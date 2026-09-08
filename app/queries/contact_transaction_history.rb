@@ -14,7 +14,7 @@ class ContactTransactionHistory
   end
 
   def posted_total_kobo
-    rows.sum { |row| row.status == "posted" ? row.amount_kobo : 0 }
+    rows.select { |row| row.status == "posted" }.sum(&:amount_kobo)
   end
 
   private
@@ -26,7 +26,7 @@ class ContactTransactionHistory
 
     def expense_rows
       contact.paid_expenses
-        .includes(:payment_account, expense_lines: :account)
+        .includes(:payment_account, :expense_lines)
         .map do |expense|
           Row.new(
             record: expense,

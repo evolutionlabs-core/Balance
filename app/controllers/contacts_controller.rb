@@ -22,10 +22,6 @@ class ContactsController < ApplicationController
     end
   end
 
-  def show
-    @history = ContactTransactionHistory.new(@contact)
-  end
-
   def edit
   end
 
@@ -35,6 +31,10 @@ class ContactsController < ApplicationController
     else
       render :edit, status: :unprocessable_content
     end
+  end
+
+  def show
+    @history = ContactTransactionHistory.new(@contact)
   end
 
   private
