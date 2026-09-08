@@ -6,6 +6,12 @@ module UiHelper
     md: "px-3 py-2 text-sm"
   }.freeze
 
+  STATUS_TONES = {
+    positive: "bg-emerald-50 text-emerald-700",
+    pending: "bg-amber-50 text-amber-700",
+    neutral: "bg-neutral-100 text-neutral-500"
+  }.freeze
+
   def primary_button_class(size: :md)
     "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-[#0f7082] text-white hover:bg-[#0b5d6d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f7082]"
   end
@@ -48,5 +54,9 @@ module UiHelper
 
   def blank_cell
     tag.span("—", class: "text-neutral-400")
+  end
+
+  def status_pill(label, tone:)
+    tag.span(label, class: "inline-flex rounded-full px-2 py-1 text-xs font-medium #{STATUS_TONES.fetch(tone)}")
   end
 end
