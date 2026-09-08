@@ -5,6 +5,7 @@ class Contact < ApplicationRecord
   belongs_to :workspace
   has_many :contact_roles, dependent: :destroy, autosave: true
   has_many :paid_expenses, class_name: "Expense", foreign_key: :payee_contact_id, dependent: :restrict_with_error
+  has_many :invoices, dependent: :restrict_with_error
 
   validates :name, :email, :contact_kind, presence: true
   validates :contact_kind, inclusion: { in: CONTACT_KINDS }

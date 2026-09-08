@@ -54,3 +54,14 @@ Use Ruby 3.4.8. Run focused tests while developing, then the full suite for
 cross-cutting changes. Report independently reproducible pre-existing failures
 instead of hiding them. Read [STYLE.md](STYLE.md) before editing or reviewing
 code.
+
+## Validation
+
+Add the minimum validation required for known application paths and domain
+invariants. Do not add speculative guards, restrictions, or normalization.
+
+## Controllers
+
+Do not add custom attribute-assignment methods or domain/workspace validation
+logic to controllers. Keep assignment direct and place invariants in the model
+or an established domain boundary.
