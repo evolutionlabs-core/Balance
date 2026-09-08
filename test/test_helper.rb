@@ -4,6 +4,7 @@ require "rails/test_help"
 require "minitest/mock"
 require_relative "test_helpers/session_test_helper"
 require_relative "test_helpers/llm_chat_test_helper"
+require_relative "test_helpers/ledger_test_helper"
 
 module ActiveSupport
   class TestCase

@@ -47,4 +47,30 @@ class ContactTest < ActiveSupport::TestCase
     assert_not contact.valid?
     assert_includes contact.errors[:email], "can't be blank"
   end
+
+  test "links only the expenses it was paid" do
+    vendor = create_vendor(@workspace)
+    other = create_vendor(@workspace, name: "Other Vendor")
+    expense = expense_for(vendor)
+    expense_for(other)
+
+    assert_equal [ expense ], vendor.paid_expenses
+  end
+
+  test "refuses to delete a contact with expenses" do
+    vendor = create_vendor(@workspace)
+    expense_for(vendor)
+
+    assert_not vendor.destroy
+    assert_match(/paid expenses/, vendor.errors[:base].to_sentence)
+    assert Contact.exists?(vendor.id)
+  end
+
+  private
+    def expense_for(contact)
+      create_expense(@workspace,
+        payee_contact: contact,
+        payment_account: @bank ||= create_payment_account(@workspace),
+        category: @fuel ||= create_expense_account(@workspace))
+    end
 end

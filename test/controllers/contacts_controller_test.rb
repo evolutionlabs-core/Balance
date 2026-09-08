@@ -64,4 +64,63 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "shows a contact with the expenses paid to it" do
+    vendor = create_vendor(@workspace)
+    expense = expense_for(vendor)
+
+    get contact_path(vendor)
+
+    assert_response :success
+    assert_select "tr##{dom_id(expense)}"
+    assert_select "a[href=?]", expense_path(expense)
+  end
+
+  test "omits expenses paid to another contact" do
+    vendor = create_vendor(@workspace)
+    other_expense = expense_for(create_vendor(@workspace, name: "Other Vendor"))
+
+    get contact_path(vendor)
+
+    assert_response :success
+    assert_select "tr##{dom_id(other_expense)}", count: 0
+  end
+
+  test "cannot view another workspace contact" do
+    contact = workspaces(:bola_shop).contacts.create!(name: "Other", contact_kind: "business", email: "other@example.com", role_names: %w[vendor])
+
+    get contact_path(contact)
+
+    assert_response :not_found
+  end
+
+  test "returns to the contact page after editing from it" do
+    contact = create_vendor(@workspace)
+
+    patch contact_path(contact), params: {
+      return_to: contact_path(contact),
+      contact: { name: "Renamed", contact_kind: "business", email: contact.email, role_names: %w[vendor] }
+    }
+
+    assert_redirected_to contact_path(contact)
+  end
+
+  test "ignores an off-site return path" do
+    contact = create_vendor(@workspace)
+
+    patch contact_path(contact), params: {
+      return_to: "https://evil.example/steal",
+      contact: { name: "Renamed", contact_kind: "business", email: contact.email, role_names: %w[vendor] }
+    }
+
+    assert_redirected_to contacts_path
+  end
+
+  private
+    def expense_for(contact)
+      create_expense(@workspace,
+        payee_contact: contact,
+        payment_account: @bank ||= create_payment_account(@workspace),
+        category: @fuel ||= create_expense_account(@workspace))
+    end
 end
