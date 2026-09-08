@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Contacts", path: contacts_path }, { label: @contact.name } ] %>
 <% end %>
 
-<% edit_contact = link_to(edit_contact_path(@contact), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
+<% edit_contact = link_to(edit_contact_path(@contact, return_to: contact_path(@contact)), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit contact
 <% end %>
 
