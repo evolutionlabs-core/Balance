@@ -66,8 +66,8 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows a contact with the expenses paid to it" do
-    vendor = create_vendor(@workspace)
-    expense = expense_for(vendor)
+    vendor = create_vendor("Fuel Station")
+    expense = create_expense_for(vendor)
 
     get contact_path(vendor)
 
@@ -77,8 +77,8 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "omits expenses paid to another contact" do
-    vendor = create_vendor(@workspace)
-    other_expense = expense_for(create_vendor(@workspace, name: "Other Vendor"))
+    vendor = create_vendor("Fuel Station")
+    other_expense = create_expense_for(create_vendor("Other Vendor"))
 
     get contact_path(vendor)
 
@@ -94,33 +94,26 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "returns to the contact page after editing from it" do
-    contact = create_vendor(@workspace)
-
-    patch contact_path(contact), params: {
-      return_to: contact_path(contact),
-      contact: { name: "Renamed", contact_kind: "business", email: contact.email, role_names: %w[vendor] }
-    }
-
-    assert_redirected_to contact_path(contact)
-  end
-
-  test "ignores an off-site return path" do
-    contact = create_vendor(@workspace)
-
-    patch contact_path(contact), params: {
-      return_to: "https://evil.example/steal",
-      contact: { name: "Renamed", contact_kind: "business", email: contact.email, role_names: %w[vendor] }
-    }
-
-    assert_redirected_to contacts_path
-  end
-
   private
-    def expense_for(contact)
-      create_expense(@workspace,
+    def create_vendor(name)
+      @workspace.contacts.create!(
+        name: name,
+        contact_kind: "business",
+        email: "#{name.parameterize}@example.com",
+        role_names: %w[vendor]
+      )
+    end
+
+    def create_expense_for(contact)
+      @bank ||= @workspace.accounts.create!(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+      @fuel ||= @workspace.accounts.create!(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+
+      @workspace.expenses.create!(
+        payment_date: Date.current,
+        payment_account: @bank,
         payee_contact: contact,
-        payment_account: @bank ||= create_payment_account(@workspace),
-        category: @fuel ||= create_expense_account(@workspace))
+        memo: "Generator fuel",
+        expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
+      )
     end
 end

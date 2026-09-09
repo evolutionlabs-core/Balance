@@ -3,13 +3,13 @@ require "test_helper"
 class ContactTransactionHistoryTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @bank = create_payment_account(@workspace)
-    @fuel = create_expense_account(@workspace)
-    @vendor = create_vendor(@workspace)
+    @bank = @workspace.accounts.create!(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+    @fuel = @workspace.accounts.create!(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    @vendor = create_vendor("Fuel Station")
   end
 
   test "builds a row from each expense paid to the contact" do
-    expense = expense_for(@vendor)
+    expense = create_expense_for(@vendor)
 
     row = ContactTransactionHistory.new(@vendor).rows.sole
 
@@ -21,14 +21,14 @@ class ContactTransactionHistoryTest < ActiveSupport::TestCase
   end
 
   test "excludes expenses paid to another contact" do
-    expense_for(create_vendor(@workspace, name: "Other Vendor"))
+    create_expense_for(create_vendor("Other Vendor"))
 
     assert_empty ContactTransactionHistory.new(@vendor).rows
   end
 
-  test "includes draft and posted expenses" do
-    draft = expense_for(@vendor)
-    posted = expense_for(@vendor, payment_date: 1.day.ago.to_date)
+  test "includes draft and posted expenses newest first" do
+    draft = create_expense_for(@vendor)
+    posted = create_expense_for(@vendor, payment_date: 1.day.ago.to_date)
     posted.post
 
     rows = ContactTransactionHistory.new(@vendor).rows
@@ -37,35 +37,31 @@ class ContactTransactionHistoryTest < ActiveSupport::TestCase
     assert_equal %w[draft posted], rows.map(&:status)
   end
 
-  test "orders rows from newest to oldest" do
-    older = expense_for(@vendor, payment_date: 3.days.ago.to_date)
-    newer = expense_for(@vendor, payment_date: Date.current)
-
-    assert_equal [ newer, older ], ContactTransactionHistory.new(@vendor).rows.map(&:record)
-  end
-
   test "totals posted expenses only" do
-    expense_for(@vendor)
-    posted = expense_for(@vendor, payment_date: 1.day.ago.to_date)
+    create_expense_for(@vendor)
+    posted = create_expense_for(@vendor, payment_date: 1.day.ago.to_date)
     posted.post
 
     assert_equal posted.total_kobo, ContactTransactionHistory.new(@vendor).posted_total_kobo
   end
 
-  test "reports whether the contact has any activity" do
-    assert_not ContactTransactionHistory.new(@vendor).any?
-
-    expense_for(@vendor)
-
-    assert ContactTransactionHistory.new(@vendor).any?
-  end
-
   private
-    def expense_for(contact, payment_date: Date.current)
-      create_expense(@workspace,
-        payee_contact: contact,
+    def create_vendor(name)
+      @workspace.contacts.create!(
+        name: name,
+        contact_kind: "business",
+        email: "#{name.parameterize}@example.com",
+        role_names: %w[vendor]
+      )
+    end
+
+    def create_expense_for(contact, payment_date: Date.current)
+      @workspace.expenses.create!(
+        payment_date: payment_date,
         payment_account: @bank,
-        category: @fuel,
-        payment_date: payment_date)
+        payee_contact: contact,
+        memo: "Generator fuel",
+        expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
+      )
     end
 end

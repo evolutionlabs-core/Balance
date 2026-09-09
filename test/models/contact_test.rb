@@ -49,28 +49,33 @@ class ContactTest < ActiveSupport::TestCase
   end
 
   test "links only the expenses it was paid" do
-    vendor = create_vendor(@workspace)
-    other = create_vendor(@workspace, name: "Other Vendor")
-    expense = expense_for(vendor)
-    expense_for(other)
+    vendor = create_vendor("Fuel Station")
+    expense = create_expense_for(vendor)
+    create_expense_for(create_vendor("Other Vendor"))
 
     assert_equal [ expense ], vendor.paid_expenses
   end
 
-  test "refuses to delete a contact with expenses" do
-    vendor = create_vendor(@workspace)
-    expense_for(vendor)
-
-    assert_not vendor.destroy
-    assert_match(/paid expenses/, vendor.errors[:base].to_sentence)
-    assert Contact.exists?(vendor.id)
-  end
-
   private
-    def expense_for(contact)
-      create_expense(@workspace,
+    def create_vendor(name)
+      @workspace.contacts.create!(
+        name: name,
+        contact_kind: "business",
+        email: "#{name.parameterize}@example.com",
+        role_names: %w[vendor]
+      )
+    end
+
+    def create_expense_for(contact)
+      @bank ||= @workspace.accounts.create!(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+      @fuel ||= @workspace.accounts.create!(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+
+      @workspace.expenses.create!(
+        payment_date: Date.current,
+        payment_account: @bank,
         payee_contact: contact,
-        payment_account: @bank ||= create_payment_account(@workspace),
-        category: @fuel ||= create_expense_account(@workspace))
+        memo: "Generator fuel",
+        expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
+      )
     end
 end

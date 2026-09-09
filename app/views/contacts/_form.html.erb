@@ -1,6 +1,4 @@
 <%= form_with model: contact do |form| %>
-  <%= hidden_field_tag :return_to, local_assigns[:return_to] if local_assigns[:return_to].present? %>
-
   <%= render "shared/modal/header",
       title: contact.persisted? ? "Edit contact" : "New contact",
       subtitle: "Keep one record for anyone you pay or sell to." %>

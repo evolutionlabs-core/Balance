@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Contacts", path: contacts_path }, { label: @contact.name } ] %>
 <% end %>
 
-<% edit_contact = link_to(edit_contact_path(@contact, return_to: contact_path(@contact)), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
+<% edit_contact = link_to(edit_contact_path(@contact), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit contact
 <% end %>
 
@@ -17,7 +17,7 @@
      [ "Email", @contact.email.presence || blank_cell ],
      [ "Phone", @contact.phone.presence || blank_cell ],
      [ "Status", contact_status(@contact) ],
-     [ "Total paid", tag.span(naira(@history.posted_total_kobo), class: "font-medium tabular-nums") ]
+     [ "Total paid", tag.span(naira(@contact_transaction_history.posted_total_kobo), class: "font-medium tabular-nums") ]
    ] %>
 
 <dl class="mt-4 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-neutral-200 bg-neutral-200 sm:grid-cols-4">
@@ -32,7 +32,7 @@
 <h2 class="mt-8 text-base font-medium text-neutral-900">Transaction history</h2>
 <p class="text-sm text-neutral-500">Records linked to this contact across the workspace.</p>
 
-<% if @history.any? %>
+<% if @contact_transaction_history.any? %>
   <div class="mt-4 overflow-x-auto border-y border-neutral-200">
     <table class="min-w-full">
       <thead class="sticky top-0 z-10 bg-white">
@@ -44,7 +44,7 @@
         </tr>
       </thead>
       <tbody class="bg-white">
-        <% @history.rows.each do |row| %>
+        <% @contact_transaction_history.rows.each do |row| %>
           <tr id="<%= dom_id(row.record) %>" class="border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
             <td class="px-4 py-3 text-sm whitespace-nowrap">
               <%= link_to row.date.to_fs(:medium), contact_transaction_path(row.record), class: "font-medium text-neutral-900 hover:underline" %>

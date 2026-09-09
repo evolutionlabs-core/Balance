@@ -53,7 +53,9 @@
             </td>
             <td class="px-4 py-3 text-sm text-neutral-600"><%= contact.email.presence || blank_cell %></td>
             <td class="px-4 py-3 text-sm text-neutral-600"><%= contact.phone.presence || blank_cell %></td>
-            <td class="px-4 py-3 text-sm"><%= contact_status(contact) %></td>
+            <td class="px-4 py-3 text-sm">
+              <span class="inline-flex rounded-full px-2 py-1 text-xs font-medium <%= contact.active? ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500' %>"><%= contact.active? ? "Active" : "Inactive" %></span>
+            </td>
             <td class="relative z-10 px-4 py-2 text-right">
               <%= link_to edit_contact_path(contact), class: icon_button_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{contact.name}" } do %>
                 <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>

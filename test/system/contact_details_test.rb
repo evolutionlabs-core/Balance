@@ -3,7 +3,7 @@ require "application_system_test_case"
 class ContactDetailsTest < ApplicationSystemTestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @vendor = create_vendor(@workspace, name: "Fuel Station")
+    @vendor = @workspace.contacts.create!(name: "Fuel Station", contact_kind: "business", email: "fuel@example.com", role_names: %w[vendor])
     users(:one).update!(password: "password")
     sign_in
   end
@@ -28,9 +28,7 @@ class ContactDetailsTest < ApplicationSystemTestCase
   end
 
   test "lists the expenses paid to the contact" do
-    bank = create_payment_account(@workspace)
-    fuel = create_expense_account(@workspace)
-    expense = create_expense(@workspace, payee_contact: @vendor, payment_account: bank, category: fuel, memo: "Generator fuel")
+    expense = create_expense_for(@vendor)
 
     visit contact_path(@vendor)
 
@@ -52,5 +50,18 @@ class ContactDetailsTest < ApplicationSystemTestCase
       fill_in "Password", with: "password"
       click_on "Sign in"
       assert_current_path root_path
+    end
+
+    def create_expense_for(contact)
+      bank = @workspace.accounts.create!(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+      fuel = @workspace.accounts.create!(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+
+      @workspace.expenses.create!(
+        payment_date: Date.current,
+        payment_account: bank,
+        payee_contact: contact,
+        memo: "Generator fuel",
+        expense_lines_attributes: [ { account: fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
+      )
     end
 end
