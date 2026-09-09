@@ -1,0 +1,17 @@
+<%= turbo_frame_tag dom_id(@invoice, :customer_choices) do %>
+  <%= form_with url: edit_invoice_customer_path(@invoice), method: :get, class: "flex gap-2 p-2" do |form| %>
+    <%= form.search_field :query, value: params[:query], placeholder: "Search customers", aria: { label: "Search customers" }, class: field_class %>
+    <%= form.submit "Search", class: secondary_button_class(size: :sm) %>
+  <% end %>
+  <div class="max-h-56 overflow-y-auto">
+    <% @customers.each do |customer| %>
+      <%= button_to customer.name, invoice_customer_path(@invoice, contact_id: customer.id), method: :patch,
+          class: "block w-full rounded px-3 py-2 text-left text-sm hover:bg-neutral-100" %>
+    <% end %>
+    <% if @customers.empty? %>
+      <p class="px-3 py-2 text-sm text-neutral-500">No customers found</p>
+    <% end %>
+  </div>
+  <%= link_to "Add customer", new_contact_path(role: "customer", invoice_id: @invoice.id),
+      class: "block border-t border-neutral-200 px-3 py-2 text-sm font-medium text-[#0f7082]", data: { turbo_frame: "modal" } %>
+<% end %>

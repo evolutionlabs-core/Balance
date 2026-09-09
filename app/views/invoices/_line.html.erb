@@ -1,0 +1,29 @@
+<tr id="<%= dom_id(line) %>" class="invoice-line border-t border-neutral-200 hover:bg-neutral-50/80" data-controller="form" data-action="change->form#submit">
+  <td class="invoice-line-number px-4 py-3 text-center text-sm text-neutral-500"></td>
+  <td class="px-2 py-2">
+    <%= form_with model: line, url: invoice_line_path(invoice, line), id: dom_id(line, :form) do |form| %>
+      <%= form.text_field :description, placeholder: "Product or service description", autocomplete: "off",
+          class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-sm focus:border-neutral-300 focus:bg-white" %>
+    <% end %>
+    <div id="<%= dom_id(line, :errors) %>"><%= render "shared/form_errors", record: line %></div>
+  </td>
+  <td class="px-2 py-2">
+    <%= number_field_tag "invoice_line[quantity]", line.quantity, id: dom_id(line, :quantity), form: dom_id(line, :form),
+        min: 0.001, step: 0.001, placeholder: "1", inputmode: "decimal", aria: { label: "Quantity" },
+        class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-right text-sm tabular-nums focus:border-neutral-300 focus:bg-white" %>
+  </td>
+  <td class="px-2 py-2">
+    <%= number_field_tag "invoice_line[rate]", line.rate, id: dom_id(line, :rate), form: dom_id(line, :form),
+        min: 0, step: 0.01, placeholder: "0.00", inputmode: "decimal", aria: { label: "Rate" },
+        class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-right text-sm tabular-nums focus:border-neutral-300 focus:bg-white" %>
+  </td>
+  <td class="px-4 py-3 text-right text-sm font-medium tabular-nums text-neutral-900">
+    <span id="<%= dom_id(line, :amount) %>"><%= minor_amount(line.amount_minor) %></span>
+  </td>
+  <td class="px-2 py-2 text-right">
+    <%= button_to invoice_line_path(invoice, line), method: :delete, class: icon_button_class do %>
+      <span class="sr-only">Remove line</span>
+      <%= inline_svg_tag "icons/trash.svg", class: "h-4 w-4" %>
+    <% end %>
+  </td>
+</tr>

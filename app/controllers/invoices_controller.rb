@@ -1,26 +1,62 @@
 class InvoicesController < ApplicationController
-  before_action :set_invoice, only: %i[show update]
+  before_action :set_invoice, only: %i[show edit update]
+
+  def index
+    @invoices = current_workspace.invoices.includes(:contact).order(created_at: :desc)
+  end
+
+  def new
+    @invoice = current_workspace.invoices.build(
+      issue_date: Date.current,
+      due_date: 30.days.from_now.to_date,
+      currency_code: current_workspace.currency_code
+    )
+  end
 
   def create
     @invoice = current_workspace.invoices.build(invoice_params)
     @invoice.user = Current.user
 
     if @invoice.save
-      render json: InvoiceBlueprint.render_as_json(@invoice), status: :created
+      respond_to do |format|
+        format.html { redirect_to edit_invoice_path(@invoice), notice: "Invoice draft saved." }
+        format.json { render json: InvoiceBlueprint.render_as_json(@invoice), status: :created }
+      end
     else
-      render json: { errors: @invoice.errors.full_messages }, status: :unprocessable_content
+      respond_to do |format|
+        format.html do
+          render :new, status: :unprocessable_content
+        end
+        format.json { render json: { errors: @invoice.errors.full_messages }, status: :unprocessable_content }
+      end
     end
   end
 
   def show
-    render json: InvoiceBlueprint.render_as_json(@invoice)
+    respond_to do |format|
+      format.html
+      format.json { render json: InvoiceBlueprint.render_as_json(@invoice) }
+    end
+  end
+
+  def edit
   end
 
   def update
-    if @invoice.update(invoice_params)
-      render json: InvoiceBlueprint.render_as_json(@invoice)
+    if @invoice.revise(invoice_params)
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to invoice_path(@invoice), notice: "Invoice draft saved." }
+        format.json { render json: InvoiceBlueprint.render_as_json(@invoice) }
+      end
     else
-      render json: { errors: @invoice.errors.full_messages }, status: :unprocessable_content
+      respond_to do |format|
+        format.turbo_stream { render :update, status: :unprocessable_content }
+        format.html do
+          render :edit, status: :unprocessable_content
+        end
+        format.json { render json: { errors: @invoice.errors.full_messages }, status: :unprocessable_content }
+      end
     end
   end
 
@@ -31,8 +67,10 @@ class InvoicesController < ApplicationController
 
     def invoice_params
       params.expect(invoice: [
-        :contact_id, :invoice_number, :issue_date, :due_date, :currency_code,
-        invoice_lines_attributes: [ [ :id, :description, :quantity, :rate_minor, :_destroy ] ]
+        :contact_id, :issue_date, :due_date, :currency_code,
+        :business_name, :business_email, :business_address,
+        :bill_to_name, :bill_to_email, :bill_to_address,
+        invoice_lines_attributes: [ [ :id, :description, :quantity, :rate, :rate_minor, :_destroy ] ]
       ])
     end
 end

@@ -49,20 +49,11 @@ class InvoiceTest < ActiveSupport::TestCase
 
   test "allows an incomplete draft" do
     invoice = build_invoice(contact: nil, lines: [ { description: "Draft line", quantity: nil, rate_minor: nil } ])
-    invoice.invoice_number = nil
     invoice.issue_date = nil
     invoice.due_date = nil
 
     assert invoice.valid?, invoice.errors.full_messages.to_sentence
     assert_equal 0, invoice.invoice_lines.first.amount_minor
-  end
-
-  test "requires a unique invoice number within the workspace" do
-    build_invoice.save!
-    duplicate = build_invoice
-
-    assert_not duplicate.valid?
-    assert_includes duplicate.errors[:invoice_number], "has already been taken"
   end
 
   private
@@ -72,7 +63,6 @@ class InvoiceTest < ActiveSupport::TestCase
       @workspace.invoices.build(
         user: user,
         contact: contact,
-        invoice_number: "INV-001",
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",

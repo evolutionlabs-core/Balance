@@ -1,8 +1,9 @@
 class InvoiceBlueprint < Blueprinter::Base
   identifier :id
 
-  fields :invoice_number, :status, :issue_date, :due_date, :currency_code,
-    :subtotal_minor, :total_minor
+  fields :status, :issue_date, :due_date, :currency_code,
+    :subtotal_minor, :total_minor, :business_name, :business_email,
+    :business_address, :bill_to_name, :bill_to_email, :bill_to_address
 
   field :business do |invoice|
     {

@@ -1,0 +1,15 @@
+<%= turbo_frame_tag dom_id(invoice, :customer) do %>
+  <p class="<%= field_label_class %>">Customer</p>
+  <details class="relative">
+    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950">
+      <span><%= invoice.contact&.name || "Select a customer" %></span>
+      <span aria-hidden="true">⌄</span>
+    </summary>
+    <div class="absolute z-20 mt-1 w-full rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
+      <%= turbo_frame_tag dom_id(invoice, :customer_choices), src: edit_invoice_customer_path(invoice), loading: :lazy do %>
+        <p class="p-3 text-sm text-neutral-500">Loading customers…</p>
+      <% end %>
+    </div>
+  </details>
+  <%= render "invoices/bill_to_fields", invoice: invoice %>
+<% end %>

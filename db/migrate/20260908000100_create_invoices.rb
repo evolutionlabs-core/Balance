@@ -4,7 +4,6 @@ class CreateInvoices < ActiveRecord::Migration[8.1]
       t.references :workspace, null: false, foreign_key: true
       t.references :user, null: false, foreign_key: true
       t.references :contact, foreign_key: true
-      t.string :invoice_number
       t.date :issue_date
       t.date :due_date
       t.string :currency_code, null: false, default: "NGN"
@@ -14,7 +13,6 @@ class CreateInvoices < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :invoices, [ :workspace_id, :invoice_number ], unique: true
     add_index :invoices, [ :workspace_id, :status ]
 
     create_table :invoice_lines do |t|

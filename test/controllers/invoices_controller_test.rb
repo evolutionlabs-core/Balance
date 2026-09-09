@@ -35,7 +35,6 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_response :created
     invoice = @workspace.invoices.order(:id).last
     assert_nil invoice.contact
-    assert_nil invoice.invoice_number
     assert_empty invoice.invoice_lines
     assert_equal 0, invoice.total_minor
   end
@@ -60,7 +59,6 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     patch invoice_path(invoice), params: {
       invoice: {
         contact_id: @customer.id,
-        invoice_number: invoice.invoice_number,
         issue_date: invoice.issue_date,
         due_date: invoice.due_date,
         currency_code: invoice.currency_code,
@@ -98,7 +96,6 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     invoice = other_workspace.invoices.create!(
       user: other_user,
       contact: other_contact,
-      invoice_number: "INV-OTHER",
       issue_date: Date.current,
       due_date: Date.current + 30.days,
       currency_code: "NGN",
@@ -115,7 +112,6 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
       @workspace.invoices.create!(
         user: @user,
         contact: @customer,
-        invoice_number: "INV-001",
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",
@@ -127,7 +123,6 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
       {
         invoice: {
           contact_id: @customer.id,
-          invoice_number: "INV-001",
           issue_date: Date.current,
           due_date: Date.current + 30.days,
           currency_code: "NGN",

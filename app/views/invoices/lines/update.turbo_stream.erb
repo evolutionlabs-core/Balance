@@ -1,0 +1,5 @@
+<%= turbo_stream.update dom_id(@line, :errors), partial: "shared/form_errors", locals: { record: @line } %>
+<% if @invoice.errors.empty? %>
+  <%= turbo_stream.update dom_id(@line, :amount), minor_amount(@line.amount_minor) %>
+  <%= render "invoices/totals", invoice: @invoice %>
+<% end %>

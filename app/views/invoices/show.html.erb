@@ -1,0 +1,95 @@
+<% content_for :title, "Invoice draft" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: "Preview" } ] %>
+<% end %>
+
+<div class="mx-auto max-w-6xl">
+  <%= render "invoices/view_tabs", invoice: @invoice, active: :preview %>
+
+  <article class="border border-neutral-200 bg-white shadow-sm">
+    <header class="flex flex-col gap-8 border-b border-neutral-200 px-8 py-10 sm:flex-row sm:justify-between md:px-12">
+      <div>
+        <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">INVOICE</p>
+        <% business_name = @invoice.business_name.nil? ? @invoice.workspace.name : @invoice.business_name %>
+        <% business_email = @invoice.business_email.nil? ? @invoice.user.email_address : @invoice.business_email %>
+        <% business_address = @invoice.business_address.nil? ? @invoice.workspace.address : @invoice.business_address %>
+        <p class="mt-5 font-semibold text-neutral-950"><%= business_name.presence || "—" %></p>
+        <p class="mt-1 text-sm text-neutral-500"><%= business_email.presence || "—" %></p>
+        <% if business_address.present? %>
+          <p class="mt-1 whitespace-pre-line text-sm text-neutral-500"><%= business_address %></p>
+        <% end %>
+      </div>
+      <dl class="grid content-start gap-2 text-sm sm:min-w-64">
+        <div class="flex justify-between gap-8">
+          <dt class="text-neutral-500">Invoice date</dt>
+          <dd class="font-medium text-neutral-950"><%= @invoice.issue_date&.strftime("%b %-d, %Y") || "—" %></dd>
+        </div>
+        <div class="flex justify-between gap-8">
+          <dt class="text-neutral-500">Due date</dt>
+          <dd class="font-medium text-neutral-950"><%= @invoice.due_date&.strftime("%b %-d, %Y") || "—" %></dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="bg-[#f4f8f8] px-8 py-7 md:px-12">
+      <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Bill to</p>
+      <% bill_to_name = @invoice.bill_to_name.nil? ? @invoice.contact&.name : @invoice.bill_to_name %>
+      <% bill_to_email = @invoice.bill_to_email.nil? ? @invoice.contact&.email : @invoice.bill_to_email %>
+      <% bill_to_address = @invoice.bill_to_address.nil? ? @invoice.contact&.address : @invoice.bill_to_address %>
+      <% if bill_to_name.present? || bill_to_email.present? || bill_to_address.present? %>
+        <p class="mt-2 font-semibold text-neutral-950"><%= bill_to_name.presence || "—" %></p>
+        <p class="mt-1 text-sm text-neutral-600"><%= bill_to_email.presence || "—" %></p>
+        <% if bill_to_address.present? %>
+          <p class="mt-1 whitespace-pre-line text-sm text-neutral-600"><%= bill_to_address %></p>
+        <% end %>
+      <% else %>
+        <p class="mt-2 text-sm text-neutral-400">No customer selected</p>
+      <% end %>
+    </section>
+
+    <section class="px-8 py-8 md:px-12">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-neutral-200">
+              <th class="py-3 text-left text-xs font-medium text-neutral-500">Description</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Qty</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Rate</th>
+              <th class="py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @invoice.invoice_lines.each do |line| %>
+              <tr class="border-b border-neutral-200">
+                <td class="py-4 text-sm text-neutral-900"><%= line.description.presence || "—" %></td>
+                <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity || "—" %></td>
+                <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.rate_minor ? minor_currency(line.rate_minor, @invoice.currency_code) : "—" %></td>
+                <td class="py-4 text-right text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(line.amount_minor, @invoice.currency_code) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <% if @invoice.invoice_lines.empty? %>
+          <p class="border-b border-neutral-200 py-8 text-center text-sm text-neutral-400">No line items added</p>
+        <% end %>
+      </div>
+
+      <dl class="mt-8 ml-auto max-w-sm">
+        <div class="flex justify-between text-sm">
+          <dt class="text-neutral-500">Subtotal</dt>
+          <dd class="font-medium tabular-nums text-neutral-950"><%= minor_currency(@invoice.subtotal_minor, @invoice.currency_code) %></dd>
+        </div>
+        <div class="mt-4 flex justify-between border-t border-neutral-200 pt-4">
+          <dt class="font-semibold text-neutral-950">Total due</dt>
+          <dd class="text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(@invoice.total_minor, @invoice.currency_code) %></dd>
+        </div>
+      </dl>
+    </section>
+  </article>
+
+  <div class="mt-5 flex items-center justify-between">
+    <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
+    <%= link_to "Edit draft", edit_invoice_path(@invoice), class: primary_button_class %>
+  </div>
+</div>

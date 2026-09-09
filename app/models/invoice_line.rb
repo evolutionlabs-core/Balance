@@ -6,6 +6,16 @@ class InvoiceLine < ApplicationRecord
 
   before_validation :calculate_amount
 
+  def rate
+    if rate_minor
+      BigDecimal(rate_minor) / 100
+    end
+  end
+
+  def rate=(value)
+    self.rate_minor = value.present? ? (BigDecimal(value.to_s) * 100).round : nil
+  end
+
   def calculate_amount
     if quantity.present? && rate_minor.present?
       self.amount_minor = (quantity * rate_minor).round

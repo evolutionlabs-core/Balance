@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000100) do
 
   create_table "contacts", force: :cascade do |t|
     t.boolean "active", default: true, null: false
+    t.text "address"
     t.string "contact_kind", null: false
     t.datetime "created_at", null: false
     t.string "email"
@@ -105,11 +106,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000100) do
   end
 
   create_table "invoices", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.text "business_address"
+    t.string "business_email"
+    t.string "business_name"
     t.bigint "contact_id"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.date "due_date"
-    t.string "invoice_number"
     t.date "issue_date"
     t.string "status", default: "draft", null: false
     t.bigint "subtotal_minor", default: 0, null: false
@@ -119,7 +125,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000100) do
     t.bigint "workspace_id", null: false
     t.index ["contact_id"], name: "index_invoices_on_contact_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
-    t.index ["workspace_id", "invoice_number"], name: "index_invoices_on_workspace_id_and_invoice_number", unique: true
     t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
@@ -304,6 +309,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_000100) do
   end
 
   create_table "workspaces", force: :cascade do |t|
+    t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.string "name", null: false
