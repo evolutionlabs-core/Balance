@@ -1,4 +1,4 @@
-class InvoiceForms::CalculationsController < ApplicationController
+class Invoices::CalculationsController < ApplicationController
   include InvoiceCalculation
 
   def create

@@ -1,4 +1,5 @@
-<%= form_with model: contact, url: contact.persisted? ? contact_path(contact, invoice_id: @invoice&.id, invoice_context: params[:invoice_context]) : contacts_path(invoice_id: @invoice&.id, invoice_context: params[:invoice_context]), class: "flex min-h-0 flex-1 flex-col" do |form| %>
+<% form_url = local_assigns.fetch(:url, contact.persisted? ? contact_path(contact) : contacts_path) %>
+<%= form_with model: contact, url: form_url, class: "flex min-h-0 flex-1 flex-col" do |form| %>
   <%= render "shared/modal/header",
       title: contact.persisted? ? "Edit contact" : "New contact",
       subtitle: "Keep one record for anyone you pay or sell to." %>

@@ -6,6 +6,6 @@
   </div>
 <% end %>
 <% if invoice.contact %>
-  <%= link_to "Edit customer", edit_contact_path(invoice.contact, invoice_context: "new"),
+  <%= link_to "Edit customer", edit_invoice_contact_path(invoice.contact, invoice_id: (invoice.id if invoice.persisted?)),
       class: "mt-2 inline-block w-fit text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
 <% end %>

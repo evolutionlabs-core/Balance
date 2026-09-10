@@ -1,5 +1,4 @@
 class ContactsController < ApplicationController
-  before_action :set_invoice, if: -> { params[:invoice_id].present? }
   before_action :set_contact, only: %i[edit update]
 
   def index
@@ -17,16 +16,7 @@ class ContactsController < ApplicationController
     @contact = current_workspace.contacts.build(contact_params)
 
     if @contact.save
-      if @invoice
-        @invoice.change_customer(@contact)
-        render :update
-      elsif params[:invoice_context] == "new"
-        @invoice = current_workspace.invoices.build(contact: @contact)
-        @invoice.use_contact_details
-        render :update
-      else
-        redirect_out_of_frame contacts_path, notice: "Contact created."
-      end
+      redirect_out_of_frame contacts_path, notice: "Contact created."
     else
       render :new, status: :unprocessable_content
     end
@@ -37,26 +27,13 @@ class ContactsController < ApplicationController
 
   def update
     if @contact.update(contact_params)
-      if @invoice
-        @invoice.change_customer(@contact)
-        render :update
-      elsif params[:invoice_context] == "new"
-        @invoice = current_workspace.invoices.build(contact: @contact)
-        @invoice.use_contact_details
-        render :update
-      else
-        redirect_out_of_frame contacts_path, notice: "Contact updated."
-      end
+      redirect_out_of_frame contacts_path, notice: "Contact updated."
     else
       render :edit, status: :unprocessable_content
     end
   end
 
   private
-    def set_invoice
-      @invoice = current_workspace.invoices.find(params[:invoice_id])
-    end
-
     def set_contact
       @contact = current_workspace.contacts.find(params[:id])
     end

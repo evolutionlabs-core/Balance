@@ -1,5 +1,6 @@
 <%= turbo_frame_tag dom_id(invoice, :customer) do %>
-  <% choices_path = invoice.persisted? ? edit_invoice_customer_path(invoice) : edit_invoice_forms_customer_path %>
+  <%= hidden_field_tag "invoice[contact_id]", invoice.contact_id, form: "new_invoice_form" %>
+  <% choices_path = invoice_contacts_path(invoice_id: (invoice.id if invoice.persisted?)) %>
   <% choices_id = dom_id(invoice, :customer_choices) %>
   <div class="relative" data-controller="combobox" data-action="click@window->combobox#closeOutside keydown.esc->combobox#close">
     <%= form_with url: choices_path, method: :get, data: { turbo_frame: choices_id } do |form| %>
@@ -15,7 +16,7 @@
       </div>
     <% end %>
     <div hidden data-combobox-target="menu" class="absolute z-30 mt-1 w-full overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg">
-      <%= link_to new_contact_path(role: "customer", invoice_id: invoice.id, invoice_context: ("new" unless invoice.persisted?)),
+      <%= link_to new_invoice_contact_path(invoice_id: (invoice.id if invoice.persisted?)),
           class: "flex items-center gap-2 border-b border-neutral-100 px-3 py-3 text-sm font-medium text-[#0f7082] hover:bg-neutral-50", data: { turbo_frame: "modal" } do %>
         <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Add new
       <% end %>
@@ -24,5 +25,5 @@
       <% end %>
     </div>
   </div>
-  <%= render invoice.persisted? ? "invoices/bill_to_fields" : "invoices/new_bill_to_fields", invoice: invoice %>
+  <%= render "invoices/new_bill_to_fields", invoice: invoice %>
 <% end %>

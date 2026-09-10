@@ -20,7 +20,7 @@
     </td>
     <td class="px-2 py-2 text-right">
       <% unless local_assigns[:first] || index.to_s == "0" %>
-        <%= button_tag form: "new_invoice_form", formaction: invoice_forms_line_path(index), formmethod: :post,
+        <%= button_tag form: "new_invoice_form", formaction: invoice_line_path(index), formmethod: :post,
             name: :_method, value: :delete, formnovalidate: true, class: icon_button_class do %>
           <span class="sr-only">Remove line</span>
           <%= inline_svg_tag "icons/trash.svg", class: "h-4 w-4" %>

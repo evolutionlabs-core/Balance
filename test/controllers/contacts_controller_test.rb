@@ -59,26 +59,6 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
     assert Contact.exists?(contact.id)
   end
 
-  test "updates invoice bill-to fields with a turbo stream" do
-    contact = @workspace.contacts.create!(name: "Customer", contact_kind: "business", email: "old@example.com", role_names: %w[customer])
-
-    invoice = @workspace.invoices.create!(user: users(:one), contact: contact)
-    patch contact_path(contact, invoice_id: invoice.id), params: {
-      contact: {
-        name: "Customer",
-        contact_kind: "business",
-        email: "new@example.com",
-        address: "12 Broad Street",
-        role_names: %w[customer]
-      }
-    }, headers: { Accept: "text/vnd.turbo-stream.html" }
-
-    assert_response :success
-    assert_select "turbo-stream[action='replace'][target='#{dom_id(invoice, :customer)}']"
-    assert_equal "12 Broad Street", contact.reload.address
-    assert_equal "12 Broad Street", invoice.reload.bill_to_address
-  end
-
   test "cannot access another workspace contact" do
     contact = workspaces(:bola_shop).contacts.create!(name: "Other", contact_kind: "business", email: "other@example.com", role_names: %w[vendor])
 
