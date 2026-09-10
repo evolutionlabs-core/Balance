@@ -39,8 +39,10 @@
       </thead>
       <tbody class="bg-white">
         <% @contacts.each do |contact| %>
-          <tr id="<%= dom_id(contact) %>" class="border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
-            <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-neutral-900"><%= contact.name %></td>
+          <tr id="<%= dom_id(contact) %>" class="relative border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
+            <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-neutral-900">
+              <%= link_to contact.name, contact_path(contact), class: "before:absolute before:inset-0 hover:underline" %>
+            </td>
             <td class="px-4 py-3 text-sm text-neutral-600"><%= contact.contact_kind.humanize %></td>
             <td class="px-4 py-3 text-sm text-neutral-600">
               <div class="flex flex-wrap gap-1">
@@ -54,7 +56,7 @@
             <td class="px-4 py-3 text-sm">
               <span class="inline-flex rounded-full px-2 py-1 text-xs font-medium <%= contact.active? ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500' %>"><%= contact.active? ? "Active" : "Inactive" %></span>
             </td>
-            <td class="px-4 py-2 text-right">
+            <td class="relative z-10 px-4 py-2 text-right">
               <%= link_to edit_contact_path(contact), class: icon_button_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{contact.name}" } do %>
                 <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>
               <% end %>

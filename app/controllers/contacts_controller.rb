@@ -1,5 +1,5 @@
 class ContactsController < ApplicationController
-  before_action :set_contact, only: %i[edit update]
+  before_action :set_contact, only: %i[show edit update]
 
   def index
     @role = params[:role].presence_in(Contact::ROLE_NAMES)
@@ -33,9 +33,13 @@ class ContactsController < ApplicationController
     end
   end
 
+  def show
+    @contact_transaction_history = ContactTransactionHistory.new(@contact)
+  end
+
   private
     def set_contact
-      @contact = current_workspace.contacts.find(params[:id])
+      @contact = current_workspace.contacts.includes(:contact_roles).find(params[:id])
     end
 
     def contact_params

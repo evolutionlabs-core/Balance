@@ -47,4 +47,35 @@ class ContactTest < ActiveSupport::TestCase
     assert_not contact.valid?
     assert_includes contact.errors[:email], "can't be blank"
   end
+
+  test "links only the expenses it was paid" do
+    vendor = create_vendor("Fuel Station")
+    expense = create_expense_for(vendor)
+    create_expense_for(create_vendor("Other Vendor"))
+
+    assert_equal [ expense ], vendor.paid_expenses
+  end
+
+  private
+    def create_vendor(name)
+      @workspace.contacts.create!(
+        name: name,
+        contact_kind: "business",
+        email: "#{name.parameterize}@example.com",
+        role_names: %w[vendor]
+      )
+    end
+
+    def create_expense_for(contact)
+      @bank ||= @workspace.accounts.create!(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+      @fuel ||= @workspace.accounts.create!(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+
+      @workspace.expenses.create!(
+        payment_date: Date.current,
+        payment_account: @bank,
+        payee_contact: contact,
+        memo: "Generator fuel",
+        expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
+      )
+    end
 end

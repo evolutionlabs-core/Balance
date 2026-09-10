@@ -1,0 +1,67 @@
+<% content_for :title, @contact.name %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Contacts", path: contacts_path }, { label: @contact.name } ] %>
+<% end %>
+
+<% edit_contact = link_to(edit_contact_path(@contact), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
+  <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit contact
+<% end %>
+
+<%= render "shared/page_header",
+    title: @contact.name,
+    description: "#{@contact.contact_kind.humanize} · #{@contact.role_names.map(&:humanize).to_sentence}",
+    action: edit_contact %>
+
+<% details = [
+     [ "Email", @contact.email.presence || blank_cell ],
+     [ "Phone", @contact.phone.presence || blank_cell ],
+     [ "Status", contact_status(@contact) ],
+     [ "Total paid", tag.span(naira(@contact_transaction_history.posted_total_kobo), class: "font-medium tabular-nums") ]
+   ] %>
+
+<dl class="mt-4 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-neutral-200 bg-neutral-200 sm:grid-cols-4">
+  <% details.each do |label, value| %>
+    <div class="bg-white px-4 py-3">
+      <dt class="text-xs font-medium text-neutral-500"><%= label %></dt>
+      <dd class="mt-1 text-sm text-neutral-900"><%= value %></dd>
+    </div>
+  <% end %>
+</dl>
+
+<h2 class="mt-8 text-base font-medium text-neutral-900">Transaction history</h2>
+<p class="text-sm text-neutral-500">Records linked to this contact across the workspace.</p>
+
+<% if @contact_transaction_history.any? %>
+  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+    <table class="min-w-full">
+      <thead class="sticky top-0 z-10 bg-white">
+        <tr>
+          <% [ "Date", "Description", "Payment account", "Status" ].each do |label| %>
+            <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500"><%= label %></th>
+          <% end %>
+          <th scope="col" class="px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Amount</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white">
+        <% @contact_transaction_history.rows.each do |row| %>
+          <tr id="<%= dom_id(row.record) %>" class="border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
+            <td class="px-4 py-3 text-sm whitespace-nowrap">
+              <%= link_to row.date.to_fs(:medium), contact_transaction_path(row.record), class: "font-medium text-neutral-900 hover:underline" %>
+            </td>
+            <td class="max-w-xs truncate px-4 py-3 text-sm text-neutral-600"><%= row.description.presence || blank_cell %></td>
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-neutral-600"><%= row.account.name %></td>
+            <td class="px-4 py-3 text-sm whitespace-nowrap"><%= contact_transaction_status(row) %></td>
+            <td class="px-4 py-3 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= naira(row.amount_kobo) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <%= render "shared/empty_state",
+      icon: "icons/receipt.svg",
+      title: "No transactions yet",
+      description: "Expenses paid to #{@contact.name} will appear here once you record them.",
+      action: link_to("New expense", new_expense_path, class: primary_button_class) %>
+<% end %>
