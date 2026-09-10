@@ -85,6 +85,20 @@ class InvoiceEditorTest < ApplicationSystemTestCase
       click_on "Remove line"
     end
     assert_selector "#invoice_total", text: "NGN 300.00"
+    assert_equal 2, invoice.invoice_lines.count
+    visit edit_invoice_path(invoice)
+    assert_selector "tr.invoice-line", count: 2
+    within all("tr.invoice-line").last do
+      click_on "Remove line"
+    end
+    assert_selector "tr.invoice-line", count: 1
+    click_on "Add product or service"
+    assert_selector "tr.invoice-line", count: 2
+    assert_equal 2, invoice.invoice_lines.count
+    within all("tr.invoice-line").last do
+      click_on "Remove line"
+    end
+    assert_selector "tr.invoice-line", count: 1
     within all("tr.invoice-line").first do
       find("input[name$='[rate]']").set("75")
     end

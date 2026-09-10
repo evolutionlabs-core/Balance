@@ -5,7 +5,7 @@
       <%= form.text_field :description, placeholder: "Product or service description", autocomplete: "off",
           class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-sm focus:border-neutral-300 focus:bg-white" %>
     <% end %>
-    <div id="<%= dom_id(line, :errors) %>"><%= render "shared/form_errors", record: line %></div>
+    <div id="<%= dom_id(line, :errors) %>"><%= render "shared/form_errors", record: line if params[:preview] %></div>
   </td>
   <td class="px-2 py-2">
     <%= number_field_tag "invoice_line[quantity]", line.quantity, id: dom_id(line, :quantity), form: dom_id(line, :form),

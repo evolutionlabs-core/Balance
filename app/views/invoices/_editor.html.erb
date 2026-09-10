@@ -1,7 +1,10 @@
 <div class="mx-auto max-w-6xl" data-controller="invoice-editor form">
   <%= render "invoices/view_tabs", invoice: invoice, active: :edit %>
 
-  <% unless invoice.persisted? %>
+  <% if invoice.persisted? %>
+    <%= form_with model: invoice, id: "new_invoice_form", data: { invoice_editor_target: "form" } do %>
+    <% end %>
+  <% else %>
     <%= form_with model: invoice, url: invoice_forms_calculation_path, method: :post, id: "new_invoice_form" do %>
     <% end %>
   <% end %>
@@ -47,7 +50,9 @@
 
           <tbody id="invoice_lines" class="invoice-lines bg-white">
             <% if invoice.persisted? %>
-              <%= render partial: "invoices/line", collection: invoice.invoice_lines, locals: { invoice: invoice } %>
+              <% invoice.invoice_lines.each_with_index do |line, index| %>
+                <%= render "invoices/new_line", line: line, index: line.persisted? ? "-#{line.id}" : index, first: index.zero? %>
+              <% end %>
             <% else %>
               <% invoice.invoice_lines.each_with_index do |line, index| %>
                 <%= render "invoices/new_line", line: line, index: index %>
@@ -58,14 +63,8 @@
         </div>
 
         <div class="mt-3">
-          <% if invoice.persisted? %>
-            <%= button_to invoice_lines_path(invoice), class: secondary_button_class(size: :sm), method: :post do %>
-              <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add product or service
-            <% end %>
-          <% else %>
-            <%= link_to new_invoice_forms_line_path, class: secondary_button_class(size: :sm), data: { turbo_stream: true } do %>
-              <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add product or service
-            <% end %>
+          <%= link_to new_invoice_forms_line_path, class: secondary_button_class(size: :sm), data: { turbo_stream: true } do %>
+            <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add product or service
           <% end %>
         </div>
 

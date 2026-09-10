@@ -3,7 +3,9 @@
 <% elsif @invoice.errors.empty? %>
   <%= turbo_stream.append "invoice_lines", partial: "invoices/line", locals: { invoice: @invoice, line: @line } %>
 <% end %>
+<% if params[:preview] %>
 <%= turbo_stream.update "invoice_errors", partial: "shared/form_errors", locals: { record: @invoice } %>
+<% end %>
 <% if @invoice.errors.empty? %>
   <%= render "invoices/totals", invoice: @invoice %>
 <% end %>

@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   submit(event) {
-    event.target.form.requestSubmit()
+    const form = event.target.form
+    if (form.checkValidity()) form.requestSubmit()
   }
 }

@@ -8,7 +8,7 @@ class Invoices::LinesController < ApplicationController
   end
 
   def update
-    saved = @invoice.change_line(params[:id], line_params)
+    saved = @invoice.change_line(params[:id], line_params, params[:preview] ? nil : :editing)
     @line = @invoice.invoice_lines.find { |line| line.id.to_s == params[:id] }
     render :update, status: :unprocessable_content unless saved
   end

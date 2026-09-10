@@ -18,6 +18,32 @@ class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name$='[id]'], input[name$='[_destroy]']", count: 0
   end
 
+  test "adding a line to an incomplete draft defers customer validation until preview" do
+    @invoice.update_column(:contact_id, nil)
+
+    assert_difference "@invoice.invoice_lines.count", 1 do
+      post invoice_lines_path(@invoice), headers: @headers
+    end
+    assert_response :success
+    assert_select "turbo-stream[target='invoice_errors']", count: 0
+
+    patch invoice_path(@invoice), params: { invoice: { currency_code: "NGN" } }, headers: @headers
+    assert_response :success
+
+    patch invoice_path(@invoice), params: { preview: true, invoice: { currency_code: "NGN" } }, headers: @headers
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[target='invoice_errors']", text: /Customer can't be blank/
+  end
+
+  test "invalid background edits keep saved values without displaying errors" do
+    line = @invoice.add_line
+    patch invoice_line_path(@invoice, line), params: { invoice_line: { quantity: 0 } }, headers: @headers
+
+    assert_response :unprocessable_content
+    assert_nil line.reload.quantity
+    assert_select "turbo-stream[target='#{dom_id(line, :errors)}']", count: 0
+  end
+
   test "updates a line and invoice totals together" do
     line = @invoice.add_line
     patch invoice_line_path(@invoice, line), params: { invoice_line: { description: "Consulting", quantity: 2, rate: 150 } }, headers: @headers
@@ -31,7 +57,7 @@ class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
   test "invalid edits preserve saved totals and return row errors" do
     line = @invoice.add_line
     @invoice.change_line(line.id, quantity: 2, rate: 150)
-    patch invoice_line_path(@invoice, line), params: { invoice_line: { quantity: 0 } }, headers: @headers
+    patch invoice_line_path(@invoice, line), params: { preview: true, invoice_line: { quantity: 0 } }, headers: @headers
 
     assert_response :unprocessable_content
     assert_equal 2, line.reload.quantity

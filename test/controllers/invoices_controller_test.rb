@@ -93,7 +93,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select "tr.invoice-line", count: 1
-    assert_select "form[action=?][method='post']", invoice_lines_path(invoice)
+    assert_select "form#new_invoice_form[action=?]", invoice_path(invoice)
     assert_select "p", text: "Changes are saved to this draft.", count: 0
   end
 
@@ -145,6 +145,27 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/attachment;.*invoice-#{invoice.id}\.pdf/, response.headers["Content-Disposition"])
     assert response.body.start_with?("%PDF-")
     assert_equal 30_000, invoice.reload.total_minor
+  end
+
+  test "buffered line changes persist together only on preview submission" do
+    invoice = create_invoice
+    kept = invoice.invoice_lines.first
+    removed = invoice.add_line(description: "Remove after save", quantity: 1, rate: 50)
+    attributes = { invoice: { currency_code: "NGN", invoice_lines_attributes: {
+      "-#{kept.id}" => { description: "Updated", quantity: 3, rate: 150 }
+    } } }
+    headers = { Accept: "text/vnd.turbo-stream.html" }
+
+    patch invoice_path(invoice), params: attributes, headers: headers
+    assert_response :success
+    assert_equal "Consulting", kept.reload.description
+    assert InvoiceLine.exists?(removed.id)
+
+    patch invoice_path(invoice), params: attributes.merge(preview: true), headers: headers
+    assert_response :success
+    assert_equal "Updated", kept.reload.description
+    assert_not InvoiceLine.exists?(removed.id)
+    assert_equal 45_000, invoice.reload.total_minor
   end
 
   test "rejects invalid invoice data" do

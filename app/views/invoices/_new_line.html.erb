@@ -1,6 +1,6 @@
 <tr id="new_invoice_line_<%= index %>" class="invoice-line border-t border-neutral-200 hover:bg-neutral-50/80">
   <td class="invoice-line-number px-4 py-3 text-center text-sm text-neutral-500"></td>
-  <%= fields_for "invoice[invoice_lines_attributes][#{index}]", line do |form| %>
+  <%= fields_for "invoice[invoice_lines_attributes][#{index}]", line, include_id: false do |form| %>
     <td class="px-2 py-2">
       <%= form.text_field :description, form: "new_invoice_form", placeholder: "Product or service description", autocomplete: "off",
           class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-sm focus:border-neutral-300 focus:bg-white" %>
@@ -19,7 +19,7 @@
       <span id="new_invoice_line_<%= index %>_amount"><%= minor_amount(line.amount_minor) %></span>
     </td>
     <td class="px-2 py-2 text-right">
-      <% unless index.to_s == "0" %>
+      <% unless local_assigns[:first] || index.to_s == "0" %>
         <%= button_tag form: "new_invoice_form", formaction: invoice_forms_line_path(index), formmethod: :post,
             name: :_method, value: :delete, formnovalidate: true, class: icon_button_class do %>
           <span class="sr-only">Remove line</span>

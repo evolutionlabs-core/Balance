@@ -52,7 +52,14 @@ class InvoicesController < ApplicationController
   end
 
   def update
-    if @invoice.update(invoice_params)
+    if params.dig(:invoice, :invoice_lines_attributes) && !params[:preview] && request.format.turbo_stream?
+      @calculation = Invoice::Calculation.new(current_workspace, Current.user, invoice_params.slice(:currency_code, :invoice_lines_attributes))
+      render "invoice_forms/calculations/create"
+      return
+    end
+    @invoice.assign_attributes(invoice_params)
+    context = :editing if request.format.turbo_stream? && !params[:preview]
+    if @invoice.save(context: context)
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to invoice_path(@invoice), notice: "Invoice draft saved." }
