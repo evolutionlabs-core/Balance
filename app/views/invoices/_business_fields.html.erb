@@ -1,0 +1,9 @@
+<%= turbo_frame_tag dom_id(invoice, :business), class: "mt-5 block" do %>
+  <p class="font-semibold text-neutral-950"><%= invoice.business_name %></p>
+  <p class="mt-1 text-sm text-neutral-600"><%= invoice.business_email %></p>
+  <% if invoice.business_address.present? %>
+    <p class="mt-1 whitespace-pre-line text-sm text-neutral-600"><%= invoice.business_address %></p>
+  <% end %>
+  <%= link_to "Edit company", edit_invoice_workspace_path(invoice_id: (invoice.id if invoice.persisted?)),
+      class: "mt-4 inline-block text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+<% end %>

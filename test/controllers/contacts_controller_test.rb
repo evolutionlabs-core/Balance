@@ -14,6 +14,7 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
           contact_kind: "business",
           email: "accounts@example.com",
           phone: "08000000000",
+          address: "12 Market Road, Lagos",
           active: true,
           role_names: %w[vendor customer]
         }
@@ -24,6 +25,7 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to contacts_path
     assert_equal %w[vendor customer], contact.role_names
     assert_equal "business", contact.contact_kind
+    assert_equal "12 Market Road, Lagos", contact.address
   end
 
   test "prefills the vendor role from the new expense link" do

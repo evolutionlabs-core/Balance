@@ -46,6 +46,14 @@ module UiHelper
     number_to_currency(BigDecimal(kobo) / 100, unit: "₦", precision: 2)
   end
 
+  def minor_currency(amount, currency_code)
+    "#{currency_code} #{minor_amount(amount)}"
+  end
+
+  def minor_amount(amount)
+    number_with_precision(BigDecimal(amount || 0) / 100, precision: 2, delimiter: ",")
+  end
+
   def blank_cell
     tag.span("—", class: "text-neutral-400")
   end

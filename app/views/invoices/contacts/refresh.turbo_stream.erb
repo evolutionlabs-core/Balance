@@ -1,0 +1,9 @@
+<%= turbo_stream.replace dom_id(@invoice, :customer), partial: "invoices/customer", locals: { invoice: @invoice } %>
+<% unless @invoice.persisted? %>
+  <%= turbo_stream.replace "new_invoice_submission", partial: "invoices/create_button", locals: { invoice: @invoice } %>
+<% end %>
+<% if action_name == "show" %>
+  <%= turbo_stream.update "invoice_errors", "" %>
+<% else %>
+  <%= turbo_stream.update "modal", "" %>
+<% end %>

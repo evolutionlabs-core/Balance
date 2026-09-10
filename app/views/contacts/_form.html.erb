@@ -1,60 +1,60 @@
-<%= form_with model: contact do |form| %>
+<% form_url = local_assigns.fetch(:url, contact.persisted? ? contact_path(contact) : contacts_path) %>
+<%= form_with model: contact, url: form_url, class: "flex min-h-0 flex-1 flex-col" do |form| %>
   <%= render "shared/modal/header",
       title: contact.persisted? ? "Edit contact" : "New contact",
       subtitle: "Keep one record for anyone you pay or sell to." %>
 
-  <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+  <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
     <%= render "shared/form_errors", record: contact %>
 
-    <div>
-      <%= form.label :name, class: field_label_class %>
-      <%= form.text_field :name, required: true, autofocus: true, placeholder: "Contact name", class: field_class %>
-    </div>
-
-    <fieldset>
-      <legend class="<%= field_label_class %>">Contact type</legend>
-      <div class="flex flex-wrap gap-2">
-        <% Contact::CONTACT_KINDS.each do |kind| %>
-          <label class="cursor-pointer">
-            <%= form.radio_button :contact_kind, kind, required: true, class: "peer sr-only" %>
-            <span class="inline-flex rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white peer-checked:hover:bg-neutral-900"><%= kind.humanize %></span>
-          </label>
-        <% end %>
-      </div>
-    </fieldset>
-
-    <div class="grid gap-4 sm:grid-cols-2">
+    <section class="space-y-4">
       <div>
-        <%= form.label :email, class: field_label_class %>
-        <%= form.email_field :email, required: true, placeholder: "name@example.com", class: field_class %>
+        <%= form.label :name, class: field_label_class %>
+        <%= form.text_field :name, required: true, autofocus: true, placeholder: "Contact name", class: field_class %>
       </div>
-      <div>
-        <%= form.label :phone, class: field_label_class %>
-        <%= form.telephone_field :phone, placeholder: "Optional", class: field_class %>
-      </div>
-    </div>
 
-    <fieldset>
-      <legend class="<%= field_label_class %>">Roles</legend>
-      <p class="mb-2 text-xs text-neutral-500">Select one or both roles.</p>
-      <input type="hidden" name="contact[role_names][]" value="">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= form.label :email, class: field_label_class %>
+          <%= form.email_field :email, required: true, placeholder: "name@example.com", class: field_class %>
+        </div>
+        <div>
+          <%= form.label :phone, class: field_label_class %>
+          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class %>
+        </div>
+      </div>
+
+      <fieldset>
+        <legend class="<%= field_label_class %>">Contact type</legend>
+        <div class="flex flex-wrap gap-2">
+          <% Contact::CONTACT_KINDS.each do |kind| %>
+            <label class="cursor-pointer">
+              <%= form.radio_button :contact_kind, kind, required: true, class: "peer sr-only" %>
+              <span class="inline-flex rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 peer-checked:border-balance-teal-700 peer-checked:bg-balance-teal-100 peer-checked:!text-balance-teal-700"><%= kind.humanize %></span>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="space-y-4 border-t border-neutral-200 pt-5">
+      <h3 class="text-sm font-semibold text-neutral-950">Billing address</h3>
+      <%= form.text_area :address, rows: 3, placeholder: "Address", class: field_class, aria: { label: "Address" } %>
+    </section>
+
+    <section class="space-y-3 border-t border-neutral-200 pt-5">
+      <h3 class="text-sm font-semibold text-neutral-950">Roles</h3>
+      <%= hidden_field_tag "contact[role_names][]", nil %>
       <div class="flex flex-wrap gap-2">
         <% Contact::ROLE_NAMES.each do |role| %>
           <label class="cursor-pointer">
-            <%= check_box_tag "contact[role_names][]", role, contact.role_names.include?(role), id: "contact_role_names_#{role}", class: "peer sr-only" %>
-            <span class="inline-flex rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white peer-checked:hover:bg-neutral-900"><%= role.humanize %></span>
+            <%= check_box_tag "contact[role_names][]", role, contact.role_names.include?(role),
+                id: "contact_role_names_#{role}", class: "peer sr-only" %>
+            <span class="inline-flex rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 peer-checked:border-balance-teal-700 peer-checked:bg-balance-teal-100 peer-checked:!text-balance-teal-700"><%= role.humanize %></span>
           </label>
         <% end %>
       </div>
-    </fieldset>
-
-    <% if contact.persisted? %>
-      <label class="flex cursor-pointer items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50">
-        <%= form.check_box :active, class: "rounded border-neutral-300 text-[#0f7082] focus:ring-[#0f7082]" %>
-        Active
-      </label>
-      <p class="-mt-2 text-xs text-neutral-500">Inactive contacts remain attached to historical transactions.</p>
-    <% end %>
+    </section>
   </div>
 
   <%= render "shared/modal/footer", form: form, submit_label: contact.persisted? ? "Save changes" : "Create contact" %>
