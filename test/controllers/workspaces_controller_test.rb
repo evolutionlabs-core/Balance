@@ -3,11 +3,12 @@ require "test_helper"
 class WorkspacesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
+    @customer = @workspace.contacts.create!(name: "Customer", email: "customer@example.com", contact_kind: "business", role_names: %w[customer])
     sign_in_as(users(:one))
   end
 
   test "updates invoice business fields with a turbo stream" do
-    invoice = @workspace.invoices.create!(user: users(:one))
+    invoice = @workspace.invoices.create!(contact: @customer, user: users(:one))
     patch workspace_path(invoice_id: invoice.id), params: {
       workspace: { name: "Ada Ventures", address: "14 Marina Road" }
     }, headers: { Accept: "text/vnd.turbo-stream.html" }

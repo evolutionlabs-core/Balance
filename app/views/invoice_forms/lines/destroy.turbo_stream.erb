@@ -1,0 +1,2 @@
+<%= turbo_stream.remove "new_invoice_line_#{params[:id]}" %>
+<%= render "invoice_forms/calculations/totals", calculation: @calculation %>

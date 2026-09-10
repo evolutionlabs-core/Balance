@@ -1,23 +1,5 @@
 <% content_for :title, "New invoice" %>
-
 <%= content_for(:breadcrumb) do %>
   <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: "New invoice" } ] %>
 <% end %>
-
-<%= form_with model: @invoice, class: "mx-auto max-w-xl space-y-4 rounded-lg border border-neutral-200 bg-white p-6" do |form| %>
-  <h1 class="text-xl font-semibold">New invoice</h1>
-  <%= render "shared/form_errors", record: @invoice %>
-  <div>
-    <%= form.label :issue_date, "Invoice date", class: field_label_class %>
-    <%= form.date_field :issue_date, class: field_class %>
-  </div>
-  <div>
-    <%= form.label :due_date, "Due date", class: field_label_class %>
-    <%= form.date_field :due_date, class: field_class %>
-  </div>
-  <div>
-    <%= form.label :currency_code, "Currency", class: field_label_class %>
-    <%= form.select :currency_code, [ [ "Nigerian naira (NGN)", "NGN" ] ], {}, class: field_class %>
-  </div>
-  <%= form.submit "Create draft", class: primary_button_class %>
-<% end %>
+<%= render "invoices/editor", invoice: @invoice %>

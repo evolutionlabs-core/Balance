@@ -12,6 +12,10 @@ class WorkspacesController < ApplicationController
       if @invoice
         @invoice.refresh_business_details
         render :update
+      elsif params[:invoice_context] == "new"
+        @invoice = current_workspace.invoices.build(user: Current.user)
+        @invoice.valid?
+        render :update
       else
         redirect_to dashboard_path, notice: "Workspace updated."
       end

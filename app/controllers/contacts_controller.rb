@@ -20,6 +20,10 @@ class ContactsController < ApplicationController
       if @invoice
         @invoice.change_customer(@contact)
         render :update
+      elsif params[:invoice_context] == "new"
+        @invoice = current_workspace.invoices.build(contact: @contact)
+        @invoice.use_contact_details
+        render :update
       else
         redirect_out_of_frame contacts_path, notice: "Contact created."
       end
@@ -35,6 +39,10 @@ class ContactsController < ApplicationController
     if @contact.update(contact_params)
       if @invoice
         @invoice.change_customer(@contact)
+        render :update
+      elsif params[:invoice_context] == "new"
+        @invoice = current_workspace.invoices.build(contact: @contact)
+        @invoice.use_contact_details
         render :update
       else
         redirect_out_of_frame contacts_path, notice: "Contact updated."

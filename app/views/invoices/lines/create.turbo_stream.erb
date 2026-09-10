@@ -1,1 +1,9 @@
-<%= turbo_stream.append "invoice_lines", partial: "invoices/line", locals: { invoice: @invoice, line: @line } %>
+<% if @replace_placeholder %>
+  <%= turbo_stream.replace dom_id(InvoiceLine.new), partial: "invoices/line", locals: { invoice: @invoice, line: @line } %>
+<% elsif @invoice.errors.empty? %>
+  <%= turbo_stream.append "invoice_lines", partial: "invoices/line", locals: { invoice: @invoice, line: @line } %>
+<% end %>
+<%= turbo_stream.update "invoice_errors", partial: "shared/form_errors", locals: { record: @invoice } %>
+<% if @invoice.errors.empty? %>
+  <%= render "invoices/totals", invoice: @invoice %>
+<% end %>

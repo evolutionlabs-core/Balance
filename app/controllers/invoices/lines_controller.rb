@@ -2,7 +2,9 @@ class Invoices::LinesController < ApplicationController
   include InvoiceScoped
 
   def create
-    @line = @invoice.add_line
+    @replace_placeholder = params[:invoice_line].present? || @invoice.invoice_lines.empty?
+    @line = @invoice.add_line(params[:invoice_line] ? line_params : {})
+    render :create, status: :unprocessable_content if @invoice.errors.any?
   end
 
   def update

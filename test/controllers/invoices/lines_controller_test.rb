@@ -3,7 +3,8 @@ require "test_helper"
 class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
-    @invoice = @workspace.invoices.create!(user: users(:one), currency_code: "NGN")
+    @customer = @workspace.contacts.create!(name: "Customer", email: "customer@example.com", contact_kind: "business", role_names: %w[customer])
+    @invoice = @workspace.invoices.create!(contact: @customer, user: users(:one), currency_code: "NGN")
     sign_in_as(users(:one))
     @headers = { Accept: "text/vnd.turbo-stream.html" }
   end
@@ -13,7 +14,7 @@ class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
       post invoice_lines_path(@invoice), headers: @headers
     end
     assert_response :success
-    assert_select "turbo-stream[action='append'][target='invoice_lines']"
+    assert_select "turbo-stream[action='replace'][target='new_invoice_line']"
     assert_select "input[name$='[id]'], input[name$='[_destroy]']", count: 0
   end
 
@@ -52,7 +53,7 @@ class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "cannot delete or edit a line belonging to another invoice" do
-    other = @workspace.invoices.create!(user: users(:one))
+    other = @workspace.invoices.create!(contact: @customer, user: users(:one))
     line = other.add_line
     delete invoice_line_path(@invoice, line), headers: @headers
     assert_response :not_found
@@ -62,7 +63,9 @@ class Invoices::LinesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "cannot change another workspace invoice" do
-    other = workspaces(:bola_shop).invoices.create!(user: users(:two))
+    other_workspace = workspaces(:bola_shop)
+    customer = other_workspace.contacts.create!(name: "Other", email: "other@example.com", contact_kind: "business", role_names: %w[customer])
+    other = other_workspace.invoices.create!(user: users(:two), contact: customer)
     post invoice_lines_path(other), headers: @headers
     assert_response :not_found
   end

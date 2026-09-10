@@ -26,6 +26,11 @@ Rails.application.routes.draw do
   resources :accounts, only: %i[index new create edit update destroy]
   resources :contacts, only: %i[index new create edit update]
   resource :workspace, only: %i[edit update]
+  namespace :invoice_forms do
+    resource :customer, only: %i[edit show]
+    resources :lines, only: %i[new destroy]
+    resource :calculation, only: :create
+  end
   resources :invoices, only: %i[index new create show edit update] do
     scope module: :invoices do
       resources :lines, only: %i[create update destroy]

@@ -3,7 +3,8 @@ require "test_helper"
 class Invoices::CustomersControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
-    @invoice = @workspace.invoices.create!(user: users(:one))
+    @customer = @workspace.contacts.create!(name: "Customer", email: "customer@example.com", contact_kind: "business", role_names: %w[customer])
+    @invoice = @workspace.invoices.create!(contact: @customer, user: users(:one))
     sign_in_as(users(:one))
   end
 
@@ -23,6 +24,6 @@ class Invoices::CustomersControllerTest < ActionDispatch::IntegrationTest
     customer = workspaces(:bola_shop).contacts.create!(name: "Other", email: "other@example.com", contact_kind: "business", role_names: %w[customer])
     patch invoice_customer_path(@invoice, contact_id: customer.id), headers: { Accept: "text/vnd.turbo-stream.html" }
     assert_response :not_found
-    assert_nil @invoice.reload.contact
+    assert_equal @customer, @invoice.reload.contact
   end
 end

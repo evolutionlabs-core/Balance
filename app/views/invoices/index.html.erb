@@ -24,34 +24,16 @@
     <table class="min-w-full">
       <thead class="bg-white">
         <tr>
-          <% [ "Customer", "Issue date", "Due date", "Status" ].each do |label| %>
-            <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500"><%= label %></th>
-          <% end %>
-          <th scope="col" class="px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Total</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Date</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Customer</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Due date</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
         </tr>
       </thead>
       <tbody class="bg-white">
-        <% @invoices.each do |invoice| %>
-          <tr class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
-            <td class="p-0 text-sm font-medium text-neutral-900">
-              <%= link_to invoice.contact&.name || blank_cell, invoice_path(invoice), class: "block px-4 py-3" %>
-            </td>
-            <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
-              <%= link_to invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-3" %>
-            </td>
-            <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
-              <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-3" %>
-            </td>
-            <td class="p-0 text-sm whitespace-nowrap">
-              <%= link_to invoice_path(invoice), class: "block px-4 py-3" do %>
-                <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">Draft</span>
-              <% end %>
-            </td>
-            <td class="p-0 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900">
-              <%= link_to minor_currency(invoice.total_minor, invoice.currency_code), invoice_path(invoice), class: "block px-4 py-3" %>
-            </td>
-          </tr>
-        <% end %>
+        <%= render @invoices %>
       </tbody>
     </table>
   </div>

@@ -90,6 +90,6 @@
 
   <div class="mt-5 flex items-center justify-between">
     <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
-    <%= link_to "Edit draft", edit_invoice_path(@invoice), class: primary_button_class %>
+    <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
   </div>
 </div>

@@ -47,12 +47,13 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal 0, invoice.total_minor
   end
 
-  test "allows an incomplete draft" do
+  test "requires a customer even for an incomplete draft" do
     invoice = build_invoice(contact: nil, lines: [ { description: "Draft line", quantity: nil, rate_minor: nil } ])
     invoice.issue_date = nil
     invoice.due_date = nil
 
-    assert invoice.valid?, invoice.errors.full_messages.to_sentence
+    assert_not invoice.valid?
+    assert_includes invoice.errors[:contact], "can't be blank"
     assert_equal 0, invoice.invoice_lines.first.amount_minor
   end
 

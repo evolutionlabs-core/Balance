@@ -1,8 +1,8 @@
 <div class="mb-6 border-b border-neutral-200">
   <nav class="flex gap-6" aria-label="Invoice views">
-    <% if active == :edit %>
+    <% if invoice.persisted? && active == :edit %>
       <span class="border-b-2 border-[#0f7082] px-1 pb-3 text-sm font-medium text-neutral-950">Edit</span>
-    <% else %>
+    <% elsif invoice.persisted? %>
       <%= link_to "Edit", edit_invoice_path(invoice), class: "px-1 pb-3 text-sm font-medium text-neutral-500 hover:text-neutral-950" %>
     <% end %>
 
@@ -11,7 +11,7 @@
     <% elsif invoice.persisted? %>
       <%= link_to "Preview", invoice_path(invoice), class: "px-1 pb-3 text-sm font-medium text-neutral-500 hover:text-neutral-950" %>
     <% else %>
-      <span class="px-1 pb-3 text-sm text-neutral-300">Preview</span>
+      <span aria-disabled="true" class="px-1 pb-3 text-sm text-neutral-300">Preview</span>
     <% end %>
   </nav>
 </div>

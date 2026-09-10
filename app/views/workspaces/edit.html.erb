@@ -1,5 +1,5 @@
 <%= render "shared/modal" do %>
-  <%= form_with model: @workspace, url: workspace_path(invoice_id: @invoice&.id), class: "flex min-h-0 flex-1 flex-col" do |form| %>
+  <%= form_with model: @workspace, url: workspace_path(invoice_id: @invoice&.id, invoice_context: params[:invoice_context]), class: "flex min-h-0 flex-1 flex-col" do |form| %>
     <%= render "shared/modal/header",
         title: "Edit company",
         subtitle: "Update the business details used as invoice defaults." %>

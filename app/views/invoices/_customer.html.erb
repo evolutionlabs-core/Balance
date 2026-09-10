@@ -1,15 +1,28 @@
 <%= turbo_frame_tag dom_id(invoice, :customer) do %>
-  <p class="<%= field_label_class %>">Customer</p>
-  <details class="relative">
-    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950">
-      <span><%= invoice.contact&.name || "Select a customer" %></span>
-      <span aria-hidden="true">⌄</span>
-    </summary>
-    <div class="absolute z-20 mt-1 w-full rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
-      <%= turbo_frame_tag dom_id(invoice, :customer_choices), src: edit_invoice_customer_path(invoice), loading: :lazy do %>
+  <% choices_path = invoice.persisted? ? edit_invoice_customer_path(invoice) : edit_invoice_forms_customer_path %>
+  <% choices_id = dom_id(invoice, :customer_choices) %>
+  <div class="relative" data-controller="combobox" data-action="click@window->combobox#closeOutside keydown.esc->combobox#close">
+    <%= form_with url: choices_path, method: :get, data: { turbo_frame: choices_id } do |form| %>
+      <%= form.label :query, "Customer", for: dom_id(invoice, :customer_search), class: field_label_class %>
+      <div class="relative">
+        <%= form.search_field :query, value: invoice.contact&.name, id: dom_id(invoice, :customer_search),
+            placeholder: "Add customer", autocomplete: "off", class: "#{field_class} pr-10",
+            role: "combobox", aria: { expanded: false, controls: choices_id, autocomplete: "list", haspopup: "listbox" },
+            data: { combobox_target: "input", action: "focus->combobox#open input->combobox#search keydown.down->combobox#focusOption" } %>
+        <button type="button" aria-label="Show customers" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center border-l border-neutral-300 text-neutral-500" data-action="combobox#toggle">
+          <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+      </div>
+    <% end %>
+    <div hidden data-combobox-target="menu" class="absolute z-30 mt-1 w-full overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg">
+      <%= link_to new_contact_path(role: "customer", invoice_id: invoice.id, invoice_context: ("new" unless invoice.persisted?)),
+          class: "flex items-center gap-2 border-b border-neutral-100 px-3 py-3 text-sm font-medium text-[#0f7082] hover:bg-neutral-50", data: { turbo_frame: "modal" } do %>
+        <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Add new
+      <% end %>
+      <%= turbo_frame_tag choices_id, src: choices_path do %>
         <p class="p-3 text-sm text-neutral-500">Loading customers…</p>
       <% end %>
     </div>
-  </details>
-  <%= render "invoices/bill_to_fields", invoice: invoice %>
+  </div>
+  <%= render invoice.persisted? ? "invoices/bill_to_fields" : "invoices/new_bill_to_fields", invoice: invoice %>
 <% end %>
