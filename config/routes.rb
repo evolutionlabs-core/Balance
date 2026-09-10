@@ -24,7 +24,7 @@ Rails.application.routes.draw do
   resource :expense_report, only: [ :show ]
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
-  resources :contacts, only: %i[index new create edit update]
+  resources :contacts, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]
 
   resources :invoices, only: %i[index new create show edit update]
