@@ -1,0 +1,11 @@
+<%= fields_for :invoice, invoice do |form| %>
+  <div class="mt-3 grid gap-2">
+    <%= form.label :bill_to_email, "Bill to", class: "#{field_label_class} mb-0" %>
+    <%= form.email_field :bill_to_email, form: "new_invoice_form", placeholder: "Email", class: field_class, aria: { label: "Billing email" } %>
+    <%= form.text_area :bill_to_address, form: "new_invoice_form", rows: 3, placeholder: "Billing address", class: field_class, aria: { label: "Billing address" } %>
+  </div>
+<% end %>
+<% if invoice.contact %>
+  <%= link_to "Edit customer", edit_invoice_contact_path(invoice.contact, invoice_id: (invoice.id if invoice.persisted?)),
+      class: "mt-2 inline-block w-fit text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+<% end %>

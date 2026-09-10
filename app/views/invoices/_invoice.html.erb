@@ -1,0 +1,22 @@
+<tr class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50">
+  <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
+    <%= link_to invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+  </td>
+  <td class="p-0 text-sm font-medium text-neutral-900">
+    <%= link_to invoice.contact&.name || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+  </td>
+  <td class="p-0 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900">
+    <%= link_to minor_currency(invoice.total_minor, invoice.currency_code), invoice_path(invoice), class: "block px-4 py-4" %>
+  </td>
+  <td class="p-0 text-sm whitespace-nowrap">
+    <%= link_to invoice_path(invoice), class: "block px-4 py-4" do %>
+      <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">Draft</span>
+    <% end %>
+  </td>
+  <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
+    <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+  </td>
+  <td class="px-4 py-4 text-right text-sm">
+    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline", aria: { label: "Edit invoice" } %>
+  </td>
+</tr>

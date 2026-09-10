@@ -1,0 +1,40 @@
+<% content_for :title, "Invoices" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Invoices" } ] %>
+<% end %>
+
+<% invoice_actions = link_to(new_invoice_path, class: primary_button_class) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New invoice
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Invoices",
+    description: "Create and review customer invoice drafts.",
+    action: invoice_actions %>
+
+<% if @invoices.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/list.svg",
+      title: "No invoices yet",
+      description: "Create an invoice draft for a customer and preview it before sending.",
+      action: invoice_actions %>
+<% else %>
+  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+    <table class="min-w-full">
+      <thead class="bg-white">
+        <tr>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Date</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Customer</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Due date</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white">
+        <%= render @invoices %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

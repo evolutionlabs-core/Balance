@@ -25,6 +25,15 @@ Rails.application.routes.draw do
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
   resources :contacts, only: %i[index new create edit update]
+  resource :workspace, only: %i[edit update]
+
+  resources :invoices, only: %i[index new create show edit update]
+  scope :invoice, module: :invoices, as: :invoice do
+    resources :contacts, only: %i[index new create show edit update]
+    resource :workspace, only: %i[edit update]
+    resources :lines, only: %i[new destroy]
+    resource :calculation, only: :create
+  end
 
   root "dashboards#show"
   get "up" => "rails/health#show", as: :rails_health_check

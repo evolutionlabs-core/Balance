@@ -1,0 +1,13 @@
+<%= turbo_frame_tag dom_id(invoice, :customer_choices) do %>
+  <div class="max-h-64 overflow-y-auto" role="listbox" aria-label="Customers">
+    <% customers.each do |customer| %>
+      <%= link_to invoice_contact_path(customer, invoice_id: (invoice.id if invoice.persisted?)),
+          class: "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm text-neutral-800 hover:bg-neutral-100", role: "option", aria: { selected: invoice.contact_id == customer.id }, data: { turbo_stream: true } do %>
+        <span><%= customer.name %></span><span class="text-xs text-neutral-400">Customer</span>
+      <% end %>
+    <% end %>
+    <% if customers.empty? %>
+      <p class="px-3 py-3 text-sm text-neutral-500">No customers found</p>
+    <% end %>
+  </div>
+<% end %>

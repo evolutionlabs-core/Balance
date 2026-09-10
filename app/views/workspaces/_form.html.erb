@@ -1,0 +1,21 @@
+<%= form_with model: workspace, url: url, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+  <%= render "shared/modal/header",
+      title: "Edit company",
+      subtitle: "Update the business details used as invoice defaults." %>
+
+  <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+    <%= render "shared/form_errors", record: workspace %>
+
+    <div>
+      <%= form.label :name, "Business name", class: field_label_class %>
+      <%= form.text_field :name, required: true, class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :address, "Business address", class: field_label_class %>
+      <%= form.text_area :address, rows: 3, placeholder: "Address", class: field_class %>
+    </div>
+  </div>
+
+  <%= render "shared/modal/footer", form: form, submit_label: "Save changes" %>
+<% end %>

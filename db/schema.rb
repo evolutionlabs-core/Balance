@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
 
   create_table "contacts", force: :cascade do |t|
     t.boolean "active", default: true, null: false
+    t.text "address"
     t.string "contact_kind", null: false
     t.datetime "created_at", null: false
     t.string "email"
@@ -65,6 +66,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.index ["account_id"], name: "index_expense_lines_on_account_id"
     t.index ["expense_id", "position"], name: "index_expense_lines_on_expense_id_and_position", unique: true
     t.index ["expense_id"], name: "index_expense_lines_on_expense_id"
+    t.check_constraint "\"position\" >= 0", name: "expense_lines_nonnegative_position"
+    t.check_constraint "amount_kobo > 0", name: "expense_lines_positive_amount"
   end
 
   create_table "expenses", force: :cascade do |t|
@@ -85,6 +88,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.index ["workspace_id", "payment_date"], name: "index_expenses_on_workspace_id_and_payment_date"
     t.index ["workspace_id", "status"], name: "index_expenses_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_expenses_on_workspace_id"
+    t.check_constraint "status::text = 'draft'::text AND journal_entry_id IS NULL OR status::text = 'posted'::text AND journal_entry_id IS NOT NULL", name: "expenses_posting_state"
+    t.check_constraint "total_kobo > 0", name: "expenses_positive_total"
+  end
+
+  create_table "invoice_lines", force: :cascade do |t|
+    t.bigint "amount_minor", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "invoice_id", null: false
+    t.integer "position", null: false
+    t.decimal "quantity", precision: 15, scale: 3
+    t.bigint "rate_minor"
+    t.datetime "updated_at", null: false
+    t.index ["invoice_id", "position"], name: "index_invoice_lines_on_invoice_id_and_position", unique: true
+    t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
+  end
+
+  create_table "invoices", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.text "business_address"
+    t.string "business_email"
+    t.string "business_name"
+    t.bigint "contact_id"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.date "due_date"
+    t.date "issue_date"
+    t.string "status", default: "draft", null: false
+    t.bigint "subtotal_minor", default: 0, null: false
+    t.bigint "total_minor", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["contact_id"], name: "index_invoices_on_contact_id"
+    t.index ["user_id"], name: "index_invoices_on_user_id"
+    t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
+    t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -95,6 +137,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["reverses_journal_entry_id"], name: "index_journal_entries_on_reverses_journal_entry_id"
+    t.index ["reverses_journal_entry_id"], name: "one_reversal_per_entry", unique: true, where: "(reverses_journal_entry_id IS NOT NULL)"
     t.index ["workspace_id", "entry_date"], name: "index_journal_entries_on_workspace_id_and_entry_date"
     t.index ["workspace_id"], name: "index_journal_entries_on_workspace_id"
   end
@@ -111,6 +154,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
     t.index ["counterparty_type", "counterparty_id"], name: "index_journal_entry_lines_on_counterparty"
     t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
+    t.check_constraint "debit_kobo > 0 AND credit_kobo = 0 OR credit_kobo > 0 AND debit_kobo = 0", name: "journal_lines_one_positive_side"
   end
 
   create_table "llm_activities", force: :cascade do |t|
@@ -265,6 +309,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
   end
 
   create_table "workspaces", force: :cascade do |t|
+    t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.string "name", null: false
@@ -282,6 +327,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
   add_foreign_key "expenses", "contacts", column: "payee_contact_id"
   add_foreign_key "expenses", "journal_entries"
   add_foreign_key "expenses", "workspaces"
+  add_foreign_key "invoice_lines", "invoices"
+  add_foreign_key "invoices", "contacts"
+  add_foreign_key "invoices", "users"
+  add_foreign_key "invoices", "workspaces"
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"
   add_foreign_key "journal_entries", "workspaces"
   add_foreign_key "journal_entry_lines", "accounts"

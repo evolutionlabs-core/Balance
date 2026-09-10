@@ -1,0 +1,29 @@
+<%= turbo_frame_tag dom_id(invoice, :customer) do %>
+  <%= hidden_field_tag "invoice[contact_id]", invoice.contact_id, form: "new_invoice_form" %>
+  <% choices_path = invoice_contacts_path(invoice_id: (invoice.id if invoice.persisted?)) %>
+  <% choices_id = dom_id(invoice, :customer_choices) %>
+  <div class="relative" data-controller="combobox" data-action="click@window->combobox#closeOutside keydown.esc->combobox#close">
+    <%= form_with url: choices_path, method: :get, data: { turbo_frame: choices_id } do |form| %>
+      <%= form.label :query, "Customer", for: dom_id(invoice, :customer_search), class: field_label_class %>
+      <div class="relative">
+        <%= form.search_field :query, value: invoice.contact&.name, id: dom_id(invoice, :customer_search),
+            placeholder: "Add customer", autocomplete: "off", class: "#{field_class} pr-10",
+            role: "combobox", aria: { expanded: false, controls: choices_id, autocomplete: "list", haspopup: "listbox" },
+            data: { combobox_target: "input", action: "focus->combobox#open input->combobox#search keydown.down->combobox#focusOption" } %>
+        <button type="button" aria-label="Show customers" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center border-l border-neutral-300 text-neutral-500" data-action="combobox#toggle">
+          <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+      </div>
+    <% end %>
+    <div hidden data-combobox-target="menu" class="absolute z-30 mt-1 w-full overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg">
+      <%= link_to new_invoice_contact_path(invoice_id: (invoice.id if invoice.persisted?)),
+          class: "flex items-center gap-2 border-b border-neutral-100 px-3 py-3 text-sm font-medium text-[#0f7082] hover:bg-neutral-50", data: { turbo_frame: "modal" } do %>
+        <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Add new
+      <% end %>
+      <%= turbo_frame_tag choices_id, src: choices_path do %>
+        <p class="p-3 text-sm text-neutral-500">Loading customers…</p>
+      <% end %>
+    </div>
+  </div>
+  <%= render "invoices/new_bill_to_fields", invoice: invoice %>
+<% end %>

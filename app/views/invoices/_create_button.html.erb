@@ -1,0 +1,4 @@
+<div id="new_invoice_submission">
+  <%= button_tag "Save and preview", form: "new_invoice_form", formaction: invoices_path(format: :html),
+      name: "invoice[contact_id]", value: invoice.contact_id, class: primary_button_class, data: { turbo_frame: "_top" } %>
+</div>
