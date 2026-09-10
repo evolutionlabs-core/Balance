@@ -28,9 +28,10 @@ class Invoice::Pdf
     def header
       @document.text "INVOICE", size: 22, style: :bold, color: "0F7082"
       @document.move_down 18
-      business = [ party_detail(:business_name, @invoice.workspace.name),
-        party_detail(:business_email, @invoice.user.email_address),
-        party_detail(:business_address, @invoice.workspace.address) ].compact_blank.join("\n")
+      name = @invoice.business_name || @invoice.workspace.name
+      email = @invoice.business_email || @invoice.user.email_address
+      address = @invoice.business_address || @invoice.workspace.address
+      business = [ name.presence || "—", email.presence || "—", address.presence ].compact.join("\n")
       @document.table([ [ business, "Invoice date\nDue date", "#{date(@invoice.issue_date)}\n#{date(@invoice.due_date)}" ] ],
         width: @document.bounds.width, column_widths: [ 285, 105, @document.bounds.width - 390 ],
         cell_style: { borders: [], padding: [ 0, 0, 16, 0 ], leading: 5 }) do |table|
@@ -40,9 +41,12 @@ class Invoice::Pdf
     end
 
     def customer
-      details = [ party_detail(:bill_to_name, @invoice.contact&.name),
-        party_detail(:bill_to_email, @invoice.contact&.email),
-        party_detail(:bill_to_address, @invoice.contact&.address) ].compact_blank
+      name = @invoice.bill_to_name || @invoice.contact&.name
+      email = @invoice.bill_to_email || @invoice.contact&.email
+      address = @invoice.bill_to_address || @invoice.contact&.address
+      details = if name.present? || email.present? || address.present?
+        [ name.presence || "—", email.presence || "—", address.presence ].compact
+      end
       @document.table([ [ "BILL TO" ], [ details.presence&.join("\n") || "No customer selected" ] ],
         width: @document.bounds.width, cell_style: { borders: [], background_color: "F4F8F8", padding: 16, leading: 4 }) do |table|
         table.row(0).size = 8
@@ -83,11 +87,6 @@ class Invoice::Pdf
         table.row(1).font_style = :bold
         table.row(1).size = 14
       end
-    end
-
-    def party_detail(attribute, default)
-      value = @invoice.public_send(attribute)
-      value.nil? ? default : value
     end
 
     def date(value)
