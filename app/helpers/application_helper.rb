@@ -4,7 +4,7 @@ module ApplicationHelper
       { items: [
         { path: dashboard_path, svg: "icons/home.svg", text: "Overview" },
         { path: chats_path, svg: "icons/bot.svg", text: "Chat" },
-        { path: expenses_path, svg: "icons/receipt.svg", text: "Expenses" },
+        { path: expenses_path, svg: "icons/banknote.svg", text: "Expenses" },
         { path: invoices_path, svg: "icons/invoice.svg", text: "Invoices" },
         { path: contacts_path, svg: "icons/users.svg", text: "Contacts" },
         { path: journal_entries_path, svg: "icons/list.svg", text: "Journal entries" },
