@@ -2,9 +2,7 @@
     url: journal_entries_path,
     class: "flex min-h-0 flex-1 flex-col",
     data: { controller: "journal-entry-lines", action: "submit->journal-entry-lines#validate" } do |form| %>
-  <%= render "shared/modal/header",
-      title: "New journal entry",
-      subtitle: "Record one balanced transaction. The first two lines are required." %>
+  <%= render "shared/modal/header", title: "New journal entry" %>
 
   <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
     <%= render "shared/form_errors", record: journal_entry %>

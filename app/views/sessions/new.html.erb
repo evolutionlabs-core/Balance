@@ -5,7 +5,7 @@
       description: "Welcome back to your books.",
       links: [ { label: "Forgot password?", path: new_password_path }, { label: "Create an account", path: new_registration_path, emphasis: true } ]
     } do %>
-  <%= form_with url: session_path, class: "space-y-4" do |form| %>
+  <%= form_with url: session_path, class: "space-y-3" do |form| %>
     <div>
       <%= form.label :email_address, "Email", class: field_label_class %>
       <%= form.email_field :email_address, value: params[:email_address], required: true, autofocus: true, autocomplete: "username", class: field_class %>

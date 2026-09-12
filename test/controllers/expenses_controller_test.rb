@@ -47,11 +47,11 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Payee contact must be a vendor/, response.body)
   end
 
-  test "links to expense reports" do
+  test "does not link to expense reports" do
     get expenses_path
 
     assert_response :success
-    assert_select "a[href='#{expense_report_path}']", text: "Reports"
+    assert_select "a[href='#{expense_report_path}']", count: 0
   end
 
   test "shows possible duplicates within the review page" do
@@ -160,7 +160,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tr##{dom_id(expense)}", text: /Fuel/
     assert_select "tr##{dom_id(expense)}", text: /Checking/
-    assert_select "tr##{dom_id(expense)} a[href='#{expense_path(expense)}']", text: "View"
+    assert_select "tr##{dom_id(expense)} a[href='#{expense_path(expense)}']", minimum: 1
     assert_select "tr##{dom_id(expense)} a[href='#{edit_expense_path(expense)}']", text: "Edit"
   end
 

@@ -44,8 +44,6 @@ class LedgerSummary
     end
   end
 
-  RECENT_LIMIT = 6
-
   def initialize(workspace)
     @workspace = workspace
   end
@@ -93,6 +91,13 @@ class LedgerSummary
     end
   end
 
+  def income_expense_series(days: 30)
+    series = daily_series(days: days)
+    [ [ "Income", :income_kobo ], [ "Expenses", :expense_kobo ] ].map do |name, key|
+      { name: name, data: series.to_h { |day| [ day[:date], day[key] / 100.0 ] } }
+    end
+  end
+
   def daily_series(days: 30)
     start_date = Date.current - (days - 1)
     range = start_date..Date.current
@@ -114,13 +119,6 @@ class LedgerSummary
 
       { date: date, income_kobo: income_kobo, expense_kobo: expense_kobo, net_kobo: income_kobo - expense_kobo }
     end
-  end
-
-  def recent_journal_entries
-    workspace.journal_entries
-      .includes(journal_entry_lines: :account)
-      .order(entry_date: :desc, id: :desc)
-      .limit(RECENT_LIMIT)
   end
 
   def trial_balance

@@ -6,7 +6,7 @@
 
 <%= render "shared/page_header",
     title: "Models",
-    description: "Every chat model Balance can reach, with what each one costs to run.",
+    description: "Manage the models available to Balance.",
     action: button_to("Refresh list", model_catalog_path, method: :patch, class: secondary_button_class) %>
 
 <% if @llm_models.any? %>

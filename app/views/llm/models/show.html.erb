@@ -2,7 +2,7 @@
 
 <% if turbo_frame_request? %>
   <%= render "shared/modal", width_class: "max-w-lg" do %>
-    <%= render "shared/modal/header", title: @llm_model.name, subtitle: "#{@llm_model.provider_class&.name || @llm_model.provider} · #{@llm_model.model_id}" %>
+    <%= render "shared/modal/header", title: @llm_model.name %>
 
     <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
       <%= render "llm/models/details", llm_model: @llm_model %>

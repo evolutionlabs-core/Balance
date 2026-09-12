@@ -1,0 +1,19 @@
+<% income_expenses = summary.income_expense_series(days: days).map { |series| series.merge(data: series[:data].transform_keys { |date| date.strftime("%b %-d") }) } %>
+<section aria-labelledby="performance-heading">
+  <h2 id="performance-heading" class="text-base font-semibold text-neutral-950">Income & expenses</h2>
+  <p class="mt-1 text-sm text-neutral-500">Daily earnings and costs over the last <%= days %> days.</p>
+  <div class="mt-6" role="img" aria-label="Daily income and expenses in naira. Period totals are shown above.">
+    <%= column_chart income_expenses, height: "270px",
+        colors: ["#0f7082", "#c7d2d4"], prefix: "₦", thousands: ",", legend: false, discrete: true,
+        library: { scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } }, y: { border: { display: false }, grid: { color: "#f0f0f0" } } } } %>
+  </div>
+  <div class="mt-6 border-t border-neutral-100 pt-6">
+    <h3 class="text-sm font-medium text-neutral-900">Profit over time</h3>
+    <p class="mt-1 text-xs text-neutral-500">Income minus expenses each day. Below zero means a loss.</p>
+    <div class="mt-4" role="img" aria-label="Daily net profit or loss in naira.">
+      <%= line_chart summary.performance_series(days: days), height: "170px", colors: ["#0f7082"],
+          points: false, curve: false, legend: false, prefix: "₦", thousands: ",",
+          library: { scales: { x: { type: "time", time: { unit: "day", displayFormats: { day: "MMM d" }, tooltipFormat: "MMM d, yyyy" }, grid: { display: false }, ticks: { maxTicksLimit: 7 } }, y: { border: { display: false }, grid: { color: "#f0f0f0" } } } } %>
+    </div>
+  </div>
+</section>

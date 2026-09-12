@@ -2,9 +2,7 @@ class ContactsController < ApplicationController
   before_action :set_contact, only: %i[show edit update]
 
   def index
-    @role = params[:role].presence_in(Contact::ROLE_NAMES)
     @contacts = current_workspace.contacts.includes(:contact_roles).ordered
-    @contacts = @contacts.with_role(@role) if @role
   end
 
   def new
