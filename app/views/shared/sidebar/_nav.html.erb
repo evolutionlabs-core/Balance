@@ -1,6 +1,6 @@
 <li>
   <% nav_classes = "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors #{active_nav?(item[:path]) ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}" %>
-  <% if item[:path] == dashboard_path && active_nav?(item[:path]) %>
+  <% if item[:path] == overview_path && active_nav?(item[:path]) %>
     <span title="<%= item[:text] %>" data-sidebar-target="navLink" class="<%= nav_classes %>">
       <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
       <span data-sidebar-target="expanded"><%= item[:text] %></span>

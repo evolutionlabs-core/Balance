@@ -19,7 +19,7 @@ Rails.application.routes.draw do
   patch "onboarding/:step", to: "onboarding#update"
   
 
-  resource :dashboard, only: [ :show ]
+  resource :overview, only: [ :show ]
   resources :expenses, only: %i[index new create show edit update] do
     resource :posting, only: [ :create ], controller: "expense_postings"
   end
@@ -38,6 +38,6 @@ Rails.application.routes.draw do
     resource :calculation, only: :create
   end
 
-  root "dashboards#show"
+  root "overviews#show"
   get "up" => "rails/health#show", as: :rails_health_check
 end
