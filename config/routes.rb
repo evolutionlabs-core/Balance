@@ -13,15 +13,17 @@ Rails.application.routes.draw do
 
   resource :session, only: [ :new, :create, :destroy ]
   resource :registration, only: %i[new create]
+  resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
+  
   get "onboarding/:step", to: "onboarding#show", as: :onboarding_step
   patch "onboarding/:step", to: "onboarding#update"
-  resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
+  
 
   resource :dashboard, only: [ :show ]
   resources :expenses, only: %i[index new create show edit update] do
     resource :posting, only: [ :create ], controller: "expense_postings"
   end
-  
+
   resource :expense_report, only: [ :show ]
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
