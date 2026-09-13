@@ -28,20 +28,20 @@ class Invoices::InteractionsTest < ActionDispatch::IntegrationTest
   end
 
   test "customer selection renders details without persisting a new invoice" do
-    customer = @workspace.contacts.create!(name: "New Customer", email: "customer@example.com", contact_kind: "business", role_names: %w[customer])
+    customer = @workspace.customers.create!(name: "New Customer", email: "customer@example.com", customer_type: "business")
 
     assert_no_difference "Invoice.count" do
-      get invoice_contact_path(customer), headers: @headers
+      get invoice_customer_path(customer), headers: @headers
     end
 
     assert_response :success
     assert_select "input[name='invoice[bill_to_email]'][value='customer@example.com']"
-    assert_select "button[name='invoice[contact_id]'][value=?]", customer.id
+    assert_select "button[name='invoice[customer_id]'][value=?]", customer.id
   end
 
-  test "customer selection cannot read another workspace contact" do
-    customer = workspaces(:bola_shop).contacts.create!(name: "Other", email: "other@example.com", contact_kind: "business", role_names: %w[customer])
-    get invoice_contact_path(customer), headers: @headers
+  test "customer selection cannot read another workspace customer" do
+    customer = workspaces(:bola_shop).customers.create!(name: "Other", email: "other@example.com", customer_type: "business")
+    get invoice_customer_path(customer), headers: @headers
     assert_response :not_found
   end
 end

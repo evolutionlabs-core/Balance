@@ -1,0 +1,14 @@
+<% position = summary.balance_sheet %>
+<section class="border-t border-neutral-200 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-labelledby="position-heading">
+  <h2 id="position-heading" class="text-base font-semibold">Financial position</h2>
+  <p class="mt-1 text-sm text-neutral-500">Balances as of <%= Date.current.strftime("%b %-d, %Y") %></p>
+  <dl class="mt-6 divide-y divide-neutral-100">
+    <% [["Assets", "What you own", position.assets_kobo], ["Liabilities", "What you owe", position.liabilities_kobo], ["Equity", "What remains after liabilities", position.equity_kobo]].each do |label, explanation, value| %>
+      <div class="py-5 first:pt-0">
+        <dt class="flex items-baseline justify-between gap-2 text-sm font-medium"><%= label %><span class="text-xs font-normal text-neutral-500"><%= explanation %></span></dt>
+        <dd class="mt-2 text-2xl font-semibold tracking-tight tabular-nums"><%= naira(value) %></dd>
+      </div>
+    <% end %>
+  </dl>
+  <%= link_to "Explore accounts →", accounts_path, class: "mt-5 inline-block text-sm font-medium text-balance-teal-700 hover:underline" %>
+</section>

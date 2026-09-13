@@ -4,7 +4,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     @user = users(:one)
-    @customer = @workspace.contacts.create!(name: "Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
+    @customer = @workspace.customers.create!(name: "Customer", customer_type: "business", email: "customer@example.com")
     sign_in_as(@user)
   end
 
@@ -15,7 +15,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
     invoice = @workspace.invoices.order(:id).last
     assert_redirected_to invoice_path(invoice)
-    assert_equal [ @user, @customer, 30_000 ], [ invoice.user, invoice.contact, invoice.total_minor ]
+    assert_equal [ @user, @customer, 30_000 ], [ invoice.user, invoice.customer, invoice.total_minor ]
   end
 
   test "invalid creation returns the populated form" do
@@ -40,7 +40,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     line = invoice.invoice_lines.first
 
     patch invoice_path(invoice), params: { invoice: {
-      contact_id: @customer.id,
+      customer_id: @customer.id,
       invoice_lines_attributes: { "-#{line.id}" => { description: "Consulting", quantity: 3, rate: 150 } }
     } }
 
@@ -60,8 +60,8 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
   test "invoices are scoped to the current workspace" do
     other_workspace = workspaces(:bola_shop)
-    other_contact = other_workspace.contacts.create!(name: "Other", contact_kind: "business", email: "other@example.com", role_names: %w[customer])
-    invoice = other_workspace.invoices.create!(user: users(:two), contact: other_contact)
+    other_customer = other_workspace.customers.create!(name: "Other", customer_type: "business", email: "other@example.com")
+    invoice = other_workspace.invoices.create!(user: users(:two), customer: other_customer)
 
     get invoice_path(invoice)
 
@@ -72,7 +72,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     def create_invoice
       @workspace.invoices.create!(
         user: @user,
-        contact: @customer,
+        customer: @customer,
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",
@@ -82,7 +82,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
     def invoice_params
       { invoice: {
-        contact_id: @customer.id,
+      customer_id: @customer.id,
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",

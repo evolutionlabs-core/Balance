@@ -1,7 +1,6 @@
 class Expense < ApplicationRecord
   belongs_to :workspace
   belongs_to :payment_account, class_name: "Account"
-  belongs_to :payee_contact, class_name: "Contact", optional: true
   belongs_to :journal_entry, optional: true
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense
 
@@ -14,8 +13,6 @@ class Expense < ApplicationRecord
   validate :payment_date_is_not_too_far_in_the_past
   validate :payment_account_belongs_to_workspace
   validate :payment_account_is_eligible
-  validate :payee_contact_belongs_to_workspace
-  validate :payee_contact_is_vendor
   validate :has_category_lines
 
   before_update { throw(:abort) if status_in_database == "posted" }
@@ -27,10 +24,8 @@ class Expense < ApplicationRecord
   end
 
   def possible_duplicates
-    return workspace.expenses.none if payee_contact_id.blank?
-
     workspace.expenses
-      .where(payee_contact_id: payee_contact_id, payment_date: payment_date, total_kobo: total_kobo)
+      .where(payment_date: payment_date, total_kobo: total_kobo)
       .where.not(id: id)
   end
 
@@ -100,19 +95,6 @@ class Expense < ApplicationRecord
       return if workspace.payment_accounts.exists?(payment_account.id)
 
       errors.add(:payment_account, "must be an asset or credit-card account")
-    end
-
-    def payee_contact_belongs_to_workspace
-      return if payee_contact.blank? || workspace.blank?
-      return if payee_contact.workspace_id == workspace_id
-
-      errors.add(:payee_contact, "must belong to the workspace")
-    end
-
-    def payee_contact_is_vendor
-      return if payee_contact.blank? || payee_contact.role_names.include?("vendor")
-
-      errors.add(:payee_contact, "must be a vendor")
     end
 
     def has_category_lines

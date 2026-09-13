@@ -10,7 +10,7 @@
 
 <%= render "shared/page_header",
     title: "Journal entries",
-    description: "Every entry balances — total debits equal total credits.",
+    description: "Manage and review your journal entries.",
     action: new_entry %>
 
 <%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>

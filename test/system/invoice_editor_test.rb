@@ -5,7 +5,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     user = users(:one)
     user.update!(password: "password")
     workspace = workspaces(:ada_store)
-    customer = workspace.contacts.create!(name: "Invoice Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
+    customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
     assert_selector "tr.invoice-line", count: 2
@@ -26,7 +26,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
 
     assert_current_path %r{\A/invoices/\d+\z}
     invoice = workspace.invoices.reload.sole
-    assert_equal [ 30_000, customer, "custom@example.com" ], [ invoice.total_minor, invoice.contact, invoice.bill_to_email ]
+    assert_equal [ 30_000, customer, "custom@example.com" ], [ invoice.total_minor, invoice.customer, invoice.bill_to_email ]
     visit edit_invoice_path(invoice)
     within "tr.invoice-line" do
       find("input[name$='[rate]']").set("75")

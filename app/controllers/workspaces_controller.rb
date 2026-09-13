@@ -7,7 +7,7 @@ class WorkspacesController < ApplicationController
     @workspace = current_workspace
 
     if @workspace.update(workspace_params)
-      redirect_to dashboard_path, notice: "Workspace updated."
+      redirect_to overview_path, notice: "Workspace updated."
     else
       render :edit, status: :unprocessable_content
     end

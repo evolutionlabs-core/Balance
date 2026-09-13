@@ -1,7 +1,5 @@
 <%= form_with model: workspace, url: url, class: "flex min-h-0 flex-1 flex-col" do |form| %>
-  <%= render "shared/modal/header",
-      title: "Edit company",
-      subtitle: "Update the business details used as invoice defaults." %>
+  <%= render "shared/modal/header", title: "Edit company" %>
 
   <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
     <%= render "shared/form_errors", record: workspace %>

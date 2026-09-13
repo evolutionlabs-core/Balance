@@ -5,7 +5,7 @@
       description: "We'll email you reset instructions.",
       links: [ { label: "Back to sign in", path: new_session_path } ]
     } do %>
-  <%= form_with url: passwords_path, class: "space-y-4" do |form| %>
+  <%= form_with url: passwords_path, class: "space-y-3" do |form| %>
     <div>
       <%= form.label :email_address, "Email", class: field_label_class %>
       <%= form.email_field :email_address, value: params[:email_address], required: true, autofocus: true, autocomplete: "username", class: field_class %>

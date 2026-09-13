@@ -41,9 +41,9 @@ class Invoice::Pdf
     end
 
     def customer
-      name = @invoice.bill_to_name || @invoice.contact&.name
-      email = @invoice.bill_to_email || @invoice.contact&.email
-      address = @invoice.bill_to_address || @invoice.contact&.address
+      name = @invoice.bill_to_name || @invoice.customer&.name
+      email = @invoice.bill_to_email || @invoice.customer&.email
+      address = @invoice.bill_to_address || @invoice.customer&.address
       details = if name.present? || email.present? || address.present?
         [ name.presence || "—", email.presence || "—", address.presence ].compact
       end

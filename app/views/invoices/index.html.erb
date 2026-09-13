@@ -10,12 +10,12 @@
 
 <%= render "shared/page_header",
     title: "Invoices",
-    description: "Create and review customer invoice drafts.",
+    description: "Manage and track your invoices.",
     action: invoice_actions %>
 
 <% if @invoices.empty? %>
   <%= render "shared/empty_state",
-      icon: "icons/list.svg",
+      icon: "icons/invoice.svg",
       title: "No invoices yet",
       description: "Create an invoice draft for a customer and preview it before sending.",
       action: invoice_actions %>
@@ -24,10 +24,10 @@
     <table class="min-w-full">
       <thead class="bg-white">
         <tr>
-          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Date</th>
           <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Customer</th>
           <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
           <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Date</th>
           <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Due date</th>
           <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
         </tr>

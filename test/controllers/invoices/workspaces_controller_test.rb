@@ -4,8 +4,8 @@ class Invoices::WorkspacesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     @user = users(:one)
-    contact = @workspace.contacts.create!(name: "Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
-    @invoice = @workspace.invoices.create!(user: @user, contact: contact)
+    customer = @workspace.customers.create!(name: "Customer", customer_type: "business", email: "customer@example.com")
+    @invoice = @workspace.invoices.create!(user: @user, customer: customer)
     sign_in_as(@user)
   end
 

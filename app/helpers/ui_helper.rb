@@ -6,6 +6,12 @@ module UiHelper
     md: "px-3 py-2 text-sm"
   }.freeze
 
+  STATUS_BADGE_TONES = {
+    success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    warning: "border-amber-200 bg-amber-50 text-amber-700",
+    neutral: "border-neutral-200 bg-neutral-50 text-neutral-600"
+  }.freeze
+
   def primary_button_class(size: :md)
     "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-[#0f7082] text-white hover:bg-[#0b5d6d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f7082]"
   end
@@ -36,6 +42,10 @@ module UiHelper
 
   def menu_item_class
     "flex w-full cursor-pointer items-center gap-2.5 rounded-md bg-transparent px-2 py-2 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100"
+  end
+
+  def status_badge(label, tone:)
+    tag.span(label, class: "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium #{STATUS_BADGE_TONES.fetch(tone)}")
   end
 
   def table_cell_class

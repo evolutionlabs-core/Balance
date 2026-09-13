@@ -23,7 +23,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_empty workspace.journal_entries
     assert_equal AccountCatalogs::Personal.core.keys.map(&:to_s).sort,
                  workspace.accounts.order(:role).pluck(:role)
-    assert_redirected_to dashboard_path
+    assert_redirected_to overview_path
   end
 
   test "posts a non-zero opening balance to checking and opening balance equity" do

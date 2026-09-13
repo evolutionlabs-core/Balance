@@ -5,7 +5,7 @@ class Workspace < ApplicationRecord
   has_many :users, through: :memberships
   has_many :journal_entries, dependent: :destroy
   has_many :expenses, dependent: :destroy
-  has_many :contacts, dependent: :destroy
+  has_many :customers, dependent: :destroy
   has_many :accounts, dependent: :destroy
   has_many :invoices, dependent: :destroy
   has_many :llm_chats, class_name: "Llm::Chat", dependent: :destroy

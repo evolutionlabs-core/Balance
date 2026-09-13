@@ -1,12 +1,12 @@
 class Invoice < ApplicationRecord
   belongs_to :workspace
   belongs_to :user
-  belongs_to :contact, optional: true
+  belongs_to :customer, optional: true
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :all_blank
 
-  validates :contact, presence: true, unless: -> { validation_context == :editing }
+  validates :customer, presence: true, unless: -> { validation_context == :editing }
 
   enum :status, { draft: "draft" }, validate: true
 
@@ -26,10 +26,10 @@ class Invoice < ApplicationRecord
     super(attributes)
   end
 
-  def use_contact_details
-    self.bill_to_name = contact&.name
-    self.bill_to_email = contact&.email
-    self.bill_to_address = contact&.address
+  def use_customer_details
+    self.bill_to_name = customer&.name
+    self.bill_to_email = customer&.email
+    self.bill_to_address = customer&.address
   end
 
   def add_line(attributes = {})
@@ -53,9 +53,9 @@ class Invoice < ApplicationRecord
     end
   end
 
-  def change_customer(customer)
-    self.contact = customer
-    use_contact_details
+  def change_customer(new_customer)
+    self.customer = new_customer
+    use_customer_details
     save!
   end
 
@@ -71,10 +71,10 @@ class Invoice < ApplicationRecord
     self.business_email = user.email_address if business_email.nil?
     self.business_address = workspace.address if business_address.nil?
 
-    if contact
-      self.bill_to_name = contact.name if bill_to_name.nil?
-      self.bill_to_email = contact.email if bill_to_email.nil?
-      self.bill_to_address = contact.address if bill_to_address.nil?
+    if customer
+      self.bill_to_name = customer.name if bill_to_name.nil?
+      self.bill_to_email = customer.email if bill_to_email.nil?
+      self.bill_to_address = customer.address if bill_to_address.nil?
     end
   end
 

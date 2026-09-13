@@ -5,7 +5,7 @@
     <%= form.text_area :bill_to_address, form: "new_invoice_form", rows: 3, placeholder: "Billing address", class: field_class, aria: { label: "Billing address" } %>
   </div>
 <% end %>
-<% if invoice.contact %>
-  <%= link_to "Edit customer", edit_invoice_contact_path(invoice.contact, invoice_id: (invoice.id if invoice.persisted?)),
+<% if invoice.customer %>
+  <%= link_to "Edit customer", edit_invoice_customer_path(invoice.customer, invoice_id: (invoice.id if invoice.persisted?)),
       class: "mt-2 inline-block w-fit text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
 <% end %>
