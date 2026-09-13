@@ -26,7 +26,7 @@
     <table class="min-w-full">
       <thead class="bg-white">
         <tr>
-          <% [ "Date", "Description", "Vendor", "Payment account", "Category", "Status" ].each do |label| %>
+          <% [ "Date", "Description", "Payment account", "Category", "Status" ].each do |label| %>
             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500"><%= label %></th>
           <% end %>
           <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
@@ -39,7 +39,7 @@
             <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
               <%= link_to expense.payment_date.to_fs(:medium), expense_path(expense), class: "block px-4 py-4" %>
             </td>
-            <% [ expense.description, expense.payee_contact&.name || blank_cell, expense.payment_account.name, expense.category_label ].each do |value| %>
+            <% [ expense.description, expense.payment_account.name, expense.category_label ].each do |value| %>
               <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
                 <%= link_to value, expense_path(expense), class: "block px-4 py-4" %>
               </td>

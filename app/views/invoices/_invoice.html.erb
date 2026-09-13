@@ -1,6 +1,6 @@
 <tr class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50">
   <td class="p-0 text-sm font-medium text-neutral-900">
-    <%= link_to invoice.contact&.name || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+    <%= link_to invoice.customer&.name || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
   </td>
   <td class="p-0 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900">
     <%= link_to minor_currency(invoice.total_minor, invoice.currency_code), invoice_path(invoice), class: "block px-4 py-4" %>

@@ -19,32 +19,8 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='expense[payee]']", count: 0
     assert_select "input[name='expense[reference_number]']", count: 0
     assert_select "input[name='expense[memo]']"
-    assert_select "[data-select-menu-search-in-trigger-value='true'] input[role='combobox'][placeholder='Who did you pay to?']"
-    assert_select "[data-select-menu-footer-label-value='Add vendor'][data-select-menu-footer-url-value='#{new_contact_path(role: "vendor")}']"
-    assert_select "[data-controller='select-menu'][data-select-menu-search-in-trigger-value='true'] input[role='combobox']", count: 4
-  end
-
-  test "only offers vendor contacts on the expense form" do
-    vendor = @workspace.contacts.create!(name: "Fuel Vendor", contact_kind: "business", email: "vendor@example.com", role_names: %w[vendor])
-    customer = @workspace.contacts.create!(name: "Retail Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
-
-    get new_expense_path
-
-    assert_select "select#expense_payee_contact_id option[value='#{vendor.id}']", text: vendor.name
-    assert_select "select#expense_payee_contact_id option[value='#{customer.id}']", count: 0
-  end
-
-  test "rejects a customer-only contact as the vendor" do
-    customer = @workspace.contacts.create!(name: "Retail Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
-    params = expense_params
-    params[:expense][:payee_contact_id] = customer.id
-
-    assert_no_difference("Expense.count") do
-      post expenses_path, params: params
-    end
-
-    assert_response :unprocessable_content
-    assert_match(/Payee contact must be a vendor/, response.body)
+    assert_select "select#expense_payee_contact_id", count: 0
+    assert_select "[data-select-menu-search-in-trigger-value='true'] input[role='combobox']", count: 3
   end
 
   test "does not link to expense reports" do
@@ -55,9 +31,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows possible duplicates within the review page" do
-    vendor = @workspace.contacts.create!(name: "Fuel Station", contact_kind: "business", email: "duplicate@example.com", role_names: %w[vendor])
     params = expense_params
-    params[:expense][:payee_contact_id] = vendor.id
     post expenses_path, params: params
     original = @workspace.expenses.order(:id).last
 
@@ -71,9 +45,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates a draft for review" do
-    payee = @workspace.contacts.create!(name: "Fuel Station", contact_kind: "business", email: "fuel@example.com", role_names: %w[vendor])
     params = expense_params
-    params[:expense][:payee_contact_id] = payee.id
     params[:expense][:memo] = "Generator fuel"
 
     assert_difference("Expense.count", 1) do
@@ -84,7 +56,6 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to expense_path(expense)
     assert expense.draft?
     assert_nil expense.journal_entry
-    assert_equal payee, expense.payee_contact
     assert_equal "Generator fuel", expense.memo
   end
 

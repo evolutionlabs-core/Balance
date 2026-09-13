@@ -4,11 +4,10 @@ class InvoiceTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
     @user = users(:one)
-    @customer = @workspace.contacts.create!(
+    @customer = @workspace.customers.create!(
       name: "Example Customer",
-      contact_kind: "business",
-      email: "customer@example.com",
-      role_names: %w[customer]
+      customer_type: "business",
+      email: "customer@example.com"
     )
   end
 
@@ -48,22 +47,22 @@ class InvoiceTest < ActiveSupport::TestCase
   end
 
   test "requires a customer even for an incomplete draft" do
-    invoice = build_invoice(contact: nil, lines: [ { description: "Draft line", quantity: nil, rate_minor: nil } ])
+    invoice = build_invoice(customer: nil, lines: [ { description: "Draft line", quantity: nil, rate_minor: nil } ])
     invoice.issue_date = nil
     invoice.due_date = nil
 
     assert_not invoice.valid?
-    assert_includes invoice.errors[:contact], "can't be blank"
+    assert_includes invoice.errors[:customer], "can't be blank"
     assert_equal 0, invoice.invoice_lines.first.amount_minor
   end
 
   private
-    def build_invoice(contact: @customer, user: @user, lines: nil)
+    def build_invoice(customer: @customer, user: @user, lines: nil)
       lines ||= [ { description: "Consulting", quantity: 2, rate_minor: 15_000 } ]
 
       @workspace.invoices.build(
         user: user,
-        contact: contact,
+        customer: customer,
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",

@@ -10,7 +10,7 @@
     action: link_to("Back to expenses", expenses_path, class: secondary_button_class) %>
 
 <%= form_with url: expense_report_path, method: :get,
-    class: "mt-4 grid gap-3 border-y border-neutral-200 py-4 sm:grid-cols-2 lg:grid-cols-4",
+    class: "mt-4 grid gap-3 border-y border-neutral-200 py-4 sm:grid-cols-2 lg:grid-cols-3",
     data: { controller: "date-range" } do |form| %>
   <div class="relative">
     <%= form.label :range, "Date range", class: field_label_class %>
@@ -22,10 +22,6 @@
         data: { date_range_target: "input" } %>
     <%= form.hidden_field :from, value: @from, data: { date_range_target: "from" } %>
     <%= form.hidden_field :to, value: @to, data: { date_range_target: "to" } %>
-  </div>
-  <div>
-    <%= form.label :vendor_id, "Vendor", class: field_label_class %>
-    <%= form.select :vendor_id, options_from_collection_for_select(@vendors, :id, :name, @vendor_id), { include_blank: "All vendors" }, class: field_class %>
   </div>
   <div>
     <%= form.label :category_id, "Category", class: field_label_class %>
@@ -57,8 +53,7 @@
     </div>
   </section>
 
-  <div class="mt-7 grid gap-8 lg:grid-cols-2">
-    <%= render "ranking", title: "Top vendors", rows: @report.top_vendors, empty_message: "No vendor-linked expenses in this period." %>
+  <div class="mt-7">
     <%= render "ranking", title: "Top categories", rows: @report.top_categories, empty_message: "No categories in this period." %>
   </div>
 

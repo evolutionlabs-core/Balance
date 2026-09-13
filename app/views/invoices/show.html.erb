@@ -34,9 +34,9 @@
 
     <section class="bg-[#f4f8f8] px-8 py-7 md:px-12">
       <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Bill to</p>
-      <% bill_to_name = @invoice.bill_to_name.nil? ? @invoice.contact&.name : @invoice.bill_to_name %>
-      <% bill_to_email = @invoice.bill_to_email.nil? ? @invoice.contact&.email : @invoice.bill_to_email %>
-      <% bill_to_address = @invoice.bill_to_address.nil? ? @invoice.contact&.address : @invoice.bill_to_address %>
+      <% bill_to_name = @invoice.bill_to_name.nil? ? @invoice.customer&.name : @invoice.bill_to_name %>
+      <% bill_to_email = @invoice.bill_to_email.nil? ? @invoice.customer&.email : @invoice.bill_to_email %>
+      <% bill_to_address = @invoice.bill_to_address.nil? ? @invoice.customer&.address : @invoice.bill_to_address %>
       <% if bill_to_name.present? || bill_to_email.present? || bill_to_address.present? %>
         <p class="mt-2 font-semibold text-neutral-950"><%= bill_to_name.presence || "—" %></p>
         <p class="mt-1 text-sm text-neutral-600"><%= bill_to_email.presence || "—" %></p>

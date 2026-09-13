@@ -11,11 +11,4 @@ module ExpensesHelper
   def expense_status(expense)
     status_badge(expense.status.humanize, tone: expense.posted? ? :success : :warning)
   end
-
-  def expense_payee_options(contacts, selected = nil)
-    grouped_options_for_select(
-      [ [ "Vendors", contacts.map { |contact| [ contact.name, contact.id ] } ] ],
-      selected
-    )
-  end
 end

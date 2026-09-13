@@ -2,7 +2,7 @@ class InvoicesController < ApplicationController
   before_action :set_invoice, only: %i[show edit update]
 
   def index
-    @invoices = current_workspace.invoices.includes(:contact).order(created_at: :desc)
+    @invoices = current_workspace.invoices.includes(:customer).order(created_at: :desc)
   end
 
   def new
@@ -58,12 +58,12 @@ class InvoicesController < ApplicationController
 
   private
     def set_invoice
-      @invoice = current_workspace.invoices.includes(:workspace, :contact, :invoice_lines).find(params[:id])
+      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines).find(params[:id])
     end
 
     def invoice_params
       params.expect(invoice: [
-        :contact_id, :issue_date, :due_date, :currency_code,
+        :customer_id, :issue_date, :due_date, :currency_code,
         :business_name, :business_email, :business_address,
         :bill_to_name, :bill_to_email, :bill_to_address,
         invoice_lines_attributes: [ [ :id, :description, :quantity, :rate, :rate_minor, :_destroy ] ]

@@ -15,21 +15,7 @@ class ExpenseReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[data-date-range-target='input']"
     assert_select "input[name='from'][data-date-range-target='from']"
     assert_select "input[name='to'][data-date-range-target='to']"
-    assert_select "select[name='vendor_id']"
+    assert_select "select[name='vendor_id']", count: 0
     assert_select "select[name='category_id']"
-  end
-
-  test "keeps inactive historical vendors available as filters" do
-    vendor = @workspace.contacts.create!(
-      name: "Former Vendor",
-      contact_kind: "business",
-      email: "former@example.com",
-      active: false,
-      role_names: %w[vendor]
-    )
-
-    get expense_report_path
-
-    assert_select "select[name='vendor_id'] option[value='#{vendor.id}']", text: vendor.name
   end
 end

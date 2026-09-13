@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,28 +31,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
     t.index ["workspace_id"], name: "index_accounts_on_workspace_id"
   end
 
-  create_table "contact_roles", force: :cascade do |t|
-    t.bigint "contact_id", null: false
-    t.datetime "created_at", null: false
-    t.string "role", null: false
-    t.datetime "updated_at", null: false
-    t.index ["contact_id", "role"], name: "index_contact_roles_on_contact_id_and_role", unique: true
-    t.index ["contact_id"], name: "index_contact_roles_on_contact_id"
-  end
-
-  create_table "contacts", force: :cascade do |t|
+  create_table "customers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.text "address"
-    t.string "contact_kind", null: false
     t.datetime "created_at", null: false
+    t.string "customer_type", null: false
     t.string "email"
     t.string "name", null: false
     t.string "phone"
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
-    t.index ["workspace_id", "active"], name: "index_contacts_on_workspace_id_and_active"
-    t.index ["workspace_id", "name"], name: "index_contacts_on_workspace_id_and_name"
-    t.index ["workspace_id"], name: "index_contacts_on_workspace_id"
+    t.index ["workspace_id", "active"], name: "index_customers_on_workspace_id_and_active"
+    t.index ["workspace_id", "name"], name: "index_customers_on_workspace_id_and_name"
+    t.index ["workspace_id"], name: "index_customers_on_workspace_id"
   end
 
   create_table "expense_lines", force: :cascade do |t|
@@ -74,7 +65,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
     t.datetime "created_at", null: false
     t.bigint "journal_entry_id"
     t.text "memo"
-    t.bigint "payee_contact_id"
     t.bigint "payment_account_id", null: false
     t.date "payment_date", null: false
     t.string "status", default: "draft", null: false
@@ -82,9 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["journal_entry_id"], name: "index_expenses_on_journal_entry_id", unique: true, where: "(journal_entry_id IS NOT NULL)"
-    t.index ["payee_contact_id"], name: "index_expenses_on_payee_contact_id"
     t.index ["payment_account_id"], name: "index_expenses_on_payment_account_id"
-    t.index ["workspace_id", "payee_contact_id", "payment_date", "total_kobo"], name: "index_expenses_for_transaction_duplicate_detection"
     t.index ["workspace_id", "payment_date"], name: "index_expenses_on_workspace_id_and_payment_date"
     t.index ["workspace_id", "status"], name: "index_expenses_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_expenses_on_workspace_id"
@@ -112,9 +100,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
     t.text "business_address"
     t.string "business_email"
     t.string "business_name"
-    t.bigint "contact_id"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id"
     t.date "due_date"
     t.date "issue_date"
     t.string "status", default: "draft", null: false
@@ -123,7 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.bigint "workspace_id", null: false
-    t.index ["contact_id"], name: "index_invoices_on_contact_id"
+    t.index ["customer_id"], name: "index_invoices_on_customer_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
     t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
@@ -319,16 +307,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_000100) do
   end
 
   add_foreign_key "accounts", "workspaces"
-  add_foreign_key "contact_roles", "contacts"
-  add_foreign_key "contacts", "workspaces"
+  add_foreign_key "customers", "workspaces"
   add_foreign_key "expense_lines", "accounts"
   add_foreign_key "expense_lines", "expenses"
   add_foreign_key "expenses", "accounts", column: "payment_account_id"
-  add_foreign_key "expenses", "contacts", column: "payee_contact_id"
   add_foreign_key "expenses", "journal_entries"
   add_foreign_key "expenses", "workspaces"
   add_foreign_key "invoice_lines", "invoices"
-  add_foreign_key "invoices", "contacts"
+  add_foreign_key "invoices", "customers"
   add_foreign_key "invoices", "users"
   add_foreign_key "invoices", "workspaces"
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"
