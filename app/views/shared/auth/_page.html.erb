@@ -1,12 +1,12 @@
-<div class="onboarding-enter w-full max-w-md">
+<div class="w-full max-w-md">
   <div class="mb-7 flex justify-center">
-    <div class="flex flex-col items-center gap-1.5">
-      <%= render "shared/brand", compact: false %>
-      <span class="text-center text-3xl font-bold tracking-tight text-neutral-950">Balance</span>
+    <div class="flex items-center gap-3">
+      <%= render "shared/brand", compact: false, horizontal: true %>
+      <span class="text-3xl font-semibold tracking-wide text-neutral-950">Balance</span>
     </div>
   </div>
 
-  <div class="space-y-5">
+  <div class="space-y-4">
     <div class="flex flex-col gap-y-1">
       <h1 class="text-3xl font-medium tracking-tight text-neutral-950"><%= title %></h1>
       <p class="text-sm leading-6 text-neutral-500"><%= description %></p>
@@ -14,7 +14,7 @@
 
     <%= yield %>
 
-    <div class="flex items-center <%= Array(links).one? ? "justify-center" : "justify-between" %> gap-3 pt-1 text-sm">
+    <div class="flex items-center <%= Array(links).one? ? "justify-start" : "justify-between" %> gap-3 text-sm">
       <% Array(links).each do |link| %>
         <%= link_to link[:label], link[:path], class: link[:emphasis] ? "font-medium text-neutral-900 hover:underline" : "text-neutral-500 transition-colors hover:text-neutral-900" %>
       <% end %>

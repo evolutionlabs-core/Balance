@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   resources :expenses, only: %i[index new create show edit update] do
     resource :posting, only: [ :create ], controller: "expense_postings"
   end
+  
   resource :expense_report, only: [ :show ]
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
