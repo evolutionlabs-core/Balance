@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Customers" } ] %>
 <% end %>
 
-<% new_customer = link_to(new_customer_path, class: primary_button_class, data: { turbo_frame: "modal" }) do %>
+<% new_customer = link_to(new_customer_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New customer
 <% end %>
 
@@ -20,7 +20,22 @@
       description: "Create a customer once, then use it wherever that person or organization appears.",
       action: new_customer %>
 <% else %>
-  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+  <div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+    <% @customers.each do |customer| %>
+      <article class="py-4">
+        <div class="flex items-start justify-between gap-3">
+          <%= link_to customer.name, customer_path(customer), class: "min-w-0 flex-1 truncate text-sm font-medium text-neutral-950" %>
+          <%= customer_status(customer) %>
+        </div>
+        <p class="mt-1 truncate text-sm text-neutral-500"><%= customer.email.presence || customer.phone.presence || customer.customer_type.humanize %></p>
+        <div class="mt-1 flex items-center justify-between gap-3">
+          <span class="truncate text-xs text-neutral-500"><%= [customer.customer_type.humanize, customer.phone.presence].compact.join(" · ") %></span>
+          <%= link_to "Edit", edit_customer_path(customer), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
+        </div>
+      </article>
+    <% end %>
+  </div>
+  <div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
     <table class="min-w-full">
       <thead class="bg-white">
         <tr>

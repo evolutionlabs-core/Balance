@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Customers", path: customers_path }, { label: @customer.name } ] %>
 <% end %>
 
-<% edit_customer = link_to(edit_customer_path(@customer), class: secondary_button_class, data: { turbo_frame: "modal" }) do %>
+<% edit_customer = link_to(edit_customer_path(@customer), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit customer
 <% end %>
 

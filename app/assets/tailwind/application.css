@@ -234,3 +234,103 @@
 .flatpickr-input[readonly] {
   background-color: white;
 }
+
+@layer utilities {
+  #sidebar-panel::backdrop {
+    background-color: rgb(0 0 0 / 0.45);
+  }
+
+  @media (min-width: 640px) {
+    .expense-line-columns {
+      grid-template-columns: minmax(13rem, 1.3fr) minmax(15rem, 1.7fr) minmax(9rem, 0.7fr) 3rem;
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+
+    .invoice-line-editor,
+    .invoice-line-editor tbody,
+    .invoice-line-editor tr,
+    .invoice-line-editor td {
+      display: block;
+      width: 100%;
+    }
+
+    .invoice-line-editor thead {
+      display: none;
+    }
+
+    .invoice-line-editor tr {
+      padding-block: 0.75rem;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    .invoice-line-editor .invoice-line-number {
+      display: none;
+    }
+
+    .invoice-line-editor td {
+      padding-inline: 0;
+    }
+
+    .invoice-line-editor td:nth-of-type(3),
+    .invoice-line-editor td:nth-of-type(4) {
+      display: inline-block;
+      width: calc(50% - 0.25rem);
+      vertical-align: top;
+    }
+
+    .invoice-line-editor td:nth-of-type(4) {
+      margin-left: 0.5rem;
+    }
+
+    .invoice-preview-lines,
+    .invoice-preview-lines tbody,
+    .invoice-preview-lines tr,
+    .invoice-preview-lines td {
+      display: block;
+      width: 100%;
+    }
+
+    .invoice-preview-lines thead {
+      display: none;
+    }
+
+    .invoice-preview-lines tr {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+      padding-block: 1rem;
+    }
+
+    .invoice-preview-lines td {
+      padding: 0;
+      text-align: left;
+    }
+
+    .invoice-preview-lines td:first-child {
+      grid-column: 1 / -1;
+      font-weight: 500;
+    }
+
+    .invoice-preview-lines td:nth-child(2)::before,
+    .invoice-preview-lines td:nth-child(3)::before,
+    .invoice-preview-lines td:nth-child(4)::before {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: #737373;
+    }
+
+    .invoice-preview-lines td:nth-child(2)::before { content: "Quantity"; }
+    .invoice-preview-lines td:nth-child(3)::before { content: "Rate"; }
+    .invoice-preview-lines td:nth-child(4)::before { content: "Amount"; }
+
+  }
+}

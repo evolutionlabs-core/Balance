@@ -21,7 +21,7 @@
   <%= render "shared/page_header",
       title: @llm_model.name,
       description: "#{@llm_model.provider_class&.name || @llm_model.provider} · #{@llm_model.model_id}",
-      action: link_to("Start an agent", chats_path(model: @llm_model.model_id), class: primary_button_class) %>
+      action: link_to("Start an agent", chats_path(model: @llm_model.model_id), class: primary_button_class(size: :compact)) %>
 
   <div class="mt-4 max-w-2xl rounded-md border border-neutral-200 bg-white p-5">
     <%= render "llm/models/details", llm_model: @llm_model %>

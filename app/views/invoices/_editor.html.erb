@@ -12,7 +12,7 @@
   <% end %>
 
   <article class="overflow-hidden border border-neutral-200 bg-white shadow-sm">
-    <div class="flex flex-col gap-8 border-b border-neutral-200 px-8 py-10 sm:flex-row sm:items-start sm:justify-between md:px-12">
+    <div class="flex flex-col gap-5 border-b border-neutral-200 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-10 md:px-12">
       <div class="w-full max-w-md">
         <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">INVOICE</p>
         <%= render "invoices/business_fields", invoice: invoice %>
@@ -25,20 +25,20 @@
 
     <div id="invoice_errors"><%= render "shared/form_errors", record: invoice %></div>
 
-    <div class="grid gap-8 bg-[#f4f8f8] px-8 py-8 md:grid-cols-[1.2fr_1fr] md:px-12">
+    <div class="grid gap-6 bg-[#f4f8f8] px-4 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.2fr_1fr] md:px-12">
       <%= render "invoices/customer", invoice: invoice %>
       <%= render invoice.persisted? ? "invoices/details" : "invoices/new_details", invoice: invoice %>
     </div>
 
-    <section class="px-6 py-7 md:px-10">
+    <section class="px-4 py-6 sm:px-6 sm:py-7 md:px-10">
       <div class="mb-4">
         <h2 class="text-sm font-semibold text-neutral-950">Product or service</h2>
         <p class="mt-1 text-sm text-neutral-500">Add each item included on this invoice.</p>
       </div>
 
       <%= turbo_frame_tag "invoice_line_items", class: "block" do %>
-        <div class="overflow-x-auto border-y border-neutral-200">
-          <table class="min-w-[760px] w-full">
+        <div class="border-y border-neutral-200">
+          <table class="invoice-line-editor w-full">
           <thead class="bg-white">
             <tr>
               <th scope="col" class="w-14 px-4 py-2.5 text-center text-xs font-medium text-neutral-500">#</th>
@@ -83,7 +83,7 @@
       <% end %>
     </section>
 
-    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-4 md:px-10">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-4 py-4 sm:px-6 md:px-10">
       <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
       <% if invoice.persisted? %>
         <%= link_to "Save and preview", invoice_path(invoice), class: primary_button_class, data: { action: "invoice-editor#saveAndShow" } %>

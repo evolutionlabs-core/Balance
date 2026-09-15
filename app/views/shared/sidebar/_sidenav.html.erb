@@ -1,21 +1,19 @@
-<div aria-label="sidenav" class="flex h-full flex-col py-3">
+<div aria-label="sidenav" class="flex h-full w-full flex-col py-3">
   <div class="flex h-12 items-center gap-2 px-3">
-    <div data-sidebar-target="expanded" class="min-w-0 flex-1 overflow-hidden px-2">
+    <div class="min-w-0 flex-1 overflow-hidden px-2 lg:group-data-[rail=collapsed]/sidebar:hidden">
       <%= render "shared/brand", compact: true, sidebar: true %>
     </div>
 
-    <button type="button" data-action="sidebar#collapse" data-sidebar-target="collapseButton" class="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900">
-      <span data-sidebar-target="expanded" class="sr-only">Collapse sidebar</span>
-      <span data-sidebar-target="collapsed" hidden class="sr-only">Expand sidebar</span>
+    <button type="button" data-sidebar-target="panelButton" data-action="sidebar#togglePanel" aria-expanded="true" aria-label="Collapse sidebar" class="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900">
       <%= inline_svg_tag "icons/panel-left.svg", class: "h-4 w-4" %>
     </button>
   </div>
 
-  <nav class="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-2">
+  <nav aria-label="Primary" class="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-2" data-action="click->sidebar#closeOnNavigate">
     <% navigation_sections.each do |section| %>
       <div>
         <% if section[:label] %>
-          <p data-sidebar-target="expanded" class="px-3 pb-1 text-xs font-medium text-neutral-500"><%= section[:label] %></p>
+          <p class="px-3 pb-1 text-xs font-medium text-neutral-500 lg:group-data-[rail=collapsed]/sidebar:hidden"><%= section[:label] %></p>
         <% end %>
 
         <ul role="list" class="flex flex-col gap-1">
@@ -25,12 +23,12 @@
     <% end %>
   </nav>
 
-  <div data-controller="menu" data-menu-match-trigger-width-value="true" class="relative mt-2 px-3">
-    <button type="button" data-menu-target="button" data-sidebar-target="identityButton" data-action="menu#toggle" class="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-100">
+  <div data-controller="menu" data-menu-match-trigger-width-value="true" data-action="keydown->menu#dismiss" class="relative mt-2 px-3">
+    <button type="button" data-menu-target="button" data-action="menu#toggle" aria-expanded="false" aria-controls="account-menu" aria-label="Account settings for <%= Current.user.full_name %>" title="<%= Current.user.full_name %>" class="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-100 lg:group-data-[rail=collapsed]/sidebar:justify-center lg:group-data-[rail=collapsed]/sidebar:px-0">
       <%= render "shared/sidebar/identity" %>
     </button>
 
-    <div data-menu-target="menu" class="hidden z-50 min-w-60 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg shadow-neutral-900/10">
+    <div id="account-menu" data-menu-target="menu" class="hidden z-50 max-h-[min(28rem,calc(100dvh-1rem))] min-w-60 overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-lg shadow-neutral-900/10">
       <div class="border-b border-neutral-100 px-4 py-4">
         <p class="mb-3 text-xs font-medium text-neutral-500">Current workspace</p>
         <div class="flex items-center gap-3">

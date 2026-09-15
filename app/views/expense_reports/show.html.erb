@@ -7,7 +7,7 @@
 <%= render "shared/page_header",
     title: "Expense reports",
     description: "Review and analyze your expenses.",
-    action: link_to("Back to expenses", expenses_path, class: secondary_button_class) %>
+    action: link_to("Back to expenses", expenses_path, class: secondary_button_class(size: :compact)) %>
 
 <%= form_with url: expense_report_path, method: :get,
     class: "mt-4 grid gap-3 border-y border-neutral-200 py-4 sm:grid-cols-2 lg:grid-cols-3",

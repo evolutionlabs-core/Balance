@@ -1,4 +1,44 @@
-<div class="mt-4 overflow-x-auto border-y border-neutral-200">
+<div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+  <% journal_entries.each do |entry| %>
+    <% debit_lines = entry.journal_entry_lines.select { |line| line.debit_kobo.positive? } %>
+    <% split = entry.journal_entry_lines.size > 2 || entry.description.to_s.length > 80 %>
+    <article class="py-4" data-controller="<%= "row-expand" if split %>">
+      <div class="flex items-start justify-between gap-4">
+        <p class="min-w-0 flex-1 text-sm font-medium text-neutral-950"><%= entry.description.presence || blank_cell %></p>
+        <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= naira(debit_lines.sum(&:debit_kobo)) %></span>
+      </div>
+      <div class="mt-2 flex items-center justify-between gap-3">
+        <span class="text-xs tabular-nums text-neutral-500"><%= entry.entry_date.strftime("%b %-d, %Y") %></span>
+        <% if split %>
+          <button type="button" class="flex min-h-11 items-center gap-1 px-1 text-sm font-medium text-[#0f7082]" data-action="row-expand#toggle" aria-expanded="false">
+            Details
+            <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 transition-transform", data: { row_expand_target: "icon" } %>
+          </button>
+        <% else %>
+          <span class="truncate text-xs text-neutral-500"><%= entry.journal_entry_lines.map { |line| line.account.name }.to_sentence %></span>
+        <% end %>
+      </div>
+      <% if split %>
+        <div class="mt-2 overflow-x-auto rounded-md bg-neutral-50 p-3" data-row-expand-target="detail" hidden>
+          <table class="w-full min-w-72">
+            <thead><tr class="text-left text-[11px] font-medium text-neutral-500"><th class="pb-2">Account</th><th class="pb-2 text-right">Debit</th><th class="pb-2 text-right">Credit</th></tr></thead>
+            <tbody>
+              <% entry.journal_entry_lines.each do |line| %>
+                <tr class="border-t border-neutral-200">
+                  <td class="py-2 pr-3 text-xs text-neutral-700"><%= line.account.name %></td>
+                  <td class="py-2 text-right text-xs tabular-nums text-neutral-600"><%= naira(line.debit_kobo) if line.debit_kobo.positive? %></td>
+                  <td class="py-2 text-right text-xs tabular-nums text-neutral-600"><%= naira(line.credit_kobo) if line.credit_kobo.positive? %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </article>
+  <% end %>
+</div>
+
+<div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
   <table class="min-w-full">
     <thead class="sticky top-0 z-10 bg-white">
       <tr>

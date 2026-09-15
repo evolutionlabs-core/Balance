@@ -3,16 +3,16 @@
   <%= render "shared/breadcrumb", data: [ { label: "Overview" } ] %>
 <% end %>
 
-<div class="mx-auto max-w-7xl space-y-8">
-  <header class="flex flex-wrap items-end justify-between gap-5">
+<div class="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+  <header class="flex flex-wrap items-end justify-between gap-4">
     <div>
       <h1 class="text-2xl font-semibold tracking-tight text-neutral-950">Your finances at a glance</h1>
       <p class="mt-2 text-sm text-neutral-500"><%= (Date.current - (@days - 1)).strftime("%b %-d") %> – <%= Date.current.strftime("%b %-d, %Y") %> · NGN</p>
     </div>
-    <nav class="inline-flex rounded-lg bg-neutral-100 p-1" aria-label="Overview period">
+    <nav class="inline-flex w-full rounded-lg bg-neutral-100 p-1 sm:w-auto" aria-label="Overview period">
       <% [7, 30, 90].each do |days| %>
         <%= link_to "#{days} days", overview_path(days: days), aria: { current: days == @days ? "page" : nil },
-            class: "rounded-md px-4 py-2 text-sm font-medium transition-colors #{days == @days ? 'bg-white text-neutral-950 shadow-sm' : 'text-neutral-500 hover:text-neutral-950'}" %>
+            class: "flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors sm:flex-none sm:px-4 #{days == @days ? 'bg-white text-neutral-950 shadow-sm' : 'text-neutral-500 hover:text-neutral-950'}" %>
       <% end %>
     </nav>
   </header>

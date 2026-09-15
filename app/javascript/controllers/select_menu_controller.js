@@ -56,7 +56,8 @@ export default class extends Controller {
 
   open() {
     document.dispatchEvent(new CustomEvent("select-menu:open", { detail: { controller: this } }))
-    document.body.append(this.menu)
+    const portal = this.element.closest("dialog[open]") || document.body
+    portal.append(this.menu)
     this.menu.classList.remove("hidden")
     this.positionMenu()
     this.buttonTarget.setAttribute("aria-expanded", "true")
@@ -119,6 +120,7 @@ export default class extends Controller {
     item.dataset.selectMenuOption = ""
     item.setAttribute("role", "option")
     item.setAttribute("aria-selected", option.selected ? "true" : "false")
+    item.disabled = option.disabled
     item.className = "flex w-full cursor-pointer items-center rounded px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-100 aria-selected:bg-neutral-100 aria-selected:font-medium aria-selected:text-neutral-950"
     item.textContent = option.textContent
     item.addEventListener("click", this.select.bind(this))
@@ -171,6 +173,8 @@ export default class extends Controller {
     if (menuHeight > roomBelow && roomAbove > roomBelow) {
       this.menu.style.top = `${Math.max(gap, rect.top - menuHeight - gap)}px`
     }
+    this.menu.style.maxHeight = `${Math.max(96, window.innerHeight - (gap * 2))}px`
+    this.menu.style.overflowY = "auto"
   }
 
   search(event) {
