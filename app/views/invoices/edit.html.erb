@@ -1,0 +1,7 @@
+<% content_for :title, "Edit invoice" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: "Edit invoice" } ] %>
+<% end %>
+
+<%= render "invoices/editor", invoice: @invoice %>

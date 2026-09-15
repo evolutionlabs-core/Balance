@@ -1,0 +1,23 @@
+<% current = summary.period(days: days) %>
+<% previous = summary.previous_period(days: days) %>
+<% difference = current.profit_kobo - previous.profit_kobo %>
+
+<section aria-label="Financial summary" class="grid grid-cols-2 border-y border-neutral-200 py-2 min-[340px]:grid-cols-2 lg:grid-cols-4">
+  <div class="min-w-0 px-2 py-4 sm:py-5">
+    <p class="text-sm font-medium text-neutral-500">Cash available</p>
+    <p class="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums text-neutral-950 sm:mt-3 sm:text-2xl"><%= naira(summary.liquid_balance_kobo) %></p>
+    <p class="mt-2 text-xs text-neutral-500 sm:mt-3">Cash and bank balances today</p>
+  </div>
+  <div class="min-w-0 border-l border-neutral-100 px-2 py-4 sm:py-5 lg:border-l-0">
+    <p class="text-sm font-medium text-neutral-500"><%= current.profit_kobo.negative? ? "Net loss" : "Net profit" %></p>
+    <p class="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums sm:mt-3 sm:text-2xl <%= current.profit_kobo.negative? ? 'text-red-700' : 'text-neutral-950' %>"><%= naira(current.profit_kobo) %></p>
+    <p class="mt-2 text-xs text-neutral-500 sm:mt-3"><%= naira(difference.abs) %> <%= difference.negative? ? "lower" : "higher" %> than prior <%= days %> days</p>
+  </div>
+  <% [["Income", current.income_kobo, "Earned in this period"], ["Expenses", current.expense_kobo, "Incurred in this period"]].each do |label, value, description| %>
+    <div class="min-w-0 border-t border-neutral-100 px-2 py-4 sm:py-5 lg:border-t-0">
+      <p class="text-sm font-medium text-neutral-500"><%= label %></p>
+      <p class="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums sm:mt-3 sm:text-2xl"><%= naira(value) %></p>
+      <p class="mt-2 text-xs text-neutral-500 sm:mt-3"><%= description %></p>
+    </div>
+  <% end %>
+</section>

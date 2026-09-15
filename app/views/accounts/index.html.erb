@@ -4,13 +4,13 @@
   <%= render "shared/breadcrumb", data: [ { label: "Accounts" } ] %>
 <% end %>
 
-<% new_account = link_to(new_account_path, class: primary_button_class, data: { turbo_frame: "modal" }) do %>
+<% new_account = link_to(new_account_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New account
 <% end %>
 
 <%= render "shared/page_header",
     title: "Accounts",
-    description: "Where your money sits. Every entry in your books moves through one of these.",
+    description: "Manage and track your accounts.",
     action: new_account %>
 
 <% if @accounts.empty? %>
@@ -20,7 +20,24 @@
       description: "Create an account for every place money sits or moves through — a bank, cash on hand, or a category for sales.",
       action: new_account %>
 <% else %>
-  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+  <div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+    <% @accounts.each do |account| %>
+      <article class="flex items-center gap-3 py-4">
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-neutral-950"><%= account.name %></p>
+          <p class="mt-1 truncate text-xs text-neutral-500"><%= account.base_type.humanize %> · <%= account.account_type.humanize %> · <%= account.detail_type.humanize %></p>
+        </div>
+        <% if account.role.present? %>
+          <span class="flex min-h-11 min-w-11 items-center justify-center text-neutral-400" title="System account — locked">
+            <span class="sr-only">System account — locked</span><%= inline_svg_tag "icons/lock.svg", class: "h-4 w-4" %>
+          </span>
+        <% else %>
+          <%= link_to "Edit", edit_account_path(account), class: "flex min-h-11 items-center px-1 text-sm font-medium text-[#0f7082]", data: { turbo_frame: "modal" } %>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+  <div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
     <table class="min-w-full">
       <thead class="sticky top-0 z-10 bg-white">
         <tr>

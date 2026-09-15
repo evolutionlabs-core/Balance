@@ -1,0 +1,5 @@
+<%= turbo_frame_tag dom_id(invoice, :details) do %>
+  <%= form_with model: invoice, data: { invoice_editor_target: "form", controller: "form", action: "change->form#submit" }, class: "grid content-start gap-4 sm:grid-cols-2" do |form| %>
+    <%= render "invoices/detail_fields", form: form, invoice: invoice %>
+  <% end %>
+<% end %>

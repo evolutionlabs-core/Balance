@@ -4,13 +4,13 @@
   <%= render "shared/breadcrumb", data: [ { label: "Journal entries" } ] %>
 <% end %>
 
-<% new_entry = link_to(new_journal_entry_path, class: primary_button_class, data: { turbo_frame: "modal" }) do %>
+<% new_entry = link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
 <% end %>
 
 <%= render "shared/page_header",
     title: "Journal entries",
-    description: "Every entry balances — total debits equal total credits.",
+    description: "Manage and review your journal entries.",
     action: new_entry %>
 
 <%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>

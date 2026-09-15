@@ -9,14 +9,6 @@ module ExpensesHelper
   end
 
   def expense_status(expense)
-    classes = expense.posted? ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-    tag.span(expense.status.humanize, class: "inline-flex rounded-full px-2 py-1 text-xs font-medium #{classes}")
-  end
-
-  def expense_payee_options(contacts, selected = nil)
-    grouped_options_for_select(
-      [ [ "Vendors", contacts.map { |contact| [ contact.name, contact.id ] } ] ],
-      selected
-    )
+    status_badge(expense.status.humanize, tone: expense.posted? ? :success : :warning)
   end
 end

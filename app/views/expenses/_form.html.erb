@@ -14,16 +14,7 @@
 
   <%= render "shared/form_errors", record: expense %>
 
-  <div class="grid gap-5 sm:grid-cols-3">
-    <div>
-      <%= form.label :payee_contact_id, "Vendor", class: field_label_class %>
-      <%= render "shared/select_menu", form: form, attribute: :payee_contact_id,
-          options: expense_payee_options(@payee_contacts, expense.payee_contact_id),
-          prompt: "Who did you pay to?", searchable: true, required: false,
-          search_in_trigger: true, empty_message: "No contacts found",
-          footer_label: "Add vendor", footer_url: new_contact_path(role: "vendor"),
-          select_data: {} %>
-    </div>
+  <div class="grid gap-5 sm:grid-cols-2">
     <div>
       <%= form.label :payment_date, "Payment date", class: field_label_class %>
       <%= form.text_field :payment_date,
@@ -49,19 +40,17 @@
   </div>
 
   <section>
-    <div class="overflow-x-auto">
-      <div class="grid min-w-[680px] grid-cols-[minmax(13rem,1.3fr)_minmax(15rem,1.7fr)_minmax(9rem,0.7fr)_3rem] gap-3 border-b border-neutral-200 pb-2">
-        <span class="text-xs font-medium text-neutral-500">Category</span>
-        <span class="text-xs font-medium text-neutral-500">Description</span>
-        <span class="text-right text-xs font-medium text-neutral-500">Amount</span>
-        <span></span>
-      </div>
+    <div class="expense-line-columns hidden gap-3 border-b border-neutral-200 pb-2 sm:grid">
+      <span class="text-xs font-medium text-neutral-500">Category</span>
+      <span class="text-xs font-medium text-neutral-500">Description</span>
+      <span class="text-right text-xs font-medium text-neutral-500">Amount</span>
+      <span></span>
+    </div>
 
-      <div class="min-w-[680px]" data-expense-lines-target="lines">
-        <%= form.fields_for :expense_lines do |line_form| %>
-          <%= render "expenses/line_fields", form: line_form %>
-        <% end %>
-      </div>
+    <div data-expense-lines-target="lines">
+      <%= form.fields_for :expense_lines do |line_form| %>
+        <%= render "expenses/line_fields", form: line_form %>
+      <% end %>
     </div>
 
     <template data-expense-lines-target="template">

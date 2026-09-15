@@ -4,14 +4,13 @@ class ExpensesController < ApplicationController
 
   def index
     @expenses = current_workspace.expenses
-      .includes(:payee_contact, :payment_account, expense_lines: :account)
+      .includes(:payment_account, expense_lines: :account)
       .order(payment_date: :desc, id: :desc)
   end
 
   def new
     @expense = current_workspace.expenses.build(payment_date: Date.current)
     @expense.expense_lines.build(position: 0)
-    prepare_form
   end
 
   def create
@@ -20,20 +19,17 @@ class ExpensesController < ApplicationController
     if @expense.save
       redirect_to expense_path(@expense)
     else
-      prepare_form
       render :new, status: :unprocessable_content
     end
   end
 
   def edit
-    prepare_form
   end
 
   def update
     if @expense.update(expense_params)
       redirect_to expense_path(@expense)
     else
-      prepare_form
       render :edit, status: :unprocessable_content
     end
   end
@@ -48,7 +44,7 @@ class ExpensesController < ApplicationController
   private
     def set_expense
       @expense = current_workspace.expenses
-        .includes(:payee_contact, :payment_account, expense_lines: :account)
+        .includes(:payment_account, expense_lines: :account)
         .find(params[:id])
     end
 
@@ -58,15 +54,8 @@ class ExpensesController < ApplicationController
 
     def expense_params
       params.expect(expense: [
-        :payment_date, :payment_account_id, :payee_contact_id, :memo,
+        :payment_date, :payment_account_id, :memo,
         expense_lines_attributes: [ [ :id, :account_id, :description, :amount, :position, :_destroy ] ]
       ])
-    end
-
-    def prepare_form
-      @payee_contacts = current_workspace.contacts.active.with_role("vendor").includes(:contact_roles).ordered.to_a
-      if @expense.payee_contact && !@payee_contacts.include?(@expense.payee_contact)
-        @payee_contacts << @expense.payee_contact
-      end
     end
 end

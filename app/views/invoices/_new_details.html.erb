@@ -1,0 +1,7 @@
+<%= turbo_frame_tag dom_id(invoice, :details) do %>
+  <div class="grid content-start gap-4 sm:grid-cols-2">
+    <%= fields_for :invoice, invoice do |form| %>
+      <%= render "invoices/detail_fields", form: form, invoice: invoice, form_id: "new_invoice_form" %>
+    <% end %>
+  </div>
+<% end %>

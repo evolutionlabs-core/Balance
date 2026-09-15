@@ -1,4 +1,7 @@
-<div aria-label="top-bar" class="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-x-2 border-b border-neutral-200/80 bg-white/90 px-5 backdrop-blur md:px-8">
+<div aria-label="top-bar" class="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-x-2 border-b border-neutral-200/80 bg-white/90 px-2 backdrop-blur sm:px-5 md:px-8">
+  <button type="button" data-sidebar-target="hamburger" data-action="sidebar#toggleDrawer" aria-expanded="false" aria-controls="sidebar-panel" aria-label="Open navigation" class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-lg text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 lg:hidden">
+    <%= inline_svg_tag "icons/menu.svg", class: "h-5 w-5" %>
+  </button>
   <% if content_for?(:breadcrumb) %>
     <%= yield :breadcrumb %>
   <% else %>

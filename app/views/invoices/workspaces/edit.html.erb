@@ -1,0 +1,3 @@
+<%= render "shared/modal" do %>
+  <%= render "workspaces/form", workspace: @workspace, url: invoice_workspace_path(invoice_id: (@invoice.id if @invoice&.persisted?)) %>
+<% end %>
