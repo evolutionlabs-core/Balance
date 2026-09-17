@@ -1,0 +1,20 @@
+<%= render "projects/project_header", project: @project %>
+<%= render "projects/project_tabs", project: @project, active_tab: :overview %>
+
+<% summary = @summary %>
+<section aria-labelledby="project-budget" class="mt-8">
+  <div class="flex items-center justify-between gap-4">
+    <h2 id="project-budget" class="text-sm font-semibold text-neutral-950">Budget</h2>
+    <%= link_to summary.has_budget? ? "Edit budget" : "Set budget", edit_project_path(@project), class: "text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+  </div>
+  <% if summary.has_budget? %>
+    <dl class="mt-2 divide-y divide-neutral-100 border-y border-neutral-200">
+      <div class="flex items-baseline justify-between gap-4 py-2.5">
+        <dt class="text-sm text-neutral-600">Cost budget</dt>
+        <dd class="text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(summary.budget_kobo, @project.currency_code) %></dd>
+      </div>
+    </dl>
+  <% else %>
+    <p class="mt-2 border-y border-neutral-200 py-4 text-sm text-neutral-500">No cost budget set for this project yet.</p>
+  <% end %>
+</section>
