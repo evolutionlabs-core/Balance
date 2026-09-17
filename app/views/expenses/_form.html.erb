@@ -64,8 +64,12 @@
     </button>
   </section>
 
+  <% if @return_to.present? %>
+    <%= hidden_field_tag :return_to, @return_to %>
+  <% end %>
+
   <div class="flex items-center justify-end gap-2 border-t border-neutral-200 pt-5">
-    <%= link_to "Cancel", expenses_path, class: secondary_button_class %>
+    <%= link_to "Cancel", @return_to || expenses_path, class: secondary_button_class %>
     <%= form.submit "Review expense", class: primary_button_class %>
   </div>
 <% end %>
