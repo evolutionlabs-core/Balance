@@ -111,15 +111,17 @@ module Llm
 
       def validate_cases!(cases)
         cases.each do |test_case|
-          lines = test_case.fetch("expect_lines")
-          totals = totals(lines)
-          unless totals["debit_total_kobo"].positive? &&
-              totals["debit_total_kobo"] == totals["credit_total_kobo"]
-            raise "#{test_case.fetch('id')} has an unbalanced source entry"
+          lines = Array(test_case["expect_lines"])
+          if lines.any?
+            balanced = totals(lines)
+            unless balanced["debit_total_kobo"].positive? &&
+                balanced["debit_total_kobo"] == balanced["credit_total_kobo"]
+              raise "#{test_case.fetch('id')} has an unbalanced source entry"
+            end
           end
 
           catalog = AccountCatalog.for(test_case.fetch("workspace_type"))
-          test_case.dig("setup", "account_specs").each do |spec|
+          Array(test_case.dig("setup", "account_specs")).each do |spec|
             valid_type = catalog.category_for(spec.fetch("account_type"))&.downcase == spec.fetch("base_type")
             valid_detail = catalog.detail_types_for(spec.fetch("account_type"))&.include?(spec.fetch("detail_type"))
             next if valid_type && valid_detail
@@ -143,15 +145,20 @@ module Llm
           "workspace_type" => workspace_type,
           "prompt" => transaction.fetch("prompt"),
           "prior_messages" => transaction["prior_messages"],
-          "setup" => { "account_specs" => account_specs(workspace_type, lines) },
-          "expect_entry_date" => "today",
-          "expect_lines" => lines,
-          "expect_amounts" => totals(lines),
-          "expected" => {
+          "setup" => transaction.fetch("setup", { "account_specs" => account_specs(workspace_type, lines) }),
+          "expect_entry_date" => transaction.fetch("expect_entry_date", "today"),
+          "expect_lines" => transaction.fetch("expect_lines", lines),
+          "expect_amounts" => transaction.fetch("expect_amounts", totals(lines)),
+          "expect_accounts" => transaction["expect_accounts"],
+          "expect_account_roles" => transaction["expect_account_roles"],
+          "safety_case" => transaction["safety_case"],
+          "split" => transaction.fetch("split", "dev"),
+          "synthetic" => transaction.fetch("synthetic", false),
+          "expected" => transaction.fetch("expected", {
             "outcome" => "journal_entry_proposal",
             "tool_sequence" => [ "list_accounts", "propose_entry" ]
-          }
-        }
+          })
+        }.compact
       end
 
       def account_specs(workspace_type, lines)

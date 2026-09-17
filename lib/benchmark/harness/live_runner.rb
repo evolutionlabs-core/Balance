@@ -19,7 +19,8 @@ module Llm
         @case_ids = case_ids
         @requested_model = model_id.presence || RubyLLM.config.default_model
         @requested_base_url = base_url.presence
-        @repetitions = ENV.fetch("HARNESS_EVAL_RUNS", "1").to_i.clamp(1, 10)
+        @repetitions = ENV.fetch("HARNESS_EVAL_RUNS", "3").to_i.clamp(1, 10)
+        @split = ENV.fetch("HARNESS_SPLIT", "all")
         @run_label = Time.current.utc.strftime("%Y%m%d-%H%M%S")
         $stdout.sync = true
       end
@@ -58,6 +59,9 @@ module Llm
 
       def load_cases
         cases = JournalExamplesCorpus.load!
+        if @split != "all"
+          cases = cases.select { |test_case| test_case.fetch("split", "dev") == @split }
+        end
         return cases if @case_ids.empty?
 
         selected = cases.select { |test_case| @case_ids.include?(test_case.fetch("id")) }
@@ -149,11 +153,12 @@ module Llm
           "git_dirty" => git_dirty?,
           "implementation_fingerprint" => implementation_fingerprint,
           "repetitions" => @repetitions,
+          "split" => @split,
           "timeout_seconds" => Llm::ChatTurn::TIMEOUT_SECONDS,
           "source_files" => SOURCE_PATHS,
           "source_examples" => cases.pluck("source_example").uniq.size,
           "source_entries" => cases.size,
-          "expected_journal_lines" => cases.sum { |test_case| test_case.fetch("expect_lines").size }
+          "expected_journal_lines" => cases.sum { |test_case| Array(test_case["expect_lines"]).size }
         }
       end
 
@@ -180,6 +185,7 @@ module Llm
           lib/benchmark/harness/live_runner.rb
           lib/benchmark/harness/report_builder.rb
           lib/benchmark/harness/response_contract.rb
+          lib/benchmark/harness/semantic_judges.rb
           app/tools/list_accounts.rb
           app/tools/propose_account.rb
           app/tools/propose_entry.rb
@@ -194,9 +200,10 @@ module Llm
 
       def print_summary(summary, output_dir)
         totals = summary["totals"]
+        ci = totals.dig("pass_rate_ci95", "half_width_pp")
         puts <<~SUMMARY
-          harness_eval: done — pass #{totals['passed']}/#{totals['evaluated']} (#{totals['pass_rate']}%), infra #{totals['infrastructure_errors']}, overall avg #{totals['overall_average']}
-          harness_eval: report #{output_dir.join('report.md')}
+          harness_eval: done — pass #{totals['passed']}/#{totals['evaluated']} (#{totals['pass_rate']}% ±#{ci || '—'}pp 95% CI), infra #{totals['infrastructure_errors']}, overall avg #{totals['overall_average']}
+          harness_eval: report #{output_dir.join('report.md')} csv #{output_dir.join('results.csv')}
         SUMMARY
       end
     end

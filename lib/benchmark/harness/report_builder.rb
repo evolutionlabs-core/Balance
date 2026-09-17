@@ -18,6 +18,7 @@ module Llm
       def call
         @output_dir.join("summary.json").write(JSON.pretty_generate(summary))
         @output_dir.join("report.md").write(markdown)
+        @output_dir.join("results.csv").write(csv)
         summary
       end
 
@@ -43,7 +44,9 @@ module Llm
           "failed" => evaluated.size - passes.size,
           "infrastructure_errors" => infrastructure_errors.size,
           "pass_rate" => pass_rate,
-          "overall_average" => average_of(evaluated) { |entry| entry[:result]["overall"] }
+          "pass_rate_ci95" => proportion_ci95(passes.size, evaluated.size),
+          "overall_average" => average_of(evaluated) { |entry| entry[:result]["overall"] },
+          "overall_sem" => sem_of(evaluated) { |entry| entry[:result]["overall"] }
         }
       end
 
@@ -76,6 +79,44 @@ module Llm
         return nil if values.empty?
 
         (values.sum(&:to_f) / values.size).round(2)
+      end
+
+      def sem_of(entries)
+        values = entries.filter_map { |entry| yield(entry) }.map(&:to_f)
+        return nil if values.size < 2
+
+        mean = values.sum / values.size
+        variance = values.sum { |value| (value - mean)**2 } / (values.size - 1)
+        (Math.sqrt(variance / values.size) * 1.96).round(2)
+      end
+
+      def proportion_ci95(successes, total)
+        return nil if total.zero?
+
+        p = successes.to_f / total
+        se = Math.sqrt(p * (1 - p) / total)
+        half_width = (1.96 * se * 100).round(1)
+        { "half_width_pp" => half_width, "n" => total }
+      end
+
+      def csv
+        require "csv"
+        headers = [ "case_id", "run_index", "source_example", "outcome_expected", "verdict", "overall",
+          *Scorer::CATEGORIES, "note", "assistant_response", "tool_sequence", "wall_clock_ms" ]
+        CSV.generate do |csv_out|
+          csv_out << headers
+          @entries.each do |entry|
+            result = entry[:result]
+            scores = result["scores"] || {}
+            csv_out << [
+              result["case_id"], result["run_index"], result["source_example"], result["outcome_expected"],
+              result["verdict"], result["overall"], *Scorer::CATEGORIES.map { |category| scores[category] },
+              result["note"], result.dig("observed", "assistant_response"),
+              Array(result.dig("observed", "tool_sequence")).join("+"),
+              result.dig("observed", "wall_clock_ms")
+            ]
+          end
+        end
       end
 
       def tool_stats
@@ -116,8 +157,8 @@ module Llm
           - Executions: #{totals['executions']}
           - Evaluated: #{totals['evaluated']}
           - Infrastructure errors: #{totals['infrastructure_errors']}
-          - Pass rate: #{pass_rate}% (#{passes.size}/#{totals['evaluated']})
-          - Overall average: #{totals['overall_average']}
+          - Pass rate: #{pass_rate}% (#{passes.size}/#{totals['evaluated']}) ±#{totals.dig('pass_rate_ci95', 'half_width_pp') || '—'}pp 95% CI (n=#{totals['evaluated']})
+          - Overall average: #{totals['overall_average']} ±#{totals['overall_sem'] || '—'} 95% CI half-width
 
           ## Consistency
 

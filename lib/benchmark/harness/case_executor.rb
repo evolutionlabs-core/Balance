@@ -159,7 +159,7 @@ module Llm
           assistant_messages: assistant,
           final_response: assistant.last,
           failure_reported: assistant.select { |content| failure?(content) },
-          infrastructure_failure: assistant.find { |content| content.match?(/temporarily unavailable/i) },
+          infrastructure_failure: assistant.find { |content| infrastructure_failure?(content) },
           journal_entries_delta: @workspace.journal_entries.count - baseline[:journal_entries],
           accounts_delta: @workspace.accounts.count - baseline[:accounts],
           proposals_created: created_proposals(baseline),
@@ -202,6 +202,10 @@ module Llm
 
       def failure?(content)
         FAILURE_PATTERNS.any? { |pattern| content.match?(pattern) }
+      end
+
+      def infrastructure_failure?(content)
+        content.match?(/temporarily unavailable/i) || content.match?(/couldn't finish this request in time/i)
       end
     end
   end

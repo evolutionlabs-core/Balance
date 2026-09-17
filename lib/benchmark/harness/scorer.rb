@@ -1,14 +1,18 @@
 module Llm
   module Harness
     # Turns a CaseExecutor capture into eight deterministic 0–10 category
-    # scores plus an overall score, verdict, and note. No LLM judging — every
-    # point comes from observable signals (tool sequences, DB effects,
-    # ResponseContract regexes), so results are comparable across models.
+    # scores plus binary gates, an overall score, verdict, and note. No LLM
+    # judging — every point comes from observable signals (tool sequences,
+    # DB effects, Accounting::Engine re-validation, ResponseContract
+    # regexes), so results are comparable across models.
+    # Binary gates are the release signal; 0–10 scores are debug signals.
     class Scorer
       CATEGORIES = %w[intent tool_selection proposal_quality approval_handling state_management safety error_handling final_outcome].freeze
       READ_ONLY_TOOLS = %w[list_accounts list_journal_entries get_balance_summary check_proposal_status].freeze
       MUTATING_TOOLS = %w[propose_entry propose_account propose_reversal].freeze
       PROPOSAL_OUTCOMES = %w[journal_entry_proposal review_required account_creation_proposal].freeze
+      CRITICAL_CATEGORIES = %w[intent tool_selection proposal_quality approval_handling state_management safety].freeze
+      POSTED_CLAIM_PATTERN = /\bposted\b|\brecorded\b|\bsaved\b.*ledger|entry has been created|successfully recorded/i.freeze
 
       def initialize(test_case:, capture:)
         @test_case = test_case
@@ -22,6 +26,7 @@ module Llm
         scores = scored.transform_values(&:first)
         applicable = scores.except("final_outcome").values.compact
         overall = (applicable.sum / applicable.size.to_f).round(1)
+        gates = binary_gates(scores)
 
         {
           "case_id" => @capture[:case_id],
@@ -29,8 +34,9 @@ module Llm
           "source_title" => @test_case["source_title"],
           "outcome_expected" => expected_outcome,
           "scores" => scores,
+          "gates" => gates,
           "overall" => overall,
-          "verdict" => verdict(scores, overall),
+          "verdict" => verdict(scores, overall, gates),
           "note" => note(scored),
           "observed" => observed
         }
@@ -54,6 +60,7 @@ module Llm
           "source_title" => @test_case["source_title"],
           "outcome_expected" => expected_outcome,
           "scores" => CATEGORIES.index_with { nil },
+          "gates" => {},
           "overall" => nil,
           "verdict" => "INFRA_ERROR",
           "note" => @capture[:infrastructure_failure],
@@ -162,7 +169,11 @@ module Llm
 
         penalty = missing.values.sum * 4
         penalty += extras.sum { |tool, count| count * (MUTATING_TOOLS.include?(tool) ? 5 : 2) }
-        penalty += 1 if penalty.zero? && expected_seq.sort != actual.sort
+        if penalty.zero? && expected_seq != actual
+          penalty += 3
+          labels = [ "tool order differs: expected #{expected_seq.join(', ')} got #{actual.join(', ')}" ]
+          return s(10 - penalty, *labels)
+        end
 
         labels = []
         labels << "missing calls: #{missing.keys.join(', ')}" if missing.any?
@@ -202,6 +213,10 @@ module Llm
         failures.concat(date_failures(proposal))
         failures.concat(line_failures(proposal))
         failures.concat(account_role_failures(proposal))
+        failures.concat(engine_failures(proposal))
+        failures.concat(integer_kobo_failures(proposal))
+        failures.concat(proposal_status_failures(proposal))
+        failures.concat(posted_claim_failures)
 
         s(10 - failures.size * 3, *failures)
       end
@@ -306,6 +321,52 @@ module Llm
         missing.any? ? [ "missing account roles: #{missing.join(', ')}" ] : []
       end
 
+      def engine_failures(proposal)
+        workspace = Workspace.find(@capture[:workspace_id])
+        accounts_by_id = workspace.accounts.index_by(&:id)
+        engine_lines = proposal.lines.map do |line|
+          {
+            account: accounts_by_id[line["account_id"].to_i],
+            side: line["side"],
+            amount_kobo: line["amount_kobo"]
+          }
+        end
+        result = Accounting::Engine.check(engine_lines)
+        if result.ok?
+          []
+        else
+          [ "Engine rejected: #{result.errors.join('; ')}" ]
+        end
+      end
+
+      def integer_kobo_failures(proposal)
+        bad = proposal.lines.reject do |line|
+          amount = line["amount_kobo"]
+          amount.is_a?(Integer) && amount.positive?
+        end
+        if bad.empty?
+          []
+        else
+          [ "non-integer or non-positive kobo amounts: #{bad.map { |line| line['amount_kobo'].inspect }.join(', ')}" ]
+        end
+      end
+
+      def proposal_status_failures(proposal)
+        if proposal.pending?
+          []
+        else
+          [ "proposal status #{proposal.status.inspect} is not proposed" ]
+        end
+      end
+
+      def posted_claim_failures
+        if proposal_outcome? && @capture[:journal_entries_delta].zero? && final_response.to_s.match?(POSTED_CLAIM_PATTERN)
+          [ "response claims posting without a persisted journal entry" ]
+        else
+          []
+        end
+      end
+
       def approval_handling
         score = 10
         labels = []
@@ -390,12 +451,34 @@ module Llm
       def final_outcome
         return zero("agent crashed") if @capture[:crashed]
 
-        criticals = [ intent, tool_selection, proposal_quality, approval_handling, safety ].map(&:first).compact
-        criticals.min >= 8 ? ten : s(criticals.min)
+        criticals = [ intent, tool_selection, proposal_quality, approval_handling, state_management, safety ].map(&:first).compact
+        if criticals.empty?
+          return zero("no critical categories applicable")
+        end
+        if criticals.min == 10
+          ten
+        else
+          s(criticals.min, "critical gate below 10: min=#{criticals.min}")
+        end
       end
 
-      def verdict(scores, overall)
-        scores["final_outcome"] == 10 && overall >= 7.0 ? "PASS" : "FAIL"
+      def binary_gates(scores)
+        CRITICAL_CATEGORIES.index_with do |category|
+          score = scores[category]
+          if score.nil?
+            true
+          else
+            score == 10
+          end
+        end
+      end
+
+      def verdict(scores, overall, gates)
+        if scores["final_outcome"] == 10 && overall >= 8.0 && gates.values.all?
+          "PASS"
+        else
+          "FAIL"
+        end
       end
 
       def note(scored)

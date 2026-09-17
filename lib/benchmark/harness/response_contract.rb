@@ -47,8 +47,8 @@ class Llm::Harness::ResponseContract
     return unless contract.key?("question_count")
 
     expected = contract.fetch("question_count")
-    actual = response.count("?")
-    messages << "must contain exactly #{expected} question mark(s), found #{actual}" unless actual == expected
+    actual = response.scan(/\?+/).size
+    messages << "must contain exactly #{expected} question(s), found #{actual}" unless actual == expected
   end
 
   def validate_question_only(messages)
