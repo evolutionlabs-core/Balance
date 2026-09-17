@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,6 +46,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.index ["workspace_id"], name: "index_customers_on_workspace_id"
   end
 
+  create_table "estimate_line_items", force: :cascade do |t|
+    t.bigint "amount_minor", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "estimate_id", null: false
+    t.integer "position", null: false
+    t.decimal "quantity", precision: 15, scale: 3
+    t.bigint "rate_minor"
+    t.datetime "updated_at", null: false
+    t.index ["estimate_id", "position"], name: "index_estimate_line_items_on_estimate_id_and_position", unique: true
+    t.index ["estimate_id"], name: "index_estimate_line_items_on_estimate_id"
+  end
+
+  create_table "estimates", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.text "business_address"
+    t.string "business_email"
+    t.string "business_name"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id", null: false
+    t.text "notes"
+    t.bigint "project_id"
+    t.string "status", default: "draft", null: false
+    t.bigint "subtotal_minor", default: 0, null: false
+    t.bigint "total_minor", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_estimates_on_customer_id"
+    t.index ["project_id"], name: "index_estimates_on_project_id"
+    t.index ["user_id"], name: "index_estimates_on_user_id"
+    t.index ["workspace_id", "project_id"], name: "index_estimates_on_workspace_id_and_project_id"
+    t.index ["workspace_id", "status"], name: "index_estimates_on_workspace_id_and_status"
+    t.index ["workspace_id"], name: "index_estimates_on_workspace_id"
+  end
+
   create_table "expense_lines", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "amount_kobo", null: false
@@ -57,8 +96,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.index ["account_id"], name: "index_expense_lines_on_account_id"
     t.index ["expense_id", "position"], name: "index_expense_lines_on_expense_id_and_position", unique: true
     t.index ["expense_id"], name: "index_expense_lines_on_expense_id"
-    t.check_constraint "\"position\" >= 0", name: "expense_lines_nonnegative_position"
-    t.check_constraint "amount_kobo > 0", name: "expense_lines_positive_amount"
   end
 
   create_table "expenses", force: :cascade do |t|
@@ -76,8 +113,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.index ["workspace_id", "payment_date"], name: "index_expenses_on_workspace_id_and_payment_date"
     t.index ["workspace_id", "status"], name: "index_expenses_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_expenses_on_workspace_id"
-    t.check_constraint "status::text = 'draft'::text AND journal_entry_id IS NULL OR status::text = 'posted'::text AND journal_entry_id IS NOT NULL", name: "expenses_posting_state"
-    t.check_constraint "total_kobo > 0", name: "expenses_positive_total"
   end
 
   create_table "invoice_lines", force: :cascade do |t|
@@ -125,7 +160,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["reverses_journal_entry_id"], name: "index_journal_entries_on_reverses_journal_entry_id"
-    t.index ["reverses_journal_entry_id"], name: "one_reversal_per_entry", unique: true, where: "(reverses_journal_entry_id IS NOT NULL)"
     t.index ["workspace_id", "entry_date"], name: "index_journal_entries_on_workspace_id_and_entry_date"
     t.index ["workspace_id"], name: "index_journal_entries_on_workspace_id"
   end
@@ -142,7 +176,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
     t.index ["counterparty_type", "counterparty_id"], name: "index_journal_entry_lines_on_counterparty"
     t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
-    t.check_constraint "debit_kobo > 0 AND credit_kobo = 0 OR credit_kobo > 0 AND debit_kobo = 0", name: "journal_lines_one_positive_side"
   end
 
   create_table "llm_activities", force: :cascade do |t|
@@ -257,6 +290,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
     t.index ["workspace_id"], name: "index_memberships_on_workspace_id"
   end
 
+  create_table "project_tasks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "internal_note"
+    t.integer "position", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.string "status", default: "todo", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "position"], name: "index_project_tasks_on_project_id_and_position"
+    t.index ["project_id"], name: "index_project_tasks_on_project_id"
+  end
+
+  create_table "project_time_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.decimal "hours", precision: 8, scale: 2, null: false
+    t.text "internal_note"
+    t.date "occurred_on", null: false
+    t.bigint "project_id", null: false
+    t.bigint "project_task_id"
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "occurred_on"], name: "index_project_time_entries_on_project_id_and_occurred_on"
+    t.index ["project_id"], name: "index_project_time_entries_on_project_id"
+    t.index ["project_task_id"], name: "index_project_time_entries_on_project_task_id"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.bigint "cost_budget_kobo"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_projects_on_customer_id"
+    t.index ["workspace_id", "customer_id"], name: "index_projects_on_workspace_id_and_customer_id"
+    t.index ["workspace_id"], name: "index_projects_on_workspace_id"
+  end
+
   create_table "proposals", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.jsonb "data", default: {}, null: false
@@ -308,6 +382,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
 
   add_foreign_key "accounts", "workspaces"
   add_foreign_key "customers", "workspaces"
+  add_foreign_key "estimate_line_items", "estimates"
+  add_foreign_key "estimates", "customers"
+  add_foreign_key "estimates", "projects"
+  add_foreign_key "estimates", "users"
+  add_foreign_key "estimates", "workspaces"
   add_foreign_key "expense_lines", "accounts"
   add_foreign_key "expense_lines", "expenses"
   add_foreign_key "expenses", "accounts", column: "payment_account_id"
@@ -333,6 +412,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_132753) do
   add_foreign_key "llm_turns", "llm_messages", column: "user_message_id"
   add_foreign_key "memberships", "users"
   add_foreign_key "memberships", "workspaces"
+  add_foreign_key "project_tasks", "projects"
+  add_foreign_key "project_time_entries", "project_tasks"
+  add_foreign_key "project_time_entries", "projects"
+  add_foreign_key "projects", "customers"
+  add_foreign_key "projects", "workspaces"
   add_foreign_key "proposals", "journal_entries"
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"
