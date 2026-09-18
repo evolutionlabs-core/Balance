@@ -1,0 +1,29 @@
+<%= form_with model: [ @project, task ], class: "flex min-h-0 flex-1 flex-col" do |form| %>
+  <%= render "shared/modal/header", title: task.persisted? ? "Edit task" : "Add task" %>
+
+  <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+    <%= render "shared/form_errors", record: task %>
+
+    <div>
+      <%= form.label :title, class: field_label_class %>
+      <%= form.text_field :title, required: true, autofocus: true, placeholder: "Task title", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :description, class: field_label_class %>
+      <%= form.text_field :description, placeholder: "What will be done", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :status, class: field_label_class %>
+      <%= form.select :status, ProjectTask::STATUSES.map { |s| [ s.humanize, s ] }, {}, { class: field_class } %>
+    </div>
+
+    <div>
+      <%= form.label :internal_note, "Private note (never shown to client)", class: field_label_class %>
+      <%= form.text_field :internal_note, class: field_class %>
+    </div>
+  </div>
+
+  <%= render "shared/modal/footer", form: form, submit_label: task.persisted? ? "Save changes" : "Add task" %>
+<% end %>

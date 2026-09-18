@@ -6,6 +6,7 @@ export default class extends Controller {
   static values = { duration: { type: Number, default: 200 } }
 
   connect() {
+    this.returnFocusTo = document.activeElement
     this.element.showModal()
     acquireOverlay(this)
     this.showFrame = requestAnimationFrame(() => this.show())
@@ -43,6 +44,7 @@ export default class extends Controller {
   remove() {
     this.element.close()
     document.getElementById("modal")?.replaceChildren()
+    if (this.returnFocusTo?.isConnected) this.returnFocusTo.focus()
   }
 
   get closeDelay() {

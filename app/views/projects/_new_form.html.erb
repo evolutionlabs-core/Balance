@@ -1,0 +1,41 @@
+<% form_url = project.persisted? ? project_path(project) : projects_path %>
+<%= form_with model: project, url: form_url, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+  <%= render "shared/modal/header", title: project.persisted? ? "Edit project" : "New project" %>
+
+  <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+    <%= render "shared/form_errors", record: project %>
+
+    <div>
+      <%= form.label :customer_id, "Customer", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :customer_id,
+          options: options_from_collection_for_select(current_workspace.customers.ordered, :id, :name, project.customer_id),
+          prompt: "Select customer", searchable: true,
+          search_placeholder: "Search customers…", empty_message: "No customers found",
+          select_data: {} %>
+    </div>
+
+    <div>
+      <%= form.label :name, class: field_label_class %>
+      <%= form.text_field :name, required: true, placeholder: "Project name", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :description, class: field_label_class %>
+      <%= form.text_area :description, rows: 3, placeholder: "Agreed work summary", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :currency_code, "Currency", class: field_label_class %>
+      <%= form.select :currency_code, [ "NGN" ], {}, { class: field_class } %>
+    </div>
+
+    <% if project.persisted? %>
+      <div>
+        <%= form.label :cost_budget, "Cost budget (NGN, optional)", class: field_label_class %>
+        <%= form.number_field :cost_budget, min: 0, step: 0.01, placeholder: "Compare against costs to date", class: field_class %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= render "shared/modal/footer", form: form, submit_label: project.persisted? ? "Save changes" : "Create project" %>
+<% end %>
