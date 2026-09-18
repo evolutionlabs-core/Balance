@@ -1,7 +1,7 @@
 class Estimate < ApplicationRecord
   include AASM
 
-  STATUSES = %w[draft sent approved declined].freeze
+  STATUSES = %w[draft sent approved declined invoiced].freeze
 
   belongs_to :workspace
   belongs_to :user
@@ -33,7 +33,7 @@ class Estimate < ApplicationRecord
 
   aasm column: :status do
     state :draft, initial: true
-    state :sent, :approved, :declined
+    state :sent, :approved, :declined, :invoiced
 
     event :send_to_client do
       transitions from: :draft, to: :sent
@@ -50,6 +50,31 @@ class Estimate < ApplicationRecord
     event :reopen do
       transitions from: :declined, to: :draft
     end
+
+    event :convert_to_invoice do
+      transitions from: :approved, to: :invoiced
+    end
+  end
+
+  def build_invoice(user:)
+    workspace.invoices.build(
+      user: user,
+      customer: customer,
+      project: project,
+      estimate: self,
+      currency_code: currency_code,
+      issue_date: Date.current,
+      due_date: Date.current + 15.days,
+      business_name: business_name,
+      business_email: business_email,
+      business_address: business_address,
+      bill_to_name: bill_to_name,
+      bill_to_email: bill_to_email,
+      bill_to_address: bill_to_address,
+      invoice_lines_attributes: line_items.map do |line|
+        { description: line.description, quantity: line.quantity, rate_minor: line.rate_minor }
+      end
+    )
   end
 
   def use_customer_details

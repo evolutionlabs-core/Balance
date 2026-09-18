@@ -7,10 +7,16 @@
 <div class="mx-auto max-w-6xl">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div class="flex flex-wrap items-center gap-2">
-      <%= link_to "Edit", edit_project_estimate_path(@estimate), class: secondary_button_class(size: :sm) %>
+      <%= link_to "Edit", edit_project_estimate_path(@estimate), class: secondary_button_class(size: :sm) unless @estimate.invoiced? %>
       <%= link_to "Download", project_estimate_path(@estimate, format: :pdf), class: primary_button_class(size: :sm), data: { turbo: false } %>
-      <%= button_to "Mark as sent", project_estimate_delivery_path(@estimate), method: :post,
-          class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
+      <% if @estimate.may_convert_to_invoice? %>
+        <%= button_to "Convert to Invoice", project_estimate_conversion_path(@estimate), method: :post,
+            class: secondary_button_class(size: :sm) %>
+      <% end %>
+      <% if @estimate.may_send_to_client? %>
+        <%= button_to "Mark as sent", project_estimate_delivery_path(@estimate), method: :post,
+            class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
+      <% end %>
     </div>
     <%= estimate_status_badge(@estimate) %>
   </div>

@@ -143,6 +143,82 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert estimate.reload.draft?
   end
 
+  test "converts an approved estimate into an invoice snapshot" do
+    estimate = @project.estimates.create!(
+      workspace: @workspace, user: @user, customer: @customer,
+      bill_to_name: "Custom Name",
+      line_items_attributes: { "0" => { description: "Hosting", quantity: "12", rate: "5000" } }
+    )
+    estimate.send_to_client!
+    estimate.approve!
+
+    assert_difference("Invoice.count", 1) do
+      post project_estimate_conversion_path(estimate)
+    end
+
+    invoice = Invoice.order(:id).last
+
+    assert_redirected_to invoice_path(invoice)
+    assert estimate.reload.invoiced?
+    assert_equal @workspace, invoice.workspace
+    assert_equal @customer, invoice.customer
+    assert_equal @project, invoice.project
+    assert_equal estimate, invoice.estimate
+    assert_equal "NGN", invoice.currency_code
+    assert_equal Date.current, invoice.issue_date
+    assert_equal Date.current + 15.days, invoice.due_date
+    assert_equal "Custom Name", invoice.bill_to_name
+    assert_equal [ "Hosting" ], invoice.invoice_lines.map(&:description)
+    assert_equal 12 * 500_000, invoice.total_minor
+    assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
+  end
+
+  test "rejects conversion of a non-approved estimate" do
+    estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+
+    assert_no_difference("Invoice.count") do
+      post project_estimate_conversion_path(estimate)
+    end
+
+    assert_redirected_to project_estimate_path(estimate)
+    assert_equal "Only approved estimates can be converted.", flash[:alert]
+    assert estimate.reload.draft?
+  end
+
+  test "rejects converting an already invoiced estimate" do
+    estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+    estimate.send_to_client!
+    estimate.approve!
+    post project_estimate_conversion_path(estimate)
+
+    assert_no_difference("Invoice.count") do
+      post project_estimate_conversion_path(estimate)
+    end
+
+    assert_redirected_to project_estimate_path(estimate)
+    assert_equal "Only approved estimates can be converted.", flash[:alert]
+  end
+
+  test "locks invoiced estimates as read-only" do
+    estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+    estimate.send_to_client!
+    estimate.approve!
+    post project_estimate_conversion_path(estimate)
+
+    get edit_project_estimate_path(estimate)
+    assert_redirected_to project_estimate_path(estimate)
+
+    patch project_estimate_path(estimate), params: { project: { name: "Changed" }, estimate: { notes: "Changed" } }
+    assert_redirected_to project_estimate_path(estimate)
+    assert_nil estimate.reload.notes
+
+    assert_no_difference("Estimate.count") do
+      delete project_estimate_path(estimate)
+    end
+    assert_redirected_to project_estimate_path(estimate)
+    assert estimate.reload.invoiced?
+  end
+
   test "edits sent estimates" do
     estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
     estimate.send_to_client!
