@@ -1,0 +1,4 @@
+<%= turbo_stream.update "estimate_errors", partial: "shared/form_errors", locals: { record: @estimate } %>
+<% if @estimate.errors.empty? %>
+  <%= render "projects/estimates/totals", estimate: @estimate %>
+<% end %>

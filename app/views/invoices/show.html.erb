@@ -86,10 +86,13 @@
         </div>
       </dl>
     </section>
+
   </article>
 
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
     <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
-    <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
+    <div class="flex flex-wrap items-center gap-2">
+      <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
+    </div>
   </div>
 </div>

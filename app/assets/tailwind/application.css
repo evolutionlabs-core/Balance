@@ -73,6 +73,18 @@
     content: counter(invoice-line);
   }
 
+  .estimate-lines {
+    counter-reset: estimate-line;
+  }
+
+  .estimate-line {
+    counter-increment: estimate-line;
+  }
+
+  .estimate-line-number::before {
+    content: counter(estimate-line);
+  }
+
   @keyframes message-in {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
