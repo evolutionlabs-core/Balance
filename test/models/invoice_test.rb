@@ -56,6 +56,15 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal 0, invoice.invoice_lines.first.amount_minor
   end
 
+  test "assigns an invoice number on create" do
+    invoice = build_invoice
+
+    assert_nil invoice.invoice_number
+    invoice.save!
+
+    assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
+  end
+
   private
     def build_invoice(customer: @customer, user: @user, lines: nil)
       lines ||= [ { description: "Consulting", quantity: 2, rate_minor: 15_000 } ]

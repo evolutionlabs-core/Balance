@@ -1,7 +1,7 @@
 module ProjectsHelper
   def estimate_status_badge(estimate)
     tone = case estimate.status
-    when "approved" then :success
+    when "approved", "invoiced" then :success
     when "sent" then :warning
     when "declined" then :warning
     else :neutral

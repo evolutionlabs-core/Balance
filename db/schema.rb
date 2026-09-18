@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_18_102146) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -139,7 +139,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.string "currency_code", default: "NGN", null: false
     t.bigint "customer_id"
     t.date "due_date"
+    t.bigint "estimate_id"
+    t.string "invoice_number"
     t.date "issue_date"
+    t.bigint "project_id"
     t.string "status", default: "draft", null: false
     t.bigint "subtotal_minor", default: 0, null: false
     t.bigint "total_minor", default: 0, null: false
@@ -147,7 +150,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.bigint "user_id", null: false
     t.bigint "workspace_id", null: false
     t.index ["customer_id"], name: "index_invoices_on_customer_id"
+    t.index ["estimate_id"], name: "index_invoices_on_estimate_id"
+    t.index ["project_id"], name: "index_invoices_on_project_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
+    t.index ["workspace_id", "invoice_number"], name: "index_invoices_on_workspace_id_and_invoice_number", unique: true
     t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
@@ -394,6 +400,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   add_foreign_key "expenses", "workspaces"
   add_foreign_key "invoice_lines", "invoices"
   add_foreign_key "invoices", "customers"
+  add_foreign_key "invoices", "estimates"
+  add_foreign_key "invoices", "projects"
   add_foreign_key "invoices", "users"
   add_foreign_key "invoices", "workspaces"
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"

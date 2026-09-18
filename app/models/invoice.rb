@@ -2,16 +2,20 @@ class Invoice < ApplicationRecord
   belongs_to :workspace
   belongs_to :user
   belongs_to :customer, optional: true
+  belongs_to :estimate, optional: true
+  belongs_to :project, optional: true
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :all_blank
 
   validates :customer, presence: true, unless: -> { validation_context == :editing }
+  validates :invoice_number, uniqueness: { scope: :workspace_id }, allow_nil: true
 
   enum :status, { draft: "draft" }, validate: true
 
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
+  after_create :assign_invoice_number, if: -> { invoice_number.blank? }
 
   # Negative form indexes identify saved rows; omitted saved rows are removed on save.
   def invoice_lines_attributes=(attributes)
@@ -79,6 +83,11 @@ class Invoice < ApplicationRecord
   end
 
   private
+    def assign_invoice_number
+      self.invoice_number = format("INV-%06d", id)
+      update_column(:invoice_number, invoice_number)
+    end
+
     def calculate_totals
       active_lines.each_with_index do |line, position|
         line.position = position

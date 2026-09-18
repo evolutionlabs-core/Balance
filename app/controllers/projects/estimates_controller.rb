@@ -1,6 +1,7 @@
 class Projects::EstimatesController < ApplicationController
   before_action :set_project, only: %i[index new create]
   before_action :set_estimate, only: %i[show edit update destroy]
+  before_action :ensure_editable, only: %i[edit update destroy]
 
   def index
     @estimates = @project.estimates.includes(:customer).ordered
@@ -70,6 +71,12 @@ class Projects::EstimatesController < ApplicationController
     def set_estimate
       @estimate = current_workspace.estimates.find(params[:id])
       @project = @estimate.project
+    end
+
+    def ensure_editable
+      return unless @estimate.invoiced?
+
+      redirect_to project_estimate_path(@estimate), alert: "Invoiced estimates are read-only."
     end
 
     def estimate_params

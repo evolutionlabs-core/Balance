@@ -65,6 +65,64 @@ class EstimateTest < ActiveSupport::TestCase
     assert estimate.reload.draft?
   end
 
+  test "converts an approved estimate to invoiced and rejects other states" do
+    estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project)
+    estimate.send_to_client!
+
+    assert_raises(AASM::InvalidTransition) { estimate.convert_to_invoice! }
+    assert estimate.reload.sent?
+
+    estimate.approve!
+
+    assert estimate.convert_to_invoice!
+    assert estimate.invoiced?
+  end
+
+  test "invoiced is terminal" do
+    estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project)
+    estimate.send_to_client!
+    estimate.approve!
+    estimate.convert_to_invoice!
+
+    assert_raises(AASM::InvalidTransition) { estimate.send_to_client! }
+    assert_raises(AASM::InvalidTransition) { estimate.approve! }
+    assert_raises(AASM::InvalidTransition) { estimate.decline! }
+    assert_raises(AASM::InvalidTransition) { estimate.reopen! }
+    assert estimate.reload.invoiced?
+  end
+
+  test "build_invoice copies the approved snapshot with net-15 terms" do
+    estimate = @workspace.estimates.create!(
+      user: @user, customer: @customer, project: @project,
+      line_items_attributes: {
+        "0" => { description: "Hosting", quantity: "12", rate: "5000" }
+      }
+    )
+
+    invoice = estimate.build_invoice(user: @user)
+
+    assert invoice.new_record?
+    assert_equal @workspace, invoice.workspace
+    assert_equal @user, invoice.user
+    assert_equal @customer, invoice.customer
+    assert_equal @project, invoice.project
+    assert_equal estimate, invoice.estimate
+    assert_equal "NGN", invoice.currency_code
+    assert_equal Date.current, invoice.issue_date
+    assert_equal Date.current + 15.days, invoice.due_date
+    assert_equal estimate.bill_to_name, invoice.bill_to_name
+    assert_equal estimate.bill_to_email, invoice.bill_to_email
+    assert_equal estimate.bill_to_address, invoice.bill_to_address
+    assert_equal [ "Hosting" ], invoice.invoice_lines.map(&:description)
+    assert_equal [ BigDecimal("12") ], invoice.invoice_lines.map(&:quantity)
+    assert_equal [ 500_000 ], invoice.invoice_lines.map(&:rate_minor)
+
+    invoice.save!
+
+    assert_equal 12 * 500_000, invoice.total_minor
+    assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
+  end
+
   test "allows edits after sending" do
     estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project)
     estimate.send_to_client!

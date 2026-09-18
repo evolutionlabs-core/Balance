@@ -44,6 +44,7 @@ Rails.application.routes.draw do
         resource :approval, only: %i[create]
         resource :decline, only: %i[create]
         resource :reopening, only: %i[create]
+        resource :conversion, only: %i[create]
       end
       resources :estimate_lines, path: "estimates/lines", only: %i[new destroy]
       resource :estimate_calculation, path: "estimates/calculation", only: %i[create], controller: "estimate_calculations"
