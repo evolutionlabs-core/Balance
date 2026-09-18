@@ -59,10 +59,10 @@ class EstimateTest < ActiveSupport::TestCase
   test "rejects transitions outside the lifecycle" do
     estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project)
 
-    assert_not estimate.approve!
-    assert_not estimate.decline!
-    assert_not estimate.reopen!
-    assert estimate.draft?
+    assert_raises(AASM::InvalidTransition) { estimate.approve! }
+    assert_raises(AASM::InvalidTransition) { estimate.decline! }
+    assert_raises(AASM::InvalidTransition) { estimate.reopen! }
+    assert estimate.reload.draft?
   end
 
   test "allows edits after sending" do

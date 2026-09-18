@@ -8,10 +8,9 @@ class Projects::ActionsController < ApplicationController
     end
 
     def respond_with_transition(notice:, alert:)
-      if yield
-        redirect_to project_estimate_path(@estimate), notice: notice
-      else
-        redirect_to project_estimate_path(@estimate), alert: alert
-      end
+      yield
+      redirect_to project_estimate_path(@estimate), notice: notice
+    rescue AASM::InvalidTransition
+      redirect_to project_estimate_path(@estimate), alert: alert
     end
 end
