@@ -49,6 +49,7 @@ Rails.application.routes.draw do
       resources :estimate_lines, path: "estimates/lines", only: %i[new destroy]
       resource :estimate_calculation, path: "estimates/calculation", only: %i[create], controller: "estimate_calculations"
       resource :estimate_workspace, path: "estimates/workspace", only: %i[edit update], controller: "estimate_workspaces"
+      resources :invoices, only: %i[index]
       resources :tasks, only: %i[index new create edit update destroy]
       resources :time_entries, only: %i[index new create edit update destroy]
       resources :activities, only: %i[index]

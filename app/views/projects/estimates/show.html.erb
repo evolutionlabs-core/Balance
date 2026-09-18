@@ -11,7 +11,7 @@
       <%= link_to "Download", project_estimate_path(@estimate, format: :pdf), class: primary_button_class(size: :sm), data: { turbo: false } %>
       <% if @estimate.may_convert_to_invoice? %>
         <%= button_to "Convert to Invoice", project_estimate_conversion_path(@estimate), method: :post,
-            class: secondary_button_class(size: :sm) %>
+            class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
       <% end %>
       <% if @estimate.may_send_to_client? %>
         <%= button_to "Mark as sent", project_estimate_delivery_path(@estimate), method: :post,

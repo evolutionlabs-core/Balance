@@ -2,6 +2,7 @@
   <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Project sections">
     <%= project_tab_link("Overview", project_path(project), active_tab == :overview) %>
     <%= project_tab_link("Estimates", project_project_estimates_path(project), active_tab == :estimates) %>
+    <%= project_tab_link("Invoices", project_project_invoices_path(project), active_tab == :invoices) %>
     <%= project_tab_link("Work", project_project_tasks_path(project), active_tab == :work) %>
     <%= project_tab_link("Activity", project_project_activities_path(project), active_tab == :activity) %>
   </nav>
