@@ -4,6 +4,7 @@ class Project < ApplicationRecord
   has_many :estimates, dependent: :destroy
   has_many :tasks, class_name: "ProjectTask", dependent: :destroy
   has_many :time_entries, class_name: "ProjectTimeEntry", dependent: :destroy
+  has_many :invoices, dependent: :nullify
 
   validates :name, presence: true
   validates :currency_code, inclusion: { in: %w[NGN] }
