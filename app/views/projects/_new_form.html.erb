@@ -7,8 +7,11 @@
 
     <div>
       <%= form.label :customer_id, "Customer", class: field_label_class %>
-      <%= form.collection_select :customer_id, current_workspace.customers.ordered, :id, :name,
-          { prompt: "Select customer" }, { required: true, autofocus: true, class: field_class } %>
+      <%= render "shared/select_menu", form: form, attribute: :customer_id,
+          options: options_from_collection_for_select(current_workspace.customers.ordered, :id, :name, project.customer_id),
+          prompt: "Select customer", searchable: true,
+          search_placeholder: "Search customers…", empty_message: "No customers found",
+          select_data: {} %>
     </div>
 
     <div>

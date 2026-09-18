@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Projects" } ] %>
 <% end %>
 
-<% new_project = link_to(new_project_path, class: primary_button_class, data: { turbo_frame: "modal" }) do %>
+<% new_project = link_to(new_project_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
   <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New project
 <% end %>
 

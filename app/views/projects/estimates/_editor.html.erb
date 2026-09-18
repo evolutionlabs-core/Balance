@@ -96,7 +96,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-4 md:px-10">
       <%= link_to "Back to estimates", project_project_estimates_path(project), class: ghost_button_class %>
       <% if estimate.persisted? %>
-        <%= link_to "Save", project_estimate_path(estimate), class: primary_button_class, data: { action: "invoice-editor#saveAndShow" } %>
+        <%= link_to "Update", project_estimate_path(estimate), class: primary_button_class, data: { action: "invoice-editor#saveAndShow" } %>
       <% else %>
         <div id="new_estimate_submission">
           <%= button_tag "Save", form: "new_estimate_form", formaction: project_project_estimates_path(project, format: :html),
