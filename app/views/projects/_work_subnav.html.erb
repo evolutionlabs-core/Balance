@@ -1,0 +1,23 @@
+<div class="mt-6 flex items-center justify-between gap-4">
+  <nav class="flex gap-5" aria-label="Work sections">
+    <% if active == :tasks %>
+      <span class="border-b-2 border-[#0f7082] px-1 pb-2 text-sm font-medium text-neutral-950" aria-current="page">Tasks</span>
+    <% else %>
+      <%= link_to "Tasks", project_project_tasks_path(project), class: "px-1 pb-2 text-sm font-medium text-neutral-500 hover:text-neutral-950" %>
+    <% end %>
+    <% if active == :time %>
+      <span class="border-b-2 border-[#0f7082] px-1 pb-2 text-sm font-medium text-neutral-950" aria-current="page">Time entries</span>
+    <% else %>
+      <%= link_to "Time entries", project_project_time_entries_path(project), class: "px-1 pb-2 text-sm font-medium text-neutral-500 hover:text-neutral-950" %>
+    <% end %>
+  </nav>
+  <% if active == :tasks %>
+    <%= link_to(new_project_project_task_path(project), class: secondary_button_class(size: :sm), data: { turbo_frame: "modal" }) do %>
+      <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add task
+    <% end %>
+  <% else %>
+    <%= link_to(new_project_project_time_entry_path(project), class: secondary_button_class(size: :sm), data: { turbo_frame: "modal" }) do %>
+      <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Log time
+    <% end %>
+  <% end %>
+</div>

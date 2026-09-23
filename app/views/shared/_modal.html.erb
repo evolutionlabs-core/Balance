@@ -1,7 +1,7 @@
 <%= turbo_frame_tag "modal" do %>
   <dialog data-controller="modal"
        data-action="keydown->modal#keydown click->modal#clickOutside"
-       class="fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none items-end justify-center overflow-y-auto border-0 bg-transparent p-0 open:flex sm:p-4">
+        class="fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none items-end justify-center overflow-y-auto border-0 bg-transparent p-0 open:flex sm:items-center sm:p-4">
     <div data-modal-target="backdrop"
          class="fixed inset-0 bg-neutral-950/45 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none"></div>
 

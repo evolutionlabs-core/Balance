@@ -1,0 +1,108 @@
+<div class="mx-auto max-w-6xl" data-controller="invoice-editor form">
+  <% if estimate.persisted? %>
+    <%= form_with model: estimate, url: project_project_estimate_calculation_path(project), method: :post, id: "new_estimate_form",
+        data: { invoice_editor_target: "form", save_url: project_estimate_path(estimate), save_method: "patch" } do %>
+      <%= hidden_field_tag :_method, "post" %>
+    <% end %>
+  <% else %>
+    <%= form_with model: estimate, url: project_project_estimate_calculation_path(project), method: :post, id: "new_estimate_form" do %>
+    <% end %>
+  <% end %>
+
+  <article class="overflow-hidden border border-neutral-200 bg-white shadow-sm">
+    <%= hidden_field_tag "estimate[currency_code]", estimate.currency_code, form: "new_estimate_form" %>
+    <div class="flex flex-col gap-8 border-b border-neutral-200 px-8 py-10 sm:flex-row sm:items-start sm:justify-between md:px-12">
+      <div class="w-full max-w-md">
+        <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">ESTIMATE</p>
+        <%= render "projects/estimates/business_fields", project: project, estimate: estimate %>
+      </div>
+      <div class="sm:text-right">
+        <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total</p>
+        <p id="estimate_balance_due" class="mt-1 text-2xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(estimate.total_minor, estimate.currency_code) %></p>
+      </div>
+    </div>
+
+    <div id="estimate_errors"><%= render "shared/form_errors", record: estimate %></div>
+
+    <div class="grid gap-8 bg-[#f4f8f8] px-8 py-8 md:px-12">
+      <%= fields_for :estimate, estimate do |form| %>
+        <div>
+          <%= form.label :bill_to_name, "Bill to", class: field_label_class %>
+          <%= form.text_field :bill_to_name, form: "new_estimate_form", placeholder: "Client name",
+              class: "#{field_class} mt-2", aria: { label: "Billing name" } %>
+          <%= form.email_field :bill_to_email, form: "new_estimate_form", placeholder: "Billing email",
+              class: "#{field_class} mt-2", aria: { label: "Billing email" } %>
+          <%= form.text_area :bill_to_address, form: "new_estimate_form", rows: 3, placeholder: "Billing address",
+              class: "#{field_class} mt-2", aria: { label: "Billing address" } %>
+        </div>
+      <% end %>
+    </div>
+
+    <section class="px-6 py-7 md:px-10">
+      <div class="mb-4">
+        <h2 class="text-sm font-semibold text-neutral-950">Line items</h2>
+      </div>
+
+      <%= turbo_frame_tag "estimate_line_items", class: "block" do %>
+        <div class="overflow-x-auto border-y border-neutral-200">
+          <table class="min-w-[760px] w-full">
+          <thead class="bg-white">
+            <tr>
+              <th scope="col" class="w-14 px-4 py-2.5 text-center text-xs font-medium text-neutral-500">#</th>
+              <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500">Description</th>
+              <th scope="col" class="w-28 px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Qty</th>
+              <th scope="col" class="w-40 px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Rate</th>
+              <th scope="col" class="w-40 px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Amount</th>
+              <th scope="col" class="w-12 px-4 py-2.5"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+
+          <tbody id="estimate_lines" class="estimate-lines bg-white">
+            <% estimate.line_items.each_with_index do |line, index| %>
+              <%= render "projects/estimates/new_line", project: project, line: line,
+                  index: line.persisted? ? "-#{line.id}" : index, first: index.zero? %>
+            <% end %>
+          </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3">
+          <%= link_to new_project_project_estimate_line_path(project), class: secondary_button_class(size: :sm), data: { turbo_stream: true } do %>
+            <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add line item
+          <% end %>
+        </div>
+
+        <div class="mt-8 ml-auto max-w-sm border-t border-neutral-200 pt-4">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-neutral-500">Subtotal</span>
+            <span id="estimate_subtotal" class="font-medium tabular-nums text-neutral-950"><%= minor_currency(estimate.subtotal_minor, estimate.currency_code) %></span>
+          </div>
+          <div class="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3">
+            <span class="font-semibold text-neutral-950">Total</span>
+            <span id="estimate_total" class="text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(estimate.total_minor, estimate.currency_code) %></span>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="border-t border-neutral-200 px-6 py-6 md:px-10">
+      <%= fields_for :estimate, estimate do |form| %>
+        <%= form.label :notes, class: field_label_class %>
+        <%= form.text_area :notes, form: "new_estimate_form", rows: 2, placeholder: "Anything the client should know",
+            class: "#{field_class} mt-2" %>
+      <% end %>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-4 md:px-10">
+      <%= link_to "Back to estimates", project_project_estimates_path(project), class: ghost_button_class %>
+      <% if estimate.persisted? %>
+        <%= link_to "Update", project_estimate_path(estimate), class: primary_button_class, data: { action: "invoice-editor#saveAndShow" } %>
+      <% else %>
+        <div id="new_estimate_submission">
+          <%= button_tag "Save", form: "new_estimate_form", formaction: project_project_estimates_path(project, format: :html),
+              class: primary_button_class, data: { turbo_frame: "_top" } %>
+        </div>
+      <% end %>
+    </div>
+  </article>
+</div>

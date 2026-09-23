@@ -1,0 +1,5 @@
+<% content_for :title, "New estimate" %>
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Projects", path: projects_path }, { label: @project.name, path: project_path(@project) }, { label: "New estimate" } ] %>
+<% end %>
+<%= render "projects/estimates/editor", project: @project, estimate: @estimate %>
