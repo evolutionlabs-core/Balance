@@ -12,7 +12,7 @@ class Projects::EstimatesController < ApplicationController
     respond_to do |format|
       format.html
       format.pdf do
-        send_data Estimate::Pdf.new(@estimate).render, filename: "estimate-#{@estimate.id}.pdf",
+        send_data Pdf::Estimate.new(@estimate).render, filename: "estimate-#{@estimate.id}.pdf",
           type: "application/pdf", disposition: "attachment"
       end
     end

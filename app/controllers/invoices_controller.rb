@@ -32,7 +32,7 @@ class InvoicesController < ApplicationController
     respond_to do |format|
       format.html
       format.pdf do
-        send_data Invoice::Pdf.new(@invoice).render, filename: "invoice-#{@invoice.id}.pdf",
+        send_data Pdf::Invoice.new(@invoice).render, filename: "invoice-#{@invoice.id}.pdf",
           type: "application/pdf", disposition: "attachment"
       end
     end
