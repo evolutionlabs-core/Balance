@@ -205,6 +205,24 @@ class SidebarTest < ApplicationSystemTestCase
     assert_equal "false", page.evaluate_script("localStorage.getItem('balance:sidebar-collapsed')")
   end
 
+  test "collapsed desktop rail does not clip the account menu" do
+    resize_to(1440, 900)
+    visit overview_path
+    find('button[aria-label="Collapse sidebar"]').click if page.has_selector?('button[aria-label="Collapse sidebar"]')
+
+    account_button.click
+
+    assert_selector "#account-menu", visible: true
+    assert page.evaluate_script(<<~JS)
+      (() => {
+        const panel = document.getElementById("sidebar-panel").getBoundingClientRect()
+        const menu = document.getElementById("account-menu")
+        const box = menu.getBoundingClientRect()
+        return menu.contains(document.elementFromPoint(panel.right + 8, box.top + 20))
+      })()
+    JS
+  end
+
   test "resizing to desktop clears drawer overlays and scroll locks" do
     resize_to(390, 844)
     visit overview_path
