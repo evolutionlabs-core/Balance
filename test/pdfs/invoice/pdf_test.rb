@@ -1,6 +1,6 @@
 require "test_helper"
 
-class Invoice::PdfTest < ActiveSupport::TestCase
+class Pdf::InvoiceTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
     @user = users(:one)
@@ -16,7 +16,7 @@ class Invoice::PdfTest < ActiveSupport::TestCase
     @workspace.update!(name: "Changed Business")
     @customer.update!(name: "Changed Customer")
 
-    text = pdf_text(Invoice::Pdf.new(invoice.reload).render)
+    text = pdf_text(Pdf::Invoice.new(invoice.reload).render)
 
     assert_includes text, "Ada's Store"
     assert_includes text, "Original Customer"
@@ -28,7 +28,7 @@ class Invoice::PdfTest < ActiveSupport::TestCase
     invoice = create_invoice
     invoice.update_columns(business_address: nil, bill_to_email: nil, bill_to_address: nil)
 
-    text = pdf_text(Invoice::Pdf.new(invoice.reload).render)
+    text = pdf_text(Pdf::Invoice.new(invoice.reload).render)
 
     assert_includes text, "INVOICE"
     assert_includes text, "NGN 150.00"
@@ -39,7 +39,7 @@ class Invoice::PdfTest < ActiveSupport::TestCase
     invoice.update_columns(business_name: nil, business_email: nil, business_address: nil,
       bill_to_name: nil, bill_to_email: nil, bill_to_address: nil)
 
-    text = pdf_text(Invoice::Pdf.new(invoice.reload).render)
+    text = pdf_text(Pdf::Invoice.new(invoice.reload).render)
 
     assert_includes text, "Ada's Store"
     assert_includes text, "Original Customer"
@@ -50,7 +50,7 @@ class Invoice::PdfTest < ActiveSupport::TestCase
   test "paginates long invoices" do
     invoice = create_invoice(lines: Array.new(80) { |index| line("Service #{index + 1}") })
 
-    pdf = Invoice::Pdf.new(invoice).render
+    pdf = Pdf::Invoice.new(invoice).render
 
     assert_operator pdf.scan(%r{/Type /Page\b}).size, :>, 1
   end

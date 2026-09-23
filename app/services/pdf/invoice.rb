@@ -1,7 +1,7 @@
 require "prawn"
 require "prawn/table"
 
-class Invoice::Pdf
+class Pdf::Invoice
   def initialize(invoice)
     @invoice = invoice
     @document = Prawn::Document.new(page_size: "A4", margin: 40,

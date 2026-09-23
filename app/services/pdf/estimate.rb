@@ -1,7 +1,7 @@
 require "prawn"
 require "prawn/table"
 
-class Estimate::Pdf
+class Pdf::Estimate
   def initialize(estimate)
     @estimate = estimate
     @document = Prawn::Document.new(page_size: "A4", margin: 40,
