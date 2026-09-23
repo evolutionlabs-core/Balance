@@ -133,6 +133,16 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert other.reload.draft?
   end
 
+  test "rejects transitions outside the lifecycle with an alert" do
+    estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+
+    post project_estimate_approval_path(estimate)
+
+    assert_redirected_to project_estimate_path(estimate)
+    assert_equal "Only sent estimates can be approved.", flash[:alert]
+    assert estimate.reload.draft?
+  end
+
   test "edits sent estimates" do
     estimate = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
     estimate.send_to_client!

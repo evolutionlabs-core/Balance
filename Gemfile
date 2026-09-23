@@ -27,6 +27,8 @@ gem "blueprinter", "~> 1.3"
 # Generate downloadable invoice PDFs without a browser process.
 gem "prawn"
 gem "prawn-table"
+# State machines for domain lifecycles (estimate status).
+gem "aasm"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 

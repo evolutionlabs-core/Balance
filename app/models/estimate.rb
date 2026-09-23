@@ -1,4 +1,6 @@
 class Estimate < ApplicationRecord
+  include AASM
+
   STATUSES = %w[draft sent approved declined].freeze
 
   belongs_to :workspace
@@ -29,33 +31,25 @@ class Estimate < ApplicationRecord
     format("EST-%06d", id || 0)
   end
 
-  def draft? = status == "draft"
-  def sent? = status == "sent"
-  def approved? = status == "approved"
-  def declined? = status == "declined"
+  aasm column: :status do
+    state :draft, initial: true
+    state :sent, :approved, :declined
 
-  def send_to_client!
-    return false unless draft?
+    event :send_to_client do
+      transitions from: :draft, to: :sent
+    end
 
-    transition_to!("sent")
-  end
+    event :approve do
+      transitions from: :sent, to: :approved
+    end
 
-  def approve!
-    return false unless sent?
+    event :decline do
+      transitions from: :sent, to: :declined
+    end
 
-    transition_to!("approved")
-  end
-
-  def decline!
-    return false unless sent?
-
-    transition_to!("declined")
-  end
-
-  def reopen!
-    return false unless declined?
-
-    transition_to!("draft")
+    event :reopen do
+      transitions from: :declined, to: :draft
+    end
   end
 
   def use_customer_details
@@ -103,10 +97,6 @@ class Estimate < ApplicationRecord
       return if project.customer_id == customer_id
 
       errors.add(:project, "must belong to the same customer as the estimate")
-    end
-
-    def transition_to!(new_status)
-      update!(status: new_status)
     end
 
     def calculate_totals
