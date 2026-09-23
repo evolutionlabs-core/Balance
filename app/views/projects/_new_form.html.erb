@@ -31,12 +31,6 @@
           prompt: "Select currency", select_data: {} %>
     </div>
 
-    <% if project.persisted? %>
-      <div>
-        <%= form.label :cost_budget, "Cost budget (NGN, optional)", class: field_label_class %>
-        <%= form.number_field :cost_budget, min: 0, step: 0.01, placeholder: "Compare against costs to date", class: field_class %>
-      </div>
-    <% end %>
   </div>
 
   <%= render "shared/modal/footer", form: form, submit_label: project.persisted? ? "Save changes" : "Create project" %>

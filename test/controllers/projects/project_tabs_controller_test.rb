@@ -59,7 +59,7 @@ class Projects::ProjectTabsControllerTest < ActionDispatch::IntegrationTest
   test "overview offers set budget when none exists" do
     get project_path(@project)
 
-    assert_select "a[data-turbo-frame='modal']", text: "Set budget"
+    assert_select "a[data-turbo-frame='modal'][href=?]", edit_project_project_budget_path(@project), text: "Set budget"
     assert_select "dt", text: "Remaining budget", count: 0
   end
 

@@ -41,7 +41,7 @@ class ProjectsController < ApplicationController
 
     def project_params
       params.expect(project: [
-        :customer_id, :name, :description, :currency_code, :cost_budget
+        :customer_id, :name, :description, :currency_code
       ])
     end
 end
