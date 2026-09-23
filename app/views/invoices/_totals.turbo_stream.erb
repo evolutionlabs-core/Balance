@@ -1,0 +1,3 @@
+<%= turbo_stream.update "invoice_balance_due", minor_currency(invoice.total_minor, invoice.currency_code) %>
+<%= turbo_stream.update "invoice_subtotal", minor_currency(invoice.subtotal_minor, invoice.currency_code) %>
+<%= turbo_stream.update "invoice_total", minor_currency(invoice.total_minor, invoice.currency_code) %>

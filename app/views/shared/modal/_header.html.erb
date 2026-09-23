@@ -1,11 +1,5 @@
 <div class="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4">
-  <div class="min-w-0">
-    <h2 class="text-base font-medium text-neutral-900"><%= title %></h2>
-
-    <% if local_assigns[:subtitle] %>
-      <p class="mt-0.5 text-sm text-neutral-500"><%= subtitle %></p>
-    <% end %>
-  </div>
+  <h2 class="min-w-0 text-base font-medium text-neutral-900"><%= title %></h2>
 
   <button type="button" data-action="modal#close" class="-mr-1.5 -mt-1 <%= icon_button_class %>">
     <span class="sr-only">Close</span>

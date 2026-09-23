@@ -1,14 +1,17 @@
-<div data-expense-lines-target="row" class="grid grid-cols-[minmax(13rem,1.3fr)_minmax(15rem,1.7fr)_minmax(9rem,0.7fr)_3rem] items-center gap-3 border-b border-neutral-200 py-3">
+<div data-expense-lines-target="row" class="expense-line-columns grid gap-3 border-b border-neutral-200 py-4 sm:items-center sm:py-3">
+  <span class="text-xs font-medium text-neutral-500 sm:hidden">Category</span>
   <%= render "shared/select_menu", form: form, attribute: :account_id,
       options: expense_account_options(current_workspace.accounts.expense_accounts.ordered, form.object.account_id),
       prompt: "Select category", searchable: true,
       search_placeholder: "Search categories…", empty_message: "No categories found",
       select_data: {} %>
+  <span class="text-xs font-medium text-neutral-500 sm:hidden">Description</span>
   <%= form.text_field :description,
       required: true,
       placeholder: "What was this for?",
       autocomplete: "off",
       class: field_class %>
+  <span class="text-xs font-medium text-neutral-500 sm:hidden">Amount</span>
   <%= form.text_field :amount,
       value: form.object.amount,
       required: true,
@@ -19,7 +22,7 @@
       data: { expense_lines_target: "amount", action: "input->expense-lines#recalculate" } %>
   <%= form.hidden_field :position, value: form.object.position, data: { expense_lines_target: "position" } %>
   <%= form.hidden_field :_destroy, data: { expense_lines_target: "destroy" } %>
-  <button type="button" data-action="expense-lines#removeLine" class="justify-self-center <%= icon_button_class %>">
+  <button type="button" data-action="expense-lines#removeLine" class="justify-self-end sm:justify-self-center <%= icon_button_class %>">
     <span class="sr-only">Remove category</span>
     <%= inline_svg_tag "icons/trash.svg", class: "h-4 w-4" %>
   </button>

@@ -5,7 +5,7 @@
       description: "Choose a new password for your account.",
       links: [ { label: "Back to sign in", path: new_session_path } ]
     } do %>
-  <%= form_with url: password_path(params[:token]), method: :put, class: "space-y-4" do |form| %>
+  <%= form_with url: password_path(params[:token]), method: :put, class: "space-y-3" do |form| %>
     <div>
       <%= form.label :password, "New password", class: field_label_class %>
       <%= form.password_field :password, required: true, autofocus: true, autocomplete: "new-password", maxlength: 72, class: field_class %>

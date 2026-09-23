@@ -31,22 +31,20 @@ class ExpenseTest < ActiveSupport::TestCase
     assert_equal 4_000_000, expense.total_kobo
   end
 
-  test "finds another expense with the same vendor date and total" do
-    vendor = @workspace.contacts.create!(name: "Fuel Station", contact_kind: "business", email: "fuel@example.com", role_names: %w[vendor])
-    original = build_expense(payee_contact: vendor)
+  test "finds another expense with the same date and total" do
+    original = build_expense
     original.save!
-    candidate = build_expense(payee_contact: vendor)
+    candidate = build_expense
     candidate.save!
 
     assert_includes candidate.possible_duplicates, original
   end
 
-  test "does not match the same transaction details for a different vendor" do
-    first_vendor = @workspace.contacts.create!(name: "First Vendor", contact_kind: "business", email: "first@example.com", role_names: %w[vendor])
-    second_vendor = @workspace.contacts.create!(name: "Second Vendor", contact_kind: "business", email: "second@example.com", role_names: %w[vendor])
-    original = build_expense(payee_contact: first_vendor)
+  test "does not flag expenses with different totals as duplicates" do
+    original = build_expense
     original.save!
-    candidate = build_expense(payee_contact: second_vendor)
+    candidate = build_expense
+    candidate.expense_lines.first.amount_kobo = 5_000_000
     candidate.save!
 
     assert_not_includes candidate.possible_duplicates, original
@@ -162,43 +160,16 @@ class ExpenseTest < ActiveSupport::TestCase
     assert_equal "Fuel", line.reload.description
   end
 
-  test "accepts an optional payee from the workspace" do
-    payee = @workspace.contacts.create!(name: "Fuel Station", contact_kind: "business", email: "fuel@example.com", role_names: %w[vendor])
-    expense = build_expense
-    expense.payee_contact = payee
-
-    assert expense.valid?
-    assert_equal payee, expense.payee_contact
-  end
-
-  test "rejects a payee from another workspace" do
-    payee = workspaces(:bola_shop).contacts.create!(name: "Other Vendor", contact_kind: "business", email: "other@example.com", role_names: %w[vendor])
-    expense = build_expense
-    expense.payee_contact = payee
-
-    assert_not expense.valid?
-    assert_includes expense.errors[:payee_contact], "must belong to the workspace"
-  end
-
-  test "rejects a customer-only payee" do
-    customer = @workspace.contacts.create!(name: "Retail Customer", contact_kind: "business", email: "customer@example.com", role_names: %w[customer])
-    expense = build_expense(payee_contact: customer)
-
-    assert_not expense.valid?
-    assert_includes expense.errors[:payee_contact], "must be a vendor"
-  end
-
   private
     def create_account(**attributes)
       @workspace.accounts.create!(attributes)
     end
 
-    def build_expense(payment_account: @bank, category: @fuel, memo: nil, payee_contact: nil, payment_date: Date.current)
+    def build_expense(payment_account: @bank, category: @fuel, memo: nil, payment_date: Date.current)
       @workspace.expenses.build(
         payment_date: payment_date,
         payment_account: payment_account,
         memo: memo,
-        payee_contact: payee_contact,
         expense_lines_attributes: [
           { account: category, description: "Fuel", amount_kobo: 4_000_000, position: 0 }
         ]

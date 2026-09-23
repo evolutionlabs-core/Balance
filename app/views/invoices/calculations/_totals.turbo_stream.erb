@@ -1,0 +1,4 @@
+<% calculation.lines.each do |index, line| %>
+  <%= turbo_stream.update "new_invoice_line_#{index}_amount", minor_amount(line.amount_minor) %>
+<% end %>
+<%= render "invoices/totals", invoice: calculation.invoice %>

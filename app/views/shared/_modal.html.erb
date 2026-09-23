@@ -1,10 +1,7 @@
 <%= turbo_frame_tag "modal" do %>
-  <div data-controller="modal"
+  <dialog data-controller="modal"
        data-action="keydown->modal#keydown click->modal#clickOutside"
-       class="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto sm:items-center sm:p-4"
-       role="dialog"
-       aria-modal="true"
-       tabindex="-1">
+        class="fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none items-end justify-center overflow-y-auto border-0 bg-transparent p-0 open:flex sm:items-center sm:p-4">
     <div data-modal-target="backdrop"
          class="fixed inset-0 bg-neutral-950/45 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none"></div>
 
@@ -12,5 +9,5 @@
          class="relative z-10 flex max-h-[92vh] w-full <%= local_assigns.fetch(:width_class, "max-w-md") %> translate-y-4 scale-[0.98] flex-col overflow-hidden rounded-t-2xl border border-neutral-200 bg-white opacity-0 shadow-2xl transition duration-200 ease-out sm:translate-y-2 sm:rounded-xl motion-reduce:transition-none">
       <%= yield %>
     </div>
-  </div>
+  </dialog>
 <% end %>

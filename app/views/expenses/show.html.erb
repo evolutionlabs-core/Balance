@@ -34,7 +34,6 @@
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-neutral-950"><%= @expense.description %></h1>
       <p class="mt-1 text-sm text-neutral-500">
         <%= @expense.payment_date.to_fs(:long) %> · Paid from <%= @expense.payment_account.name %>
-        <% if @expense.payee_contact %>· Vendor <%= @expense.payee_contact.name %><% end %>
       </p>
     </div>
     <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= naira(@expense.total_kobo) %></p>

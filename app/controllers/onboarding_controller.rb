@@ -51,7 +51,7 @@ class OnboardingController < ApplicationController
 
     Current.session.update!(workspace: workspace)
     session.delete(:onboarding)
-    redirect_to dashboard_path, notice: "Your personal workspace is ready."
+    redirect_to overview_path, notice: "Your personal workspace is ready."
   rescue ActiveRecord::RecordInvalid => invalid
     render_error(invalid.record.errors.full_messages.to_sentence)
   end
@@ -82,7 +82,7 @@ class OnboardingController < ApplicationController
   end
 
   def redirect_completed_user
-    redirect_to dashboard_path if current_workspace
+    redirect_to overview_path if current_workspace
   end
 
   def render_error(message)

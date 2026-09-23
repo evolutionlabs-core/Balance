@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,27 +31,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.index ["workspace_id"], name: "index_accounts_on_workspace_id"
   end
 
-  create_table "contact_roles", force: :cascade do |t|
-    t.bigint "contact_id", null: false
-    t.datetime "created_at", null: false
-    t.string "role", null: false
-    t.datetime "updated_at", null: false
-    t.index ["contact_id", "role"], name: "index_contact_roles_on_contact_id_and_role", unique: true
-    t.index ["contact_id"], name: "index_contact_roles_on_contact_id"
-  end
-
-  create_table "contacts", force: :cascade do |t|
+  create_table "customers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
-    t.string "contact_kind", null: false
+    t.text "address"
     t.datetime "created_at", null: false
+    t.string "customer_type", null: false
     t.string "email"
     t.string "name", null: false
     t.string "phone"
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
-    t.index ["workspace_id", "active"], name: "index_contacts_on_workspace_id_and_active"
-    t.index ["workspace_id", "name"], name: "index_contacts_on_workspace_id_and_name"
-    t.index ["workspace_id"], name: "index_contacts_on_workspace_id"
+    t.index ["workspace_id", "active"], name: "index_customers_on_workspace_id_and_active"
+    t.index ["workspace_id", "name"], name: "index_customers_on_workspace_id_and_name"
+    t.index ["workspace_id"], name: "index_customers_on_workspace_id"
+  end
+
+  create_table "estimate_line_items", force: :cascade do |t|
+    t.bigint "amount_minor", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "estimate_id", null: false
+    t.integer "position", null: false
+    t.decimal "quantity", precision: 15, scale: 3
+    t.bigint "rate_minor"
+    t.datetime "updated_at", null: false
+    t.index ["estimate_id", "position"], name: "index_estimate_line_items_on_estimate_id_and_position", unique: true
+    t.index ["estimate_id"], name: "index_estimate_line_items_on_estimate_id"
+  end
+
+  create_table "estimates", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.text "business_address"
+    t.string "business_email"
+    t.string "business_name"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id", null: false
+    t.text "notes"
+    t.bigint "project_id"
+    t.string "status", default: "draft", null: false
+    t.bigint "subtotal_minor", default: 0, null: false
+    t.bigint "total_minor", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_estimates_on_customer_id"
+    t.index ["project_id"], name: "index_estimates_on_project_id"
+    t.index ["user_id"], name: "index_estimates_on_user_id"
+    t.index ["workspace_id", "project_id"], name: "index_estimates_on_workspace_id_and_project_id"
+    t.index ["workspace_id", "status"], name: "index_estimates_on_workspace_id_and_status"
+    t.index ["workspace_id"], name: "index_estimates_on_workspace_id"
   end
 
   create_table "expense_lines", force: :cascade do |t|
@@ -71,7 +102,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.datetime "created_at", null: false
     t.bigint "journal_entry_id"
     t.text "memo"
-    t.bigint "payee_contact_id"
     t.bigint "payment_account_id", null: false
     t.date "payment_date", null: false
     t.string "status", default: "draft", null: false
@@ -79,12 +109,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["journal_entry_id"], name: "index_expenses_on_journal_entry_id", unique: true, where: "(journal_entry_id IS NOT NULL)"
-    t.index ["payee_contact_id"], name: "index_expenses_on_payee_contact_id"
     t.index ["payment_account_id"], name: "index_expenses_on_payment_account_id"
-    t.index ["workspace_id", "payee_contact_id", "payment_date", "total_kobo"], name: "index_expenses_for_transaction_duplicate_detection"
     t.index ["workspace_id", "payment_date"], name: "index_expenses_on_workspace_id_and_payment_date"
     t.index ["workspace_id", "status"], name: "index_expenses_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_expenses_on_workspace_id"
+  end
+
+  create_table "invoice_lines", force: :cascade do |t|
+    t.bigint "amount_minor", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "invoice_id", null: false
+    t.integer "position", null: false
+    t.decimal "quantity", precision: 15, scale: 3
+    t.bigint "rate_minor"
+    t.datetime "updated_at", null: false
+    t.index ["invoice_id", "position"], name: "index_invoice_lines_on_invoice_id_and_position", unique: true
+    t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
+  end
+
+  create_table "invoices", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.text "business_address"
+    t.string "business_email"
+    t.string "business_name"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id"
+    t.date "due_date"
+    t.date "issue_date"
+    t.string "status", default: "draft", null: false
+    t.bigint "subtotal_minor", default: 0, null: false
+    t.bigint "total_minor", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_invoices_on_customer_id"
+    t.index ["user_id"], name: "index_invoices_on_user_id"
+    t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
+    t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -225,6 +290,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
     t.index ["workspace_id"], name: "index_memberships_on_workspace_id"
   end
 
+  create_table "project_tasks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "internal_note"
+    t.integer "position", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.string "status", default: "todo", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "position"], name: "index_project_tasks_on_project_id_and_position"
+    t.index ["project_id"], name: "index_project_tasks_on_project_id"
+  end
+
+  create_table "project_time_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.decimal "hours", precision: 8, scale: 2, null: false
+    t.text "internal_note"
+    t.date "occurred_on", null: false
+    t.bigint "project_id", null: false
+    t.bigint "project_task_id"
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "occurred_on"], name: "index_project_time_entries_on_project_id_and_occurred_on"
+    t.index ["project_id"], name: "index_project_time_entries_on_project_id"
+    t.index ["project_task_id"], name: "index_project_time_entries_on_project_task_id"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.bigint "cost_budget_kobo"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.bigint "customer_id", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_projects_on_customer_id"
+    t.index ["workspace_id", "customer_id"], name: "index_projects_on_workspace_id_and_customer_id"
+    t.index ["workspace_id"], name: "index_projects_on_workspace_id"
+  end
+
   create_table "proposals", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.jsonb "data", default: {}, null: false
@@ -265,6 +371,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
   end
 
   create_table "workspaces", force: :cascade do |t|
+    t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.string "name", null: false
@@ -274,14 +381,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
   end
 
   add_foreign_key "accounts", "workspaces"
-  add_foreign_key "contact_roles", "contacts"
-  add_foreign_key "contacts", "workspaces"
+  add_foreign_key "customers", "workspaces"
+  add_foreign_key "estimate_line_items", "estimates"
+  add_foreign_key "estimates", "customers"
+  add_foreign_key "estimates", "projects"
+  add_foreign_key "estimates", "users"
+  add_foreign_key "estimates", "workspaces"
   add_foreign_key "expense_lines", "accounts"
   add_foreign_key "expense_lines", "expenses"
   add_foreign_key "expenses", "accounts", column: "payment_account_id"
-  add_foreign_key "expenses", "contacts", column: "payee_contact_id"
   add_foreign_key "expenses", "journal_entries"
   add_foreign_key "expenses", "workspaces"
+  add_foreign_key "invoice_lines", "invoices"
+  add_foreign_key "invoices", "customers"
+  add_foreign_key "invoices", "users"
+  add_foreign_key "invoices", "workspaces"
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"
   add_foreign_key "journal_entries", "workspaces"
   add_foreign_key "journal_entry_lines", "accounts"
@@ -298,6 +412,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_000200) do
   add_foreign_key "llm_turns", "llm_messages", column: "user_message_id"
   add_foreign_key "memberships", "users"
   add_foreign_key "memberships", "workspaces"
+  add_foreign_key "project_tasks", "projects"
+  add_foreign_key "project_time_entries", "project_tasks"
+  add_foreign_key "project_time_entries", "projects"
+  add_foreign_key "projects", "customers"
+  add_foreign_key "projects", "workspaces"
   add_foreign_key "proposals", "journal_entries"
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"

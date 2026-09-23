@@ -1,0 +1,50 @@
+<%= render "projects/project_header", project: @project %>
+<%= render "projects/project_tabs", project: @project, active_tab: :estimates %>
+
+<div class="mt-6 flex items-center justify-between gap-4">
+  <h2 class="text-sm font-semibold text-neutral-950">Estimates</h2>
+  <%= link_to(new_project_project_estimate_path(@project), class: secondary_button_class(size: :sm)) do %>
+    <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>New estimate
+  <% end %>
+</div>
+
+<% if @estimates.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/list.svg",
+      title: "No estimates yet",
+      description: "Send the client an upfront view of what you plan to spend.",
+      action: link_to("New estimate", new_project_project_estimate_path(@project), class: primary_button_class(size: :sm)) %>
+<% else %>
+  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+    <table class="min-w-full">
+      <thead class="bg-white">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Estimate</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Total</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody class="bg-white">
+        <% @estimates.each do |estimate| %>
+          <tr class="border-t border-neutral-200">
+            <td class="p-0 text-sm font-medium whitespace-nowrap text-neutral-900">
+              <%= link_to estimate.number, project_estimate_path(estimate), class: "block px-4 py-4" %>
+            </td>
+            <td class="p-0 text-right text-sm tabular-nums whitespace-nowrap text-neutral-600">
+              <%= link_to minor_currency(estimate.total_minor, estimate.currency_code), project_estimate_path(estimate), class: "block px-4 py-4" %>
+            </td>
+            <td class="p-0 text-sm whitespace-nowrap">
+              <%= link_to project_estimate_path(estimate), class: "block px-4 py-4" do %>
+                <%= estimate_status_badge(estimate) %>
+              <% end %>
+            </td>
+            <td class="px-4 py-4 text-right text-sm whitespace-nowrap">
+              <%= link_to "Edit", edit_project_estimate_path(estimate), class: "font-medium text-[#0f7082] hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

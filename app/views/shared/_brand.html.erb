@@ -1,12 +1,16 @@
-<div class="flex items-center gap-2.5" aria-label="Balance">
+<div class="flex items-center gap-1.5" aria-label="Balance">
   <% if local_assigns.fetch(:compact, false) %>
-    <span class="relative block h-9 w-9 overflow-hidden" aria-hidden="true">
-      <%= image_tag "balance-logo.png", class: "pointer-events-none absolute h-[120px] w-[120px] max-w-none -translate-x-[44px] -translate-y-[34px]" %>
+    <span class="relative block <%= local_assigns.fetch(:sidebar, false) ? "h-7 w-7 shrink-0" : "h-9 w-9" %> overflow-hidden" aria-hidden="true">
+      <%= image_tag "balance-logo.png", class: local_assigns.fetch(:sidebar, false) ? "pointer-events-none absolute h-[68px] w-[68px] max-w-none -translate-x-[22px] -translate-y-[19px]" : "pointer-events-none w-[120px] max-w-none -translate-x-[44px] -translate-y-[34px]" %>
     </span>
-    <span class="text-base font-medium tracking-tight text-neutral-900">Balance</span>
+    <span class="text-base font-medium tracking-tight">Balance</span>
+  <% elsif local_assigns.fetch(:horizontal, false) %>
+    <span class="relative block h-12 w-10 shrink-0 overflow-hidden" aria-hidden="true">
+      <%= image_tag "balance-logo.png", class: "pointer-events-none absolute h-[120px] w-[120px] max-w-none -translate-x-[40px] -translate-y-[35px]" %>
+    </span>
   <% else %>
-    <span class="relative block h-[108px] w-[210px] overflow-hidden" aria-hidden="true">
-      <%= image_tag "balance-logo.png", class: "pointer-events-none absolute h-[240px] w-[240px] max-w-none -translate-x-[20px] -translate-y-[66px]" %>
+    <span class="relative block h-24 w-20 overflow-hidden" aria-hidden="true">
+      <%= image_tag "balance-logo.png", class: "pointer-events-none absolute h-[240px] w-[240px] max-w-none -translate-x-[80px] -translate-y-[69px]" %>
     </span>
   <% end %>
 </div>

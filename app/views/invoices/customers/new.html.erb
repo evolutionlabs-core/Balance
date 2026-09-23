@@ -1,0 +1,3 @@
+<%= render "shared/modal" do %>
+  <%= render "customers/form", customer: @customer, url: invoice_customers_path(invoice_id: (@invoice.id if @invoice.persisted?)) %>
+<% end %>
