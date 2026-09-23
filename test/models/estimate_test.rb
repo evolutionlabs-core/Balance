@@ -7,14 +7,17 @@ class EstimateTest < ActiveSupport::TestCase
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Estimate Customer", customer_type: "business", email: "estimate@example.com", address: "12 Allen Ave")
     @project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
+    @income_account = @workspace.accounts.create!(name: "Estimate Income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @service = @workspace.services.create!(name: "Hosting service", income_account: @income_account)
   end
 
   test "prefills billing address from customer and totals lines in kobo" do
     estimate = @workspace.estimates.build(
       user: @user, customer: @customer, project: @project,
       line_items_attributes: {
-        "0" => { description: "Hosting", quantity: "12", rate: "5000" },
-        "1" => { description: "Domain", quantity: "1", rate: "15000" }
+        "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" },
+        "1" => { service: @service, description: "Domain", quantity: "1", rate: "15000" }
       }
     )
 
@@ -30,6 +33,21 @@ class EstimateTest < ActiveSupport::TestCase
 
     assert_not estimate.valid?
     assert_includes estimate.errors[:customer], "must belong to the workspace"
+  end
+
+  test "allows free-form lines and rejects services outside the workspace" do
+    other_income = @other_workspace.accounts.create!(name: "Other Estimate Income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    foreign_service = @other_workspace.services.create!(name: "Foreign estimate service", income_account: other_income)
+
+    missing = @workspace.estimates.build(user: @user, customer: @customer, project: @project,
+      line_items_attributes: { "0" => { description: "Work", quantity: 1, rate: 100 } })
+    foreign = @workspace.estimates.build(user: @user, customer: @customer, project: @project,
+      line_items_attributes: { "0" => { service: foreign_service, description: "Work", quantity: 1, rate: 100 } })
+
+    assert missing.valid?, missing.errors.full_messages.to_sentence
+    assert_not foreign.valid?
+    assert_includes foreign.line_items.first.errors[:service], "must belong to the workspace"
   end
 
   test "rejects project of another customer" do
@@ -95,7 +113,7 @@ class EstimateTest < ActiveSupport::TestCase
     estimate = @workspace.estimates.create!(
       user: @user, customer: @customer, project: @project,
       line_items_attributes: {
-        "0" => { description: "Hosting", quantity: "12", rate: "5000" }
+        "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" }
       }
     )
 
@@ -116,11 +134,27 @@ class EstimateTest < ActiveSupport::TestCase
     assert_equal [ "Hosting" ], invoice.invoice_lines.map(&:description)
     assert_equal [ BigDecimal("12") ], invoice.invoice_lines.map(&:quantity)
     assert_equal [ 500_000 ], invoice.invoice_lines.map(&:rate_minor)
+    assert_equal [ @service ], invoice.invoice_lines.map(&:service)
 
     invoice.save!
 
+    assert_equal [ @income_account ], invoice.invoice_lines.map(&:account)
     assert_equal 12 * 500_000, invoice.total_minor
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
+  end
+
+  test "free-form estimates convert without requiring an income account" do
+    estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project,
+      line_items_attributes: [ { description: "Custom work", quantity: 3, rate: 125 } ])
+    invoice = estimate.build_invoice(user: @user)
+    invoice.save!
+
+    assert_equal 37_500, invoice.total_minor
+    assert_equal "Custom work", invoice.invoice_lines.sole.description
+    assert_nil invoice.invoice_lines.sole.service
+    assert_nil invoice.invoice_lines.sole.account
+    assert invoice.draft?
+    assert_nil invoice.journal_entry
   end
 
   test "allows edits after sending" do
@@ -135,17 +169,32 @@ class EstimateTest < ActiveSupport::TestCase
     estimate = @workspace.estimates.create!(
       user: @user, customer: @customer, project: @project,
       line_items_attributes: {
-        "0" => { description: "Hosting", quantity: "12", rate: "5000" },
-        "1" => { description: "Domain", quantity: "1", rate: "15000" }
+        "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" },
+        "1" => { service: @service, description: "Domain", quantity: "1", rate: "15000" }
       }
     )
     kept = estimate.line_items.find_by(description: "Hosting")
 
     assert_difference("EstimateLineItem.count", -1) do
-      estimate.update!(line_items_attributes: { "-#{kept.id}" => { description: "Hosting", quantity: "12", rate: "5000" } })
+      estimate.update!(line_items_attributes: { "-#{kept.id}" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" } })
     end
 
     assert_equal [ "Hosting" ], estimate.reload.line_items.pluck(:description)
+  end
+
+  test "ignores a blank placeholder when another line is complete" do
+    estimate = @workspace.estimates.build(
+      user: @user,
+      customer: @customer,
+      project: @project,
+      line_items_attributes: {
+        "0" => { service: @service, description: "Hosting", quantity: 2, rate: 20, amount: 40 },
+        "1" => { service_id: "", description: "", quantity: 1, rate: 0, amount: 0 }
+      }
+    )
+
+    assert estimate.valid?, estimate.errors.full_messages.to_sentence
+    assert_equal 1, estimate.line_items.size
   end
 
   test "number derives from id" do

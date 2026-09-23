@@ -6,6 +6,9 @@ class Invoice::PdfTest < ActiveSupport::TestCase
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Original Customer", customer_type: "business",
       email: "original-customer@example.com", address: "1 Customer Road")
+    income_account = @workspace.accounts.create!(name: "PDF Service Income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @service = @workspace.services.create!(name: "PDF service", income_account: income_account)
   end
 
   test "renders saved party snapshots rather than current records" do
@@ -55,7 +58,8 @@ class Invoice::PdfTest < ActiveSupport::TestCase
   private
     def create_invoice(lines: [ line("Consulting") ])
       @workspace.invoices.create!(user: @user, customer: @customer, issue_date: Date.new(2026, 9, 10),
-        due_date: Date.new(2026, 10, 10), currency_code: "NGN", invoice_lines_attributes: lines)
+        due_date: Date.new(2026, 10, 10), currency_code: "NGN",
+        invoice_lines_attributes: lines.map { |attributes| { service: @service }.merge(attributes) })
     end
 
     def line(description)

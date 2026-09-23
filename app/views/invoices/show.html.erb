@@ -1,11 +1,11 @@
-<% content_for :title, "Invoice draft" %>
+<% content_for :title, @invoice.posted? ? "Invoice #{@invoice.invoice_number}" : "Invoice draft" %>
 
 <%= content_for(:breadcrumb) do %>
-  <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: "Preview" } ] %>
+  <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: @invoice.invoice_number.presence || "Invoice" } ] %>
 <% end %>
 
 <div class="mx-auto max-w-6xl">
-  <%= render "invoices/view_tabs", invoice: @invoice, active: :preview %>
+  <%= render "invoices/view_tabs", invoice: @invoice, active: :show %>
 
   <article class="border border-neutral-200 bg-white shadow-sm">
     <header class="flex flex-col gap-5 border-b border-neutral-200 px-4 py-6 sm:flex-row sm:justify-between sm:px-8 sm:py-10 md:px-12">
@@ -62,7 +62,9 @@
           <tbody>
             <% @invoice.invoice_lines.each do |line| %>
               <tr class="border-b border-neutral-200">
-                <td class="py-4 text-sm text-neutral-900"><%= line.description.presence || "—" %></td>
+                <td class="py-4 text-sm text-neutral-900">
+                  <p><%= line.description.presence || "—" %></p>
+                </td>
                 <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity || "—" %></td>
                 <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.rate_minor ? minor_currency(line.rate_minor, @invoice.currency_code) : "—" %></td>
                 <td class="py-4 text-right text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(line.amount_minor, @invoice.currency_code) %></td>
@@ -81,8 +83,8 @@
           <dd class="font-medium tabular-nums text-neutral-950"><%= minor_currency(@invoice.subtotal_minor, @invoice.currency_code) %></dd>
         </div>
         <div class="mt-4 flex justify-between border-t border-neutral-200 pt-4">
-          <dt class="font-semibold text-neutral-950">Total due</dt>
-          <dd class="text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(@invoice.total_minor, @invoice.currency_code) %></dd>
+          <dt class="font-semibold text-neutral-950">Balance due</dt>
+          <dd class="text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(@invoice.balance_due_kobo, @invoice.currency_code) %></dd>
         </div>
       </dl>
     </section>
@@ -92,6 +94,9 @@
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
     <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
     <div class="flex flex-wrap items-center gap-2">
+      <% unless @invoice.posted? %>
+        <%= link_to "Post to ledger", new_invoice_posting_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
+      <% end %>
       <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
     </div>
   </div>

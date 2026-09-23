@@ -10,5 +10,7 @@
     </div>
     <div class="sm:col-span-2">
       <%= form.label :currency_code, "Currency", class: field_label_class %>
-      <%= form.select :currency_code, [ [ "Nigerian naira (NGN)", "NGN" ] ], {}, form: "new_invoice_form", class: field_class %>
+      <%= render "shared/select_menu", form: form, attribute: :currency_code,
+          options: options_for_select([ [ "Nigerian naira (NGN)", "NGN" ] ], form.object.currency_code),
+          prompt: "Select currency", form_id: "new_invoice_form", select_data: {} %>
     </div>

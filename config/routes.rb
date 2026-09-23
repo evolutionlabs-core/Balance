@@ -26,10 +26,13 @@ Rails.application.routes.draw do
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
+  resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]
 
-  resources :invoices, only: %i[index new create show edit update]
+  resources :invoices, only: %i[index new create show edit update] do
+    resource :posting, only: %i[new create], controller: "invoice_postings"
+  end
   scope :invoice, module: :invoices, as: :invoice do
     resources :customers, only: %i[index new create show edit update]
     resource :workspace, only: %i[edit update]

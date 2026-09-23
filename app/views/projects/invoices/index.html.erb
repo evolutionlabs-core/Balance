@@ -34,7 +34,7 @@
             </td>
             <td class="p-0 text-sm whitespace-nowrap">
               <%= link_to invoice_path(invoice), class: "block px-4 py-4" do %>
-                <%= status_badge("Draft", tone: :warning) %>
+                <%= invoice_status_badge(invoice) %>
               <% end %>
             </td>
             <td class="p-0 text-sm whitespace-nowrap text-neutral-600">
@@ -44,7 +44,7 @@
               <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
             </td>
             <td class="px-4 py-4 text-right text-sm whitespace-nowrap">
-              <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline" %>
+              <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline" unless invoice.posted? %>
             </td>
           </tr>
         <% end %>

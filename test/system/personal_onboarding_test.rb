@@ -15,14 +15,10 @@ class PersonalOnboardingTest < ApplicationSystemTestCase
     click_on "Continue"
 
     fill_in "Workspace name", with: "Ngozi's Money"
-    click_on "Continue"
-
-    assert_text "Where do you keep or owe money?"
-    assert_no_text "Opening Balance Equity"
     click_on "Create workspace"
 
-    assert_text "Ngozi's Money"
     assert_text "Your personal workspace is ready."
+    assert_equal "Ngozi's Money", User.find_by!(email_address: "ngozi@example.com").workspaces.sole.name
   end
 
   test "business workspace is visibly unavailable" do

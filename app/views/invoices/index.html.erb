@@ -29,7 +29,7 @@
         </div>
         <div class="mt-2 flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-2 text-xs text-neutral-500">
-            <%= status_badge("Draft", tone: :warning) %>
+            <%= invoice_status_badge(invoice) %>
             <span class="truncate"><%= invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell %></span>
             <span aria-hidden="true">·</span>
             <span class="truncate">Due <%= invoice.due_date&.strftime("%b %-d") || blank_cell %></span>

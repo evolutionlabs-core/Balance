@@ -2,7 +2,7 @@ class Projects::InvoicesController < ApplicationController
   before_action :set_project
 
   def index
-    @invoices = @project.invoices.includes(:customer).order(created_at: :desc)
+    @invoices = @project.invoices.includes(:customer, :receivable_applications).order(created_at: :desc)
   end
 
   private

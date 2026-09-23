@@ -17,6 +17,18 @@
         <%= button_to "Mark as sent", project_estimate_delivery_path(@estimate), method: :post,
             class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
       <% end %>
+      <% if @estimate.may_approve? %>
+        <%= button_to "Approve", project_estimate_approval_path(@estimate), method: :post,
+            class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
+      <% end %>
+      <% if @estimate.may_decline? %>
+        <%= button_to "Decline", project_estimate_decline_path(@estimate), method: :post,
+            class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
+      <% end %>
+      <% if @estimate.may_reopen? %>
+        <%= button_to "Reopen", project_estimate_reopening_path(@estimate), method: :post,
+            class: "cursor-pointer bg-transparent text-sm font-medium text-[#0f7082] hover:underline" %>
+      <% end %>
     </div>
     <%= estimate_status_badge(@estimate) %>
   </div>
@@ -60,7 +72,9 @@
           <tbody>
             <% @estimate.line_items.each do |line| %>
               <tr class="border-b border-neutral-200">
-                <td class="py-4 text-sm text-neutral-900"><%= line.description.presence || "—" %></td>
+                <td class="py-4 text-sm text-neutral-900">
+                  <p><%= line.description.presence || "—" %></p>
+                </td>
                 <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity || "—" %></td>
                 <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.rate_minor ? minor_currency(line.rate_minor, @estimate.currency_code) : "—" %></td>
                 <td class="py-4 text-right text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(line.amount_minor, @estimate.currency_code) %></td>

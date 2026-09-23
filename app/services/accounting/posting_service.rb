@@ -39,6 +39,7 @@ class Accounting::PostingService
       end
 
       entry.save!
+      Accounting::ReceivableAllocator.call(entry)
       source.record_posting!(entry) if source
     end
 

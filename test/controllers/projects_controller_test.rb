@@ -12,12 +12,12 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     @category = @workspace.accounts.create!(name: "Site Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
   end
 
-  test "creates a project and redirects to the estimates tab for scope entry" do
+  test "creates a project and redirects to its overview" do
     assert_difference("Project.count", 1) do
       post projects_path, params: { project: { customer_id: @customer.id, name: "Villa" } }
     end
 
-    assert_redirected_to project_project_estimates_path(Project.last)
+    assert_redirected_to project_path(Project.last)
   end
 
   test "updates project details and budget only" do

@@ -2,6 +2,24 @@
 <%= render "projects/project_tabs", project: @project, active_tab: :overview %>
 
 <% summary = @summary %>
+<section aria-labelledby="project-finances" class="mt-8">
+  <h2 id="project-finances" class="text-sm font-semibold text-neutral-950">Project finances</h2>
+  <dl class="mt-2 grid border-y border-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-neutral-200">
+    <div class="py-4 sm:pr-5">
+      <dt class="text-sm text-neutral-500">Estimate value</dt>
+      <dd class="mt-1 text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(summary.estimate_value_kobo, @project.currency_code) %></dd>
+    </div>
+    <div class="border-t border-neutral-200 py-4 sm:border-t-0 sm:px-5">
+      <dt class="text-sm text-neutral-500">Invoice value</dt>
+      <dd class="mt-1 text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(summary.invoice_value_kobo, @project.currency_code) %></dd>
+    </div>
+    <div class="border-t border-neutral-200 py-4 sm:border-t-0 sm:pl-5">
+      <dt class="text-sm text-neutral-500">Amount owed to you</dt>
+      <dd class="mt-1 text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(summary.amount_owed_kobo, @project.currency_code) %></dd>
+    </div>
+  </dl>
+</section>
+
 <section aria-labelledby="project-budget" class="mt-8">
   <div class="flex items-center justify-between gap-4">
     <h2 id="project-budget" class="text-sm font-semibold text-neutral-950">Budget</h2>

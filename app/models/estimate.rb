@@ -9,9 +9,10 @@ class Estimate < ApplicationRecord
   belongs_to :project, optional: true
   has_many :line_items, class_name: "EstimateLineItem", dependent: :destroy
 
-  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
+  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :blank_line_attributes?
 
   def line_items_attributes=(attributes)
+    @line_items_submitted = true
     drop_missing_lines(attributes) if saved_rows_submitted?(attributes)
     super(restore_line_ids(attributes))
   end
@@ -21,6 +22,7 @@ class Estimate < ApplicationRecord
   validate :customer_belongs_to_workspace
   validate :project_belongs_to_workspace
   validate :project_matches_customer
+  validate :at_least_one_line, if: -> { @line_items_submitted }
 
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
@@ -72,7 +74,12 @@ class Estimate < ApplicationRecord
       bill_to_email: bill_to_email,
       bill_to_address: bill_to_address,
       invoice_lines_attributes: line_items.map do |line|
-        { description: line.description, quantity: line.quantity, rate_minor: line.rate_minor }
+        {
+          service: line.service,
+          description: line.description,
+          quantity: line.quantity,
+          rate_minor: line.rate_minor
+        }
       end
     )
   end
@@ -103,6 +110,16 @@ class Estimate < ApplicationRecord
   end
 
   private
+    def blank_line_attributes?(attributes)
+      attributes.values_at("service_id", :service_id, "service", :service, "description", :description).all?(&:blank?) &&
+        attributes.fetch("rate", attributes.fetch(:rate, 0)).to_d.zero? &&
+        attributes.fetch("amount", attributes.fetch(:amount, 0)).to_d.zero?
+    end
+
+    def at_least_one_line
+      errors.add(:line_items, "must include at least one item") if active_lines.empty?
+    end
+
     def customer_belongs_to_workspace
       return if customer.blank? || workspace.blank?
       return if customer.workspace_id == workspace_id

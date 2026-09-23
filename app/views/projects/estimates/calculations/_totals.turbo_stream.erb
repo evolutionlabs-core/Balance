@@ -1,4 +1,1 @@
-<% calculation.lines.each do |index, line| %>
-  <%= turbo_stream.update "new_estimate_line_#{index}_amount", minor_amount(line.amount_minor) %>
-<% end %>
 <%= render "projects/estimates/totals", estimate: calculation.estimate %>

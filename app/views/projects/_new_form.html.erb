@@ -26,7 +26,9 @@
 
     <div>
       <%= form.label :currency_code, "Currency", class: field_label_class %>
-      <%= form.select :currency_code, [ "NGN" ], {}, { class: field_class } %>
+      <%= render "shared/select_menu", form: form, attribute: :currency_code,
+          options: options_for_select([ [ "Nigerian naira (NGN)", "NGN" ] ], project.currency_code),
+          prompt: "Select currency", select_data: {} %>
     </div>
 
     <% if project.persisted? %>

@@ -2,7 +2,9 @@ class JournalEntry < ApplicationRecord
   belongs_to :workspace
   belongs_to :reverses_journal_entry, class_name: "JournalEntry", optional: true
   has_many :journal_entry_lines, dependent: :destroy, inverse_of: :journal_entry
+  has_many :receivable_applications, dependent: :restrict_with_error
   has_one :expense, dependent: :restrict_with_error
+  has_one :invoice, dependent: :restrict_with_error
 
   accepts_nested_attributes_for :journal_entry_lines, allow_destroy: true, reject_if: :all_blank
 

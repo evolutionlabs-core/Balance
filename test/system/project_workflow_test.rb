@@ -52,7 +52,7 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_equal "Modal Edit Villa Renamed", project.reload.name
   end
 
-  test "creates an estimate in the full-page editor and sends it" do
+  test "creates and converts a free-form estimate" do
     project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
     visit project_project_estimates_path(project)
 
@@ -68,6 +68,19 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
 
     estimate = Estimate.order(:id).last
     assert_selector "a[href='#{project_estimate_path(estimate, format: :pdf)}']", text: "Download"
+    click_on "Mark as sent"
+    assert_text "Estimate #{estimate.number} sent."
+    click_on "Approve"
+    assert_text "Estimate #{estimate.number} approved."
+    click_on "Convert to Invoice"
+    assert_current_path %r{\A/invoices/\d+\z}
+    assert_selector "article", text: "Hosting"
+    invoice = @workspace.invoices.find_by!(estimate: estimate)
+    assert_equal 6_000_000, invoice.total_minor
+    assert_nil invoice.invoice_lines.sole.service
+    assert invoice.draft?
+    click_on "Post to ledger"
+    assert_selector "#modal select", count: 1
   end
 
   test "creates a task then logs time against it from the task row" do

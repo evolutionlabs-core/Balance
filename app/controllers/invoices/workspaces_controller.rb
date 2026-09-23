@@ -27,6 +27,6 @@ class Invoices::WorkspacesController < ApplicationController
     end
 
     def workspace_params
-      params.expect(workspace: [ :name, :address ])
+      params.expect(workspace: [ :name, :address, :default_sales_account_id ])
     end
 end

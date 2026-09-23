@@ -1,22 +1,33 @@
-<tr id="new_estimate_line_<%= index %>" class="estimate-line border-t border-neutral-200 hover:bg-neutral-50/80">
+<tr id="new_estimate_line_<%= index %>" class="estimate-line border-t border-neutral-200 hover:bg-neutral-50/80" data-controller="service-line">
   <td class="estimate-line-number px-4 py-3 text-center text-sm text-neutral-500"></td>
   <%= fields_for "estimate[line_items_attributes][#{index}]", line, include_id: false do |form| %>
     <td class="px-2 py-2">
+      <% services = @services.select { |service| service.active? || service.id == line.service_id } %>
+      <% options = services.map { |service| [ service.name, service.id, { data: { description: service.description.presence || service.name, rate: service.default_rate&.to_s("F") } } ] } %>
+      <%= render "shared/select_menu", form: form, attribute: :service_id,
+          options: options_for_select(options, line.service_id), prompt: "No service", include_blank_option: true,
+          select_data: { service_line_target: "service", action: "change->service-line#applyDefaults" }, form_id: "new_estimate_form",
+          searchable: true, search_placeholder: "Search services…", empty_message: "No services found", required: false %>
+    </td>
+    <td class="px-2 py-2">
       <%= form.text_field :description, form: "new_estimate_form", placeholder: "Hosting, domain, proxy…", autocomplete: "off", aria: { label: "Description" },
+          data: { service_line_target: "description" },
           class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-sm focus:border-neutral-300 focus:bg-white" %>
     </td>
     <td class="px-2 py-2">
       <%= form.number_field :quantity, form: "new_estimate_form", min: 0.001, step: 0.001, placeholder: "1", inputmode: "decimal", aria: { label: "Quantity" },
-          data: { action: "change->form#submit" },
+          data: { service_line_target: "quantity", action: "input->service-line#calculateAmount change->form#submit" },
           class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-right text-sm tabular-nums focus:border-neutral-300 focus:bg-white" %>
     </td>
     <td class="px-2 py-2">
       <%= form.number_field :rate, form: "new_estimate_form", min: 0, step: 0.01, placeholder: "0.00", inputmode: "decimal", aria: { label: "Rate" },
-          data: { action: "change->form#submit" },
+          data: { action: "input->service-line#calculateAmount change->form#submit", service_line_target: "rate" },
           class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-right text-sm tabular-nums focus:border-neutral-300 focus:bg-white" %>
     </td>
-    <td class="px-4 py-3 text-right text-sm font-medium tabular-nums text-neutral-900">
-      <span id="new_estimate_line_<%= index %>_amount"><%= minor_amount(line.amount_minor) %></span>
+    <td class="px-2 py-2">
+      <%= form.number_field :amount, form: "new_estimate_form", min: 0, step: 0.01, inputmode: "decimal", aria: { label: "Amount" },
+          data: { service_line_target: "amount", invoice_editor_target: "amount", action: "input->invoice-editor#calculateTotals change->form#submit" },
+          class: "block h-9 w-full rounded-md border border-transparent bg-transparent px-2 text-right text-sm font-medium tabular-nums focus:border-neutral-300 focus:bg-white" %>
     </td>
     <td class="px-2 py-2 text-right">
       <% unless local_assigns[:first] || index.to_s == "0" %>

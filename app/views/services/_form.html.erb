@@ -1,0 +1,40 @@
+<%= form_with model: service do |form| %>
+  <%= render "shared/modal/header", title: service.persisted? ? "Edit service" : "New service" %>
+
+  <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+    <%= render "shared/form_errors", record: service %>
+
+    <div>
+      <%= form.label :name, class: field_label_class %>
+      <%= form.text_field :name, required: true, autofocus: true, placeholder: "Interior design", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :description, "Default description", class: field_label_class %>
+      <%= form.text_area :description, rows: 3, placeholder: "Optional", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :default_rate, "Default rate (#{current_workspace.currency_code})", class: field_label_class %>
+      <%= form.number_field :default_rate, min: 0, step: 0.01, placeholder: "0.00", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :income_account_id, "Income account", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :income_account_id,
+          options: options_from_collection_for_select(current_workspace.accounts.where(base_type: "income").ordered, :id, :name, service.income_account_id),
+          prompt: "Select income account", searchable: true,
+          search_placeholder: "Search income accounts…", empty_message: "No income accounts found",
+          select_data: {}, required: true %>
+    </div>
+
+    <% if service.persisted? %>
+      <label class="flex items-center gap-2 text-sm text-neutral-700">
+        <%= form.check_box :active, class: "h-4 w-4 rounded border-neutral-300 text-[#0f7082]" %>
+        Active
+      </label>
+    <% end %>
+  </div>
+
+  <%= render "shared/modal/footer", form: form, submit_label: service.persisted? ? "Save changes" : "Create service" %>
+<% end %>

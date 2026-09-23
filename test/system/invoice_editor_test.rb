@@ -1,16 +1,19 @@
 require "application_system_test_case"
 
 class InvoiceEditorTest < ApplicationSystemTestCase
-  test "creates and edits an invoice" do
+  test "creates edits and posts a free-form invoice" do
     user = users(:one)
     user.update!(password: "password")
     workspace = workspaces(:ada_store)
+    income = workspace.accounts.create!(name: "Consulting income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
     assert_selector "tr.invoice-line", count: 2
     fill_in "Customer", with: "Invoice"
     find("[role='option']", text: customer.name).click
+    assert_selector "input[name='invoice[customer_id]'][value='#{customer.id}']", visible: :all
     within all("tr.invoice-line").first do
       find("input[name$='[description]']").set("Consulting")
       find("input[name$='[quantity]']").set("2")
@@ -22,6 +25,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     within all("tr.invoice-line").last do
       click_on "Remove line"
     end
+    assert_selector "tr.invoice-line", count: 1
     click_on "Save and preview"
 
     assert_current_path %r{\A/invoices/\d+\z}
@@ -36,6 +40,18 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     click_on "Save and preview"
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
+
+    click_on "Post to ledger"
+    within "#modal dialog" do
+      assert_text "Consulting"
+      select income.name, from: "Income account"
+      click_on "Post invoice"
+    end
+    assert_text "Invoice #{invoice.invoice_number} posted."
+    assert invoice.reload.posted?
+    assert_equal income, invoice.invoice_lines.sole.account
+    assert_equal 15_000, invoice.journal_entry.journal_entry_lines.sum(:credit_kobo)
+    assert_no_link "Edit"
   end
 
   private

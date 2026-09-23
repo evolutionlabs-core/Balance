@@ -13,6 +13,12 @@
       <%= form.label :address, "Business address", class: field_label_class %>
       <%= form.text_area :address, rows: 3, placeholder: "Address", class: field_class %>
     </div>
+    <div>
+      <%= form.label :default_sales_account_id, "Default sales income account", class: field_label_class %>
+      <%= form.collection_select :default_sales_account_id, workspace.accounts.where(base_type: "income").ordered, :id, :name,
+          { include_blank: "Choose when posting" }, { class: field_class } %>
+      <p class="mt-1 text-xs text-neutral-500">Used for invoice lines without a service. You can change the account before posting.</p>
+    </div>
   </div>
 
   <%= render "shared/modal/footer", form: form, submit_label: "Save changes" %>

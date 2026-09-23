@@ -7,14 +7,10 @@
 <div class="min-w-0">
   <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
     <h1 class="min-w-0 flex-1 basis-48 break-words text-base font-medium text-neutral-900"><%= project.name %></h1>
-    <%= link_to(edit_project_path(project), class: secondary_button_class(size: :sm), data: { turbo_frame: "modal" }) do %>
-      <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit project
-    <% end %>
+    <%= link_to "Edit project", edit_project_path(project), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
   </div>
   <p class="mt-1 text-sm text-neutral-500">
+    Customer:
     <%= link_to project.customer.name, customer_path(project.customer), class: "font-medium text-[#0f7082] hover:underline" %>
   </p>
-  <% if project.description.present? %>
-    <p class="mt-2 max-w-3xl text-sm break-words text-neutral-600"><%= project.description %></p>
-  <% end %>
 </div>

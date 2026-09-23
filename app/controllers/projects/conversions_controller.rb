@@ -3,8 +3,8 @@ class Projects::ConversionsController < Projects::ActionsController
     invoice = @estimate.build_invoice(user: Current.user)
 
     ActiveRecord::Base.transaction do
-      invoice.save!
       @estimate.convert_to_invoice!
+      invoice.save!
     end
 
     redirect_to invoice_path(invoice), notice: "Invoice #{invoice.invoice_number} created from #{@estimate.number}."

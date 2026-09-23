@@ -90,7 +90,7 @@ export default class extends Controller {
     this.optionsContainer = document.createElement("div")
     this.optionsContainer.setAttribute("role", "listbox")
     this.optionsContainer.className = this.searchableValue
-      ? "max-h-40 overflow-y-auto pb-2"
+      ? "max-h-40 overflow-y-auto"
       : "max-h-56 overflow-y-auto"
     this.menu.append(this.optionsContainer)
 

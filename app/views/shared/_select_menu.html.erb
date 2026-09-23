@@ -7,13 +7,8 @@
 <% empty_message = local_assigns.fetch(:empty_message, "No options found") %>
 <% footer_label = local_assigns[:footer_label] %>
 <% footer_url = local_assigns[:footer_url] %>
+<% form_id = local_assigns[:form_id] %>
 
-<% unless searchable %>
-  <%= form.select attribute, options, { prompt: prompt },
-      required: required,
-      class: compact ? "max-w-[15rem] rounded-md bg-transparent px-2 py-1.5 text-xs font-medium text-neutral-600" : field_class,
-      data: select_data %>
-<% else %>
 <div class="relative <%= compact ? "inline-flex" : "" %>"
      data-controller="select-menu"
      data-select-menu-compact-value="<%= compact %>"
@@ -28,6 +23,7 @@
   <%= form.select attribute, options, { prompt: prompt },
       required: required,
       class: "sr-only",
+      form: form_id,
       data: select_data.merge(select_menu_target: "native") %>
 
   <% if search_in_trigger %>
@@ -63,4 +59,3 @@
   <div class="fixed z-[60] hidden overflow-hidden rounded-md border border-neutral-200 bg-white p-1 shadow-lg"
        data-select-menu-target="menu"></div>
 </div>
-<% end %>
