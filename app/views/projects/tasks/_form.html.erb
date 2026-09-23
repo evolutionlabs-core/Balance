@@ -16,7 +16,9 @@
 
     <div>
       <%= form.label :status, class: field_label_class %>
-      <%= form.select :status, ProjectTask::STATUSES.map { |s| [ s.humanize, s ] }, {}, { class: field_class } %>
+      <%= render "shared/select_menu", form: form, attribute: :status,
+          options: options_for_select(ProjectTask::STATUSES.map { |status| [ status.humanize, status ] }, task.status),
+          prompt: "Select status", select_data: {} %>
     </div>
 
     <div>

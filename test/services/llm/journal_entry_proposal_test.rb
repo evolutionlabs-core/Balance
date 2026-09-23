@@ -49,6 +49,68 @@ class LlmJournalEntryProposalTest < ActiveSupport::TestCase
     assert_includes draft.errors, "Entry date cannot be in the future"
   end
 
+  test "resolves an existing workspace customer as the journal line counterparty" do
+    customer = @workspace.customers.create!(name: "Known Customer", customer_type: "business", email: "known@example.com")
+    receivable = Account.for_role!(@workspace, :receivable)
+    draft = Llm::JournalEntryProposal.from_tool(
+      workspace: @workspace,
+      description: "Customer receipt",
+      entry_date: Date.current.to_s,
+      lines: [
+        { account_id: @cash.id, side: "debit", amount_naira: "100", counterparty_name: nil },
+        { account_id: receivable.id, side: "credit", amount_naira: "100", counterparty_name: customer.name }
+      ]
+    )
+
+    assert draft.valid?, draft.errors.to_sentence
+    assert_equal customer.id, draft.data.fetch("lines").last.fetch("counterparty_id")
+    assert_equal customer, draft.entry.journal_entry_lines.last.counterparty
+  end
+
+  test "rejects an unknown workspace customer counterparty" do
+    receivable = Account.for_role!(@workspace, :receivable)
+    draft = Llm::JournalEntryProposal.from_tool(
+      workspace: @workspace,
+      description: "Unknown customer receipt",
+      entry_date: Date.current.to_s,
+      lines: [
+        { account_id: @cash.id, side: "debit", amount_naira: "100" },
+        { account_id: receivable.id, side: "credit", amount_naira: "100", counterparty_name: "Missing Customer" }
+      ]
+    )
+
+    assert_includes draft.errors, 'Customer "Missing Customer" does not exist in this workspace'
+  end
+
+  test "requires a customer on an accounts receivable credit" do
+    receivable = Account.for_role!(@workspace, :receivable)
+    draft = Llm::JournalEntryProposal.from_tool(
+      workspace: @workspace,
+      description: "Unassigned customer receipt",
+      entry_date: Date.current.to_s,
+      lines: [
+        { account_id: @cash.id, side: "debit", amount_naira: "100" },
+        { account_id: receivable.id, side: "credit", amount_naira: "100" }
+      ]
+    )
+
+    assert_includes draft.errors, "Accounts Receivable credit must name an existing customer"
+  end
+
+  test "does not require ordinary transaction counterparties to be customers" do
+    draft = Llm::JournalEntryProposal.from_tool(
+      workspace: @workspace,
+      description: "Vendor expense",
+      entry_date: Date.current.to_s,
+      lines: [
+        { account_id: @expense.id, side: "debit", amount_naira: "100", counterparty_name: "Local Vendor" },
+        { account_id: @cash.id, side: "credit", amount_naira: "100" }
+      ]
+    )
+
+    assert draft.valid?, draft.errors.to_sentence
+  end
+
   private
 
   def build_draft(amount:, entry_date: Date.current.to_s)

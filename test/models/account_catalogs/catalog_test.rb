@@ -17,7 +17,7 @@ class AccountCatalogs::CatalogTest < ActiveSupport::TestCase
     categories = AccountCatalogs::Personal.categories
 
     assert_equal %w[ASSET LIABILITY EQUITY INCOME EXPENSE], categories.map { |group| group[:category] }
-    assert_equal [ "Cash & Liquid Assets", "Investments & Long-Term Assets" ],
+    assert_equal [ "Cash & Liquid Assets", "Accounts Receivable", "Investments & Long-Term Assets" ],
                  categories.first[:account_types].map { |entry| entry[:account_type] }
     assert_equal [ "Personal Outflows" ], categories.last[:account_types].map { |entry| entry[:account_type] }
   end
@@ -25,7 +25,7 @@ class AccountCatalogs::CatalogTest < ActiveSupport::TestCase
   test "account_types flattens the whole chart" do
     types = AccountCatalogs::Personal.account_types
 
-    assert_equal 7, types.length
+    assert_equal 8, types.length
     assert types.all? { |entry| entry[:account_type].present? && entry[:detail_types].present? }
   end
 
@@ -55,7 +55,7 @@ class AccountCatalogs::CatalogTest < ActiveSupport::TestCase
   test "core and recommended account specs are derived from chart detail types" do
     catalog = AccountCatalogs::Personal
 
-    assert_equal %i[checking savings cash wallet suspense credit_card opening_balance uncategorized_income uncategorized_expense].sort,
+    assert_equal %i[checking savings cash wallet suspense receivable credit_card opening_balance uncategorized_income uncategorized_expense].sort,
                  catalog.core.keys.sort
     assert_equal "Checking Account", catalog.account_spec(:checking)[:detail]
     assert_includes catalog.recommended.values.pluck(:detail), "Earned Salary & Wages"

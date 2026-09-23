@@ -1,0 +1,32 @@
+<%= render "shared/modal" do %>
+  <%= form_with scope: :invoice_receipt, url: invoice_receipt_path(@invoice), class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Invoice paid" %>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @invoice %>
+      <p class="text-sm text-neutral-600">Record money received from <%= @invoice.customer.name %> against this invoice.</p>
+
+      <div>
+        <%= form.label :account_id, "Bank or Cash account", class: field_label_class %>
+        <%= render "shared/select_menu", form: form, attribute: :account_id,
+            options: options_from_collection_for_select(@receipt_accounts, :id, :name, params.dig(:invoice_receipt, :account_id)),
+            prompt: "Select account", searchable: true, search_placeholder: "Search Bank or Cash accounts…",
+            empty_message: "No Bank or Cash accounts found", select_data: {}, required: true %>
+      </div>
+
+      <div>
+        <%= form.label :received_on, "Payment date", class: field_label_class %>
+        <%= form.text_field :received_on, value: params.dig(:invoice_receipt, :received_on) || Date.current,
+            required: true, autocomplete: "off", class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+      </div>
+
+      <div>
+        <%= form.label :amount, "Amount received", class: field_label_class %>
+        <%= form.number_field :amount, value: params.dig(:invoice_receipt, :amount) || format("%.2f", BigDecimal(@invoice.balance_due_kobo) / 100), min: 0.01,
+            max: format("%.2f", BigDecimal(@invoice.balance_due_kobo) / 100), step: 0.01, required: true, class: field_class %>
+      </div>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Record payment" %>
+  <% end %>
+<% end %>

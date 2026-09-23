@@ -26,10 +26,14 @@ Rails.application.routes.draw do
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create]
   resources :accounts, only: %i[index new create edit update destroy]
+  resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]
 
-  resources :invoices, only: %i[index new create show edit update]
+  resources :invoices, only: %i[index new create show edit update] do
+    resource :posting, only: %i[new create], controller: "invoice_postings"
+    resource :receipt, only: %i[new create], controller: "invoice_receipts"
+  end
   scope :invoice, module: :invoices, as: :invoice do
     resources :customers, only: %i[index new create show edit update]
     resource :workspace, only: %i[edit update]
@@ -44,10 +48,13 @@ Rails.application.routes.draw do
         resource :approval, only: %i[create]
         resource :decline, only: %i[create]
         resource :reopening, only: %i[create]
+        resource :conversion, only: %i[create]
       end
       resources :estimate_lines, path: "estimates/lines", only: %i[new destroy]
       resource :estimate_calculation, path: "estimates/calculation", only: %i[create], controller: "estimate_calculations"
       resource :estimate_workspace, path: "estimates/workspace", only: %i[edit update], controller: "estimate_workspaces"
+      resources :invoices, only: %i[index]
+      resource :budget, only: %i[edit update]
       resources :tasks, only: %i[index new create edit update destroy]
       resources :time_entries, only: %i[index new create edit update destroy]
       resources :activities, only: %i[index]

@@ -1,0 +1,59 @@
+<% content_for :title, "Services" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Services" } ] %>
+<% end %>
+
+<% new_service = link_to "New service", new_service_path,
+    class: primary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+
+<%= render "shared/page_header",
+    title: "Services",
+    description: "Manage the services you sell and where their income is recorded.",
+    action: new_service %>
+
+<% if @services.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/services.svg",
+      title: "No services yet",
+      description: "Create a service before adding billable work to an estimate or invoice.",
+      action: new_service %>
+<% else %>
+  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
+    <table class="min-w-full">
+      <thead>
+        <tr>
+          <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500">Service</th>
+          <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500">Income account</th>
+          <th scope="col" class="px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Default rate</th>
+          <th scope="col" class="px-4 py-2.5 text-left text-xs font-medium text-neutral-500">Status</th>
+          <th scope="col" class="w-20 px-4 py-2.5 text-right text-xs font-medium text-neutral-500">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white">
+        <% @services.each do |service| %>
+          <tr id="<%= dom_id(service) %>" class="border-t border-neutral-200 hover:bg-neutral-50/80">
+            <td class="px-4 py-3">
+              <p class="text-sm font-medium text-neutral-900"><%= service.name %></p>
+              <% if service.description.present? %>
+                <p class="mt-0.5 max-w-xl truncate text-xs text-neutral-500"><%= service.description %></p>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-sm text-neutral-600"><%= service.income_account.name %></td>
+            <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600">
+              <%= service.default_rate_minor ? minor_currency(service.default_rate_minor, current_workspace.currency_code) : "—" %>
+            </td>
+            <td class="px-4 py-3 text-sm text-neutral-600">
+              <span class="inline-flex rounded-md border px-2 py-0.5 text-xs font-medium <%= service.active? ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-neutral-200 bg-neutral-50 text-neutral-600' %>">
+                <%= service.active? ? "Active" : "Inactive" %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Edit", edit_service_path(service), aria: { label: "Edit #{service.name}" }, class: "text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

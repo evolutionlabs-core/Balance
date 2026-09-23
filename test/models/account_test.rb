@@ -16,6 +16,15 @@ class AccountTest < ActiveSupport::TestCase
     assert account.valid?
   end
 
+  test "seeds a receivable account from the personal catalog" do
+    account = Account.for_role!(@workspace, :receivable)
+
+    assert account.persisted?
+    assert_equal "asset", account.base_type
+    assert_equal "Accounts Receivable", account.account_type
+    assert_equal "Accounts Receivable (A/R)", account.detail_type
+  end
+
   test "rejects an unknown base type" do
     account = @workspace.accounts.build(
       name: "Checking",

@@ -53,8 +53,10 @@ class Llm::JournalEntryProposal
 
     @workspace = workspace
     @data = data
+    @counterparty_errors = []
+    resolve_counterparties
     entry.valid?
-    @errors = entry.errors.full_messages
+    @errors = (entry.errors.full_messages + @counterparty_errors).uniq
   end
 
   def valid?
@@ -98,6 +100,8 @@ class Llm::JournalEntryProposal
         end
         if original_lines
           attributes[:counterparty] = original_lines.find { |original| original.id == line["source_line_id"] }&.counterparty
+        elsif line["counterparty_id"].present?
+          attributes[:counterparty] = @workspace.customers.find_by(id: line["counterparty_id"])
         end
 
         built.journal_entry_lines.build(attributes)
@@ -108,10 +112,33 @@ class Llm::JournalEntryProposal
   end
 
   private
+    def resolve_counterparties
+      return if data["reverses_journal_entry_id"].present?
 
-  def parse_date(value)
-    Date.iso8601(value)
-  rescue ArgumentError, TypeError
-    nil
-  end
+      data.fetch("lines", []).each do |line|
+        name = line["counterparty_name"].presence
+        account = @workspace.accounts.find_by(id: line["account_id"])
+        next unless line["side"] == "credit" && account&.role == "receivable"
+
+        unless name
+          @counterparty_errors << "Accounts Receivable credit must name an existing customer"
+          next
+        end
+
+        matches = @workspace.customers.where("LOWER(name) = ?", name.downcase).limit(2).to_a
+        if matches.one?
+          line["counterparty_id"] = matches.first.id
+        elsif matches.empty?
+          @counterparty_errors << "Customer #{name.inspect} does not exist in this workspace"
+        else
+          @counterparty_errors << "Customer #{name.inspect} is ambiguous in this workspace"
+        end
+      end
+    end
+
+    def parse_date(value)
+      Date.iso8601(value)
+    rescue ArgumentError, TypeError
+      nil
+    end
 end

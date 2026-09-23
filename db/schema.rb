@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,9 +54,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.integer "position", null: false
     t.decimal "quantity", precision: 15, scale: 3
     t.bigint "rate_minor"
+    t.bigint "service_id"
     t.datetime "updated_at", null: false
     t.index ["estimate_id", "position"], name: "index_estimate_line_items_on_estimate_id_and_position", unique: true
     t.index ["estimate_id"], name: "index_estimate_line_items_on_estimate_id"
+    t.index ["service_id"], name: "index_estimate_line_items_on_service_id"
   end
 
   create_table "estimates", force: :cascade do |t|
@@ -116,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   end
 
   create_table "invoice_lines", force: :cascade do |t|
+    t.bigint "account_id"
     t.bigint "amount_minor", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "description"
@@ -123,9 +126,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.integer "position", null: false
     t.decimal "quantity", precision: 15, scale: 3
     t.bigint "rate_minor"
+    t.bigint "service_id"
     t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_invoice_lines_on_account_id"
     t.index ["invoice_id", "position"], name: "index_invoice_lines_on_invoice_id_and_position", unique: true
     t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
+    t.index ["service_id"], name: "index_invoice_lines_on_service_id"
   end
 
   create_table "invoices", force: :cascade do |t|
@@ -139,7 +145,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.string "currency_code", default: "NGN", null: false
     t.bigint "customer_id"
     t.date "due_date"
+    t.bigint "estimate_id"
+    t.string "invoice_number"
     t.date "issue_date"
+    t.bigint "journal_entry_id"
+    t.bigint "project_id"
     t.string "status", default: "draft", null: false
     t.bigint "subtotal_minor", default: 0, null: false
     t.bigint "total_minor", default: 0, null: false
@@ -147,7 +157,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.bigint "user_id", null: false
     t.bigint "workspace_id", null: false
     t.index ["customer_id"], name: "index_invoices_on_customer_id"
+    t.index ["estimate_id"], name: "index_invoices_on_estimate_id"
+    t.index ["journal_entry_id"], name: "index_invoices_on_journal_entry_id"
+    t.index ["project_id"], name: "index_invoices_on_project_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
+    t.index ["workspace_id", "invoice_number"], name: "index_invoices_on_workspace_id_and_invoice_number", unique: true
     t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
@@ -350,6 +364,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.index ["workspace_id"], name: "index_proposals_on_workspace_id"
   end
 
+  create_table "receivable_applications", force: :cascade do |t|
+    t.bigint "amount_kobo", null: false
+    t.datetime "created_at", null: false
+    t.bigint "invoice_id", null: false
+    t.bigint "journal_entry_id", null: false
+    t.bigint "reverses_receivable_application_id"
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["invoice_id"], name: "index_receivable_applications_on_invoice_id"
+    t.index ["journal_entry_id", "invoice_id"], name: "idx_on_journal_entry_id_invoice_id_90d136502d", unique: true
+    t.index ["journal_entry_id"], name: "index_receivable_applications_on_journal_entry_id"
+    t.index ["reverses_receivable_application_id"], name: "idx_on_reverses_receivable_application_id_0fce615a15", unique: true
+    t.index ["workspace_id"], name: "index_receivable_applications_on_workspace_id"
+  end
+
+  create_table "services", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.bigint "default_rate_minor"
+    t.text "description"
+    t.bigint "income_account_id", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["income_account_id"], name: "index_services_on_income_account_id"
+    t.index ["workspace_id", "name"], name: "index_services_on_workspace_id_and_name", unique: true
+    t.index ["workspace_id"], name: "index_services_on_workspace_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -374,15 +417,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
     t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
+    t.bigint "default_sales_account_id"
     t.string "name", null: false
     t.datetime "onboarding_completed_at"
     t.datetime "updated_at", null: false
     t.string "workspace_type", default: "personal", null: false
+    t.index ["default_sales_account_id"], name: "index_workspaces_on_default_sales_account_id"
   end
 
   add_foreign_key "accounts", "workspaces"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
+  add_foreign_key "estimate_line_items", "services"
   add_foreign_key "estimates", "customers"
   add_foreign_key "estimates", "projects"
   add_foreign_key "estimates", "users"
@@ -392,8 +438,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   add_foreign_key "expenses", "accounts", column: "payment_account_id"
   add_foreign_key "expenses", "journal_entries"
   add_foreign_key "expenses", "workspaces"
+  add_foreign_key "invoice_lines", "accounts"
   add_foreign_key "invoice_lines", "invoices"
+  add_foreign_key "invoice_lines", "services"
   add_foreign_key "invoices", "customers"
+  add_foreign_key "invoices", "estimates"
+  add_foreign_key "invoices", "journal_entries"
+  add_foreign_key "invoices", "projects"
   add_foreign_key "invoices", "users"
   add_foreign_key "invoices", "workspaces"
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"
@@ -421,6 +472,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_000100) do
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"
   add_foreign_key "proposals", "workspaces"
+  add_foreign_key "receivable_applications", "invoices"
+  add_foreign_key "receivable_applications", "journal_entries"
+  add_foreign_key "receivable_applications", "receivable_applications", column: "reverses_receivable_application_id"
+  add_foreign_key "receivable_applications", "workspaces"
+  add_foreign_key "services", "accounts", column: "income_account_id"
+  add_foreign_key "services", "workspaces"
   add_foreign_key "sessions", "users"
   add_foreign_key "sessions", "workspaces"
+  add_foreign_key "workspaces", "accounts", column: "default_sales_account_id"
 end

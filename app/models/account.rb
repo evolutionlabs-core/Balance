@@ -1,4 +1,7 @@
 class Account < ApplicationRecord
+  has_many :services, foreign_key: :income_account_id, dependent: :restrict_with_error
+  has_many :invoice_lines, dependent: :restrict_with_error
+  has_many :sales_workspaces, class_name: "Workspace", foreign_key: :default_sales_account_id, dependent: :restrict_with_error
   belongs_to :workspace
   has_many :journal_entry_lines, dependent: :restrict_with_error
   has_many :paid_expenses,

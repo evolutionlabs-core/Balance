@@ -7,7 +7,7 @@
   </td>
   <td data-label="Status" class="p-0 text-sm whitespace-nowrap">
     <%= link_to invoice_path(invoice), class: "block px-4 py-4" do %>
-      <%= status_badge("Draft", tone: :warning) %>
+      <%= invoice_status_badge(invoice) %>
     <% end %>
   </td>
   <td data-label="Date" class="p-0 text-sm whitespace-nowrap text-neutral-600">
@@ -17,6 +17,6 @@
     <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
   </td>
   <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline", aria: { label: "Edit invoice" } %>
+    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline", aria: { label: "Edit invoice" } unless invoice.posted? %>
   </td>
 </tr>

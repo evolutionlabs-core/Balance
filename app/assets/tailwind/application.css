@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-/* Geist has to be registered here — @font-face plus a --font-* theme variable is
-   the only way to hand a webfont to Tailwind. Everything else the app needs is a
-   stock utility. */
+/* Register the local fonts and the design tokens Tailwind exposes as utilities. */
 @font-face {
   font-family: "Geist";
   src: url("Geist-Regular.woff2") format("woff2");
@@ -41,7 +39,6 @@
 
   --color-balance-teal-700: #0f7082;
   --color-balance-teal-100: #e8f1ef;
-  --color-balance-cream-50: #fbfaf7;
   --color-balance-red-600: #c32c2c;
 }
 
@@ -56,33 +53,17 @@
   }
 }
 
-.onboarding-enter {
-  animation: onboarding-enter 260ms ease-out both;
-}
-
 @layer components {
-  .invoice-lines {
-    counter-reset: invoice-line;
+  :is(.invoice-lines, .estimate-lines) {
+    counter-reset: line-item;
   }
 
-  .invoice-line {
-    counter-increment: invoice-line;
+  :is(.invoice-line, .estimate-line) {
+    counter-increment: line-item;
   }
 
-  .invoice-line-number::before {
-    content: counter(invoice-line);
-  }
-
-  .estimate-lines {
-    counter-reset: estimate-line;
-  }
-
-  .estimate-line {
-    counter-increment: estimate-line;
-  }
-
-  .estimate-line-number::before {
-    content: counter(estimate-line);
+  :is(.invoice-line-number, .estimate-line-number)::before {
+    content: counter(line-item);
   }
 
   @keyframes message-in {
@@ -212,12 +193,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .onboarding-enter {
-    animation: none;
-  }
-}
-
 .flatpickr-calendar {
   border: 1px solid #e5e5e5 !important;
   border-radius: 0.75rem !important;
@@ -265,15 +240,13 @@
       font-size: 16px;
     }
 
-    .invoice-line-editor,
-    .invoice-line-editor tbody,
-    .invoice-line-editor tr,
-    .invoice-line-editor td {
+    :is(.invoice-line-editor, .invoice-preview-lines),
+    :is(.invoice-line-editor, .invoice-preview-lines) :is(tbody, tr, td) {
       display: block;
       width: 100%;
     }
 
-    .invoice-line-editor thead {
+    :is(.invoice-line-editor, .invoice-preview-lines) thead {
       display: none;
     }
 
@@ -290,27 +263,15 @@
       padding-inline: 0;
     }
 
-    .invoice-line-editor td:nth-of-type(3),
-    .invoice-line-editor td:nth-of-type(4) {
+    .invoice-line-editor td:nth-of-type(4),
+    .invoice-line-editor td:nth-of-type(5) {
       display: inline-block;
       width: calc(50% - 0.25rem);
       vertical-align: top;
     }
 
-    .invoice-line-editor td:nth-of-type(4) {
+    .invoice-line-editor td:nth-of-type(5) {
       margin-left: 0.5rem;
-    }
-
-    .invoice-preview-lines,
-    .invoice-preview-lines tbody,
-    .invoice-preview-lines tr,
-    .invoice-preview-lines td {
-      display: block;
-      width: 100%;
-    }
-
-    .invoice-preview-lines thead {
-      display: none;
     }
 
     .invoice-preview-lines tr {

@@ -50,19 +50,18 @@
 
         <div class="divide-y divide-neutral-100">
           <% proposal.lines.each_with_index do |line, index| %>
-            <% missing_account = line["account_id"].blank? %>
             <div class="grid grid-cols-[3.5rem_minmax(0,1fr)_6.25rem] items-center gap-1.5 px-4 py-1.5">
               <span class="w-fit rounded px-1.5 py-0.5 text-[11px] font-semibold <%= line["side"] == "debit" ? "bg-[#e9f5f6] text-[#0f7082]" : "bg-neutral-100 text-neutral-600" %>"><%= line["side"] == "debit" ? "Debit" : "Credit" %></span>
               <% if reversal %>
                 <span class="truncate px-1.5 py-1 text-[13px] text-neutral-900"><%= accounts.find { |account| account.id.to_s == line["account_id"].to_s }&.name %></span>
                 <span class="px-1.5 py-1 text-right text-[13px] tabular-nums text-neutral-900"><%= naira(line["amount_kobo"]) %></span>
               <% else %>
-                <select name="proposal[lines][<%= index %>][account_id]" required class="<%= input %> <%= "border-amber-300 text-amber-800" if missing_account %>">
-                  <option value="" disabled <%= "selected" if missing_account %>>Choose an account</option>
-                  <% accounts.each do |account| %>
-                    <option value="<%= account.id %>" <%= "selected" if account.id.to_s == line["account_id"].to_s %>><%= account.name %></option>
-                  <% end %>
-                </select>
+                <%= fields_for "proposal[lines][#{index}]" do |line_form| %>
+                  <%= render "shared/select_menu", form: line_form, attribute: :account_id,
+                      options: options_from_collection_for_select(accounts, :id, :name, line["account_id"]),
+                      prompt: "Choose an account", searchable: true, search_placeholder: "Search accounts…",
+                      empty_message: "No accounts found", select_data: {} %>
+                <% end %>
                 <input type="number" step="0.01" min="0.01" name="proposal[lines][<%= index %>][amount_naira]" value="<%= format("%.2f", BigDecimal(line["amount_kobo"].to_i) / 100) %>" aria-label="<%= line["side"] %> amount" class="<%= input %> text-right tabular-nums">
                 <input type="hidden" name="proposal[lines][<%= index %>][side]" value="<%= line["side"] %>">
                 <input type="hidden" name="proposal[lines][<%= index %>][counterparty_name]" value="<%= line["counterparty_name"] %>">

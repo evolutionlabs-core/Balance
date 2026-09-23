@@ -1,7 +1,7 @@
 class Estimate < ApplicationRecord
   include AASM
 
-  STATUSES = %w[draft sent approved declined].freeze
+  STATUSES = %w[draft sent approved declined invoiced].freeze
 
   belongs_to :workspace
   belongs_to :user
@@ -9,9 +9,10 @@ class Estimate < ApplicationRecord
   belongs_to :project, optional: true
   has_many :line_items, class_name: "EstimateLineItem", dependent: :destroy
 
-  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
+  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :blank_line_attributes?
 
   def line_items_attributes=(attributes)
+    @line_items_submitted = true
     drop_missing_lines(attributes) if saved_rows_submitted?(attributes)
     super(restore_line_ids(attributes))
   end
@@ -21,6 +22,7 @@ class Estimate < ApplicationRecord
   validate :customer_belongs_to_workspace
   validate :project_belongs_to_workspace
   validate :project_matches_customer
+  validate :at_least_one_line, if: -> { @line_items_submitted }
 
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
@@ -33,7 +35,7 @@ class Estimate < ApplicationRecord
 
   aasm column: :status do
     state :draft, initial: true
-    state :sent, :approved, :declined
+    state :sent, :approved, :declined, :invoiced
 
     event :send_to_client do
       transitions from: :draft, to: :sent
@@ -50,6 +52,36 @@ class Estimate < ApplicationRecord
     event :reopen do
       transitions from: :declined, to: :draft
     end
+
+    event :convert_to_invoice do
+      transitions from: :approved, to: :invoiced
+    end
+  end
+
+  def build_invoice(user:)
+    workspace.invoices.build(
+      user: user,
+      customer: customer,
+      project: project,
+      estimate: self,
+      currency_code: currency_code,
+      issue_date: Date.current,
+      due_date: Date.current + 15.days,
+      business_name: business_name,
+      business_email: business_email,
+      business_address: business_address,
+      bill_to_name: bill_to_name,
+      bill_to_email: bill_to_email,
+      bill_to_address: bill_to_address,
+      invoice_lines_attributes: line_items.map do |line|
+        {
+          service: line.service,
+          description: line.description,
+          quantity: line.quantity,
+          rate_minor: line.rate_minor
+        }
+      end
+    )
   end
 
   def use_customer_details
@@ -78,6 +110,16 @@ class Estimate < ApplicationRecord
   end
 
   private
+    def blank_line_attributes?(attributes)
+      attributes.values_at("service_id", :service_id, "service", :service, "description", :description).all?(&:blank?) &&
+        attributes.fetch("rate", attributes.fetch(:rate, 0)).to_d.zero? &&
+        attributes.fetch("amount", attributes.fetch(:amount, 0)).to_d.zero?
+    end
+
+    def at_least_one_line
+      errors.add(:line_items, "must include at least one item") if active_lines.empty?
+    end
+
     def customer_belongs_to_workspace
       return if customer.blank? || workspace.blank?
       return if customer.workspace_id == workspace_id

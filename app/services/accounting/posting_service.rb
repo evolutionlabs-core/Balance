@@ -3,14 +3,15 @@ class Accounting::PostingService
     def success? = errors.empty?
   end
 
-  def self.call(entry: nil, source: nil, entry_builder: nil, engine: Accounting::Engine)
-    new(entry, source: source, entry_builder: entry_builder, engine: engine).call
+  def self.call(entry: nil, source: nil, entry_builder: nil, allocation_invoice: nil, engine: Accounting::Engine)
+    new(entry, source: source, entry_builder: entry_builder, allocation_invoice: allocation_invoice, engine: engine).call
   end
 
-  def initialize(entry, source:, entry_builder:, engine:)
+  def initialize(entry, source:, entry_builder:, allocation_invoice:, engine:)
     @entry = entry
     @source = source
     @entry_builder = entry_builder
+    @allocation_invoice = allocation_invoice
     @engine = engine
   end
 
@@ -39,6 +40,7 @@ class Accounting::PostingService
       end
 
       entry.save!
+      Accounting::ReceivableAllocator.call(entry, preferred_invoice: allocation_invoice)
       source.record_posting!(entry) if source
     end
 
@@ -49,7 +51,7 @@ class Accounting::PostingService
 
   private
 
-  attr_reader :entry, :source, :entry_builder, :engine
+  attr_reader :entry, :source, :entry_builder, :allocation_invoice, :engine
 
   def result(proof)
     errors = entry.errors.full_messages

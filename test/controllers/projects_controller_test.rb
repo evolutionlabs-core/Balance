@@ -12,15 +12,24 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     @category = @workspace.accounts.create!(name: "Site Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
   end
 
-  test "creates a project and redirects to the estimates tab for scope entry" do
+  test "creates a project and redirects to its overview" do
     assert_difference("Project.count", 1) do
       post projects_path, params: { project: { customer_id: @customer.id, name: "Villa" } }
     end
 
-    assert_redirected_to project_project_estimates_path(Project.last)
+    assert_redirected_to project_path(Project.last)
   end
 
-  test "updates project details and budget only" do
+  test "edit excludes the project budget" do
+    project = @workspace.projects.create!(customer: @customer, name: "Villa")
+
+    get edit_project_path(project)
+
+    assert_response :success
+    assert_select "input[name='project[cost_budget]']", count: 0
+  end
+
+  test "updates project details without changing the budget" do
     project = @workspace.projects.create!(customer: @customer, name: "Villa")
 
     patch project_path(project), params: {
@@ -31,16 +40,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     project.reload
 
     assert_equal "Villa Updated", project.name
-    assert_equal 10_000_000, project.cost_budget_kobo
-  end
-
-  test "rejects a negative cost budget" do
-    project = @workspace.projects.create!(customer: @customer, name: "Villa")
-
-    patch project_path(project), params: { project: { cost_budget: "-5" } }
-
-    assert_response :unprocessable_content
-    assert_nil project.reload.cost_budget_kobo
+    assert_nil project.cost_budget_kobo
   end
 
   test "ignores unknown nested attributes on update" do
