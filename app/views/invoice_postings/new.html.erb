@@ -1,6 +1,6 @@
 <%= render "shared/modal" do %>
   <%= form_with model: @invoice, url: invoice_posting_path(@invoice), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
-    <%= render "shared/modal/header", title: "Post to ledger" %>
+    <%= render "shared/modal/header", title: "Issue invoice" %>
 
     <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
       <%= render "shared/form_errors", record: @invoice %>
@@ -10,7 +10,10 @@
           <p class="text-sm font-medium text-neutral-950"><%= line_form.object.description %></p>
           <p class="text-sm text-neutral-500"><%= minor_currency(line_form.object.amount_minor, @invoice.currency_code) %></p>
           <%= line_form.label :account_id, "Income account", class: field_label_class %>
-          <%= line_form.collection_select :account_id, @income_accounts, :id, :name, { prompt: "Select income account" }, { required: true, class: field_class } %>
+          <%= render "shared/select_menu", form: line_form, attribute: :account_id,
+              options: options_from_collection_for_select(@income_accounts, :id, :name, line_form.object.account_id),
+              prompt: "Select income account", searchable: true, search_placeholder: "Search income accounts…",
+              empty_message: "No income accounts found", select_data: {}, required: true %>
         </div>
       <% end %>
       <% if @income_accounts.empty? %>
@@ -18,6 +21,6 @@
       <% end %>
     </div>
 
-    <%= render "shared/modal/footer", form: form, submit_label: "Post invoice" %>
+    <%= render "shared/modal/footer", form: form, submit_label: "Issue invoice" %>
   <% end %>
 <% end %>

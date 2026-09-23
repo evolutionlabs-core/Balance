@@ -20,7 +20,7 @@ class InvoicePostingsControllerTest < ActionDispatch::IntegrationTest
     get new_invoice_posting_path(invoice)
 
     assert_response :success
-    assert_select "#modal dialog", text: /Post to ledger/
+    assert_select "#modal dialog", text: /Issue invoice/
     assert_select "#modal select[name='receivable_account_id']", count: 0
     assert_select "#modal select[name='revenue_account_id']", count: 0
     assert_select "#modal select[name='invoice[invoice_lines_attributes][0][account_id]'] option[selected]", text: @revenue.name
@@ -34,7 +34,7 @@ class InvoicePostingsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to invoice_path(invoice)
-    assert_match(/posted/, flash[:notice])
+    assert_match(/issued/, flash[:notice])
     assert invoice.reload.posted?
     assert_equal @revenue, invoice.invoice_lines.first.account
   end

@@ -7,6 +7,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     workspace = workspaces(:ada_store)
     income = workspace.accounts.create!(name: "Consulting income", base_type: "income",
       account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    bank = Account.for_role!(workspace, :checking)
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
@@ -41,17 +42,27 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
 
-    click_on "Post to ledger"
+    click_on "Issue invoice"
     within "#modal dialog" do
       assert_text "Consulting"
       select income.name, from: "Income account"
-      click_on "Post invoice"
+      click_on "Issue invoice"
     end
-    assert_text "Invoice #{invoice.invoice_number} posted."
+    assert_text "Invoice #{invoice.invoice_number} issued."
     assert invoice.reload.posted?
     assert_equal income, invoice.invoice_lines.sole.account
     assert_equal 15_000, invoice.journal_entry.journal_entry_lines.sum(:credit_kobo)
     assert_no_link "Edit"
+
+    click_on "Invoice paid"
+    within "#modal dialog" do
+      select bank.name, from: "Bank or Cash account"
+      click_on "Record payment"
+    end
+    assert_text "Payment recorded for invoice #{invoice.invoice_number}."
+    assert_selector "dd", text: "NGN 0.00"
+    assert_no_link "Invoice paid"
+    assert_equal 0, invoice.reload.balance_due_kobo
   end
 
   private

@@ -112,6 +112,27 @@ class Invoice < ApplicationRecord
     [ total_minor - applied_amount_kobo, 0 ].max
   end
 
+  def record_receipt(account:, received_on:, amount_kobo:)
+    self.class.transaction do
+      workspace.invoices.posted.where(customer_id: customer_id).order(:id).lock.load
+      receivable_applications.reset
+      errors.clear
+      validate_receipt(account, amount_kobo)
+      return failed_posting_result if errors.any?
+
+      receivable_account = Account.for_role!(workspace, :receivable)
+      entry = workspace.journal_entries.build(
+        entry_date: received_on,
+        description: "Payment received for invoice #{invoice_number}",
+        journal_entry_lines_attributes: [
+          { account: account, debit_kobo: amount_kobo, credit_kobo: 0 },
+          { account: receivable_account, debit_kobo: 0, credit_kobo: amount_kobo, counterparty: customer }
+        ]
+      )
+      Accounting::PostingService.call(entry: entry, allocation_invoice: self)
+    end
+  end
+
   def refresh_business_details
     self.business_name = workspace.name
     self.business_email = user.email_address
@@ -169,6 +190,21 @@ class Invoice < ApplicationRecord
           errors.add(:base, "every invoice line account must be workspace income")
         end
       end
+    end
+
+    def validate_receipt(account, amount_kobo)
+      errors.add(:base, "invoice must be issued before recording payment") unless posted?
+      errors.add(:base, "invoice has no outstanding balance") if balance_due_kobo.zero?
+      unless account && workspace.receipt_accounts.exists?(id: account.id)
+        errors.add(:base, "payment account must be a Bank or Cash account in this workspace")
+      end
+      unless amount_kobo.is_a?(Integer) && amount_kobo.positive? && amount_kobo <= balance_due_kobo
+        errors.add(:base, "payment amount must be positive and no more than the balance due")
+      end
+    end
+
+    def failed_posting_result
+      Accounting::PostingService::Result.new(nil, errors.full_messages.uniq, nil)
     end
 
     def journal_entry_draft(receivable_account)

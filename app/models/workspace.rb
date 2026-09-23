@@ -36,6 +36,12 @@ class Workspace < ApplicationRecord
     accounts.where(base_type: "asset").or(credit_card_accounts)
   end
 
+  def receipt_accounts
+    account_type = business? ? "Bank" : "Cash & Liquid Assets"
+    cash_accounts = accounts.where(base_type: "asset", account_type: account_type)
+    cash_accounts.where(role: nil).or(cash_accounts.where.not(role: "suspense")).ordered
+  end
+
   def seed_core_accounts!
     catalog.core.each_key { |role| Account.for_role!(self, role) }
   end

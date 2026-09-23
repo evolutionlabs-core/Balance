@@ -95,7 +95,11 @@
     <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
     <div class="flex flex-wrap items-center gap-2">
       <% unless @invoice.posted? %>
-        <%= link_to "Post to ledger", new_invoice_posting_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
+        <%= link_to "Issue invoice", new_invoice_posting_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
+      <% else %>
+        <% if @invoice.balance_due_kobo.positive? %>
+          <%= link_to "Invoice paid", new_invoice_receipt_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
+        <% end %>
       <% end %>
       <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
     </div>

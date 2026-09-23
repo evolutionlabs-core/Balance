@@ -191,6 +191,30 @@ class InvoiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "rechecks the persisted balance after locking invoices for a receipt" do
+    invoice = build_invoice
+    invoice.save!
+    assert invoice.post(receivable_account: receivable_account).success?
+
+    stale_invoice = Invoice.includes(:receivable_applications).find(invoice.id)
+    assert_predicate stale_invoice.receivable_applications, :loaded?
+    assert Invoice.find(invoice.id).record_receipt(
+      account: Account.for_role!(@workspace, :checking),
+      received_on: Date.current,
+      amount_kobo: 10_000
+    ).success?
+
+    result = stale_invoice.record_receipt(
+      account: Account.for_role!(@workspace, :checking),
+      received_on: Date.current,
+      amount_kobo: invoice.total_minor
+    )
+
+    assert_not result.success?
+    assert_includes result.errors.to_sentence, "no more than the balance due"
+    assert_equal 10_000, stale_invoice.applied_amount_kobo
+  end
+
   test "rejects posting accounts outside the workspace or of the wrong type" do
     invoice = build_invoice
     invoice.save!

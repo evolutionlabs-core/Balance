@@ -68,6 +68,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a", text: "Edit", count: 0
     assert_select "a", text: "Post to ledger", count: 0
+    assert_select "a", text: "Invoice paid"
   end
 
   test "show downloads the saved invoice as a PDF" do

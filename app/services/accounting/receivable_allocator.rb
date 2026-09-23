@@ -1,10 +1,11 @@
 class Accounting::ReceivableAllocator
-  def self.call(journal_entry)
-    new(journal_entry).call
+  def self.call(journal_entry, preferred_invoice: nil)
+    new(journal_entry, preferred_invoice: preferred_invoice).call
   end
 
-  def initialize(journal_entry)
+  def initialize(journal_entry, preferred_invoice:)
     @journal_entry = journal_entry
+    @preferred_invoice = preferred_invoice
   end
 
   def call
@@ -16,7 +17,7 @@ class Accounting::ReceivableAllocator
   end
 
   private
-    attr_reader :journal_entry
+    attr_reader :journal_entry, :preferred_invoice
 
     def reverse_original_applications
       journal_entry.reverses_journal_entry.receivable_applications.find_each do |application|
@@ -72,7 +73,10 @@ class Accounting::ReceivableAllocator
 
     def allocate_customer(customer, amount_kobo)
       remaining_kobo = amount_kobo
-      invoices = journal_entry.workspace.invoices.posted.where(customer: customer).order(:issue_date, :id).lock
+      invoices = journal_entry.workspace.invoices.posted.where(customer: customer).order(:id).lock.to_a
+      invoices.sort_by! do |invoice|
+        [ invoice == preferred_invoice ? 0 : 1, invoice.issue_date || invoice.created_at.to_date, invoice.id ]
+      end
 
       invoices.each do |invoice|
         break if remaining_kobo.zero?

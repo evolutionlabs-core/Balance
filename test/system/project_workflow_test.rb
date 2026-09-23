@@ -79,7 +79,7 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_equal 6_000_000, invoice.total_minor
     assert_nil invoice.invoice_lines.sole.service
     assert invoice.draft?
-    click_on "Post to ledger"
+    click_on "Issue invoice"
     assert_selector "#modal select", count: 1
   end
 

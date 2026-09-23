@@ -24,6 +24,10 @@ module Projects
       project.invoices.posted.includes(:receivable_applications).sum(&:balance_due_kobo)
     end
 
+    def amount_received_kobo
+      project.invoices.posted.includes(:receivable_applications).sum(&:applied_amount_kobo)
+    end
+
     private
       attr_reader :project
   end
