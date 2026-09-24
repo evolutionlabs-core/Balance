@@ -1,0 +1,7 @@
+<h1 class="text-xl font-semibold">Review estimate <%= @estimate.number %></h1>
+<p class="mt-2 text-sm text-neutral-600">Review the details below, then accept or decline this estimate.</p>
+<%= render "projects/estimates/document", document: @estimate.review_content %>
+<div class="mt-6 flex gap-3">
+  <%= button_to "Accept estimate", estimate_review_path(params[:token]), params: { decision: "accepted" }, class: primary_button_class %>
+  <%= button_to "Decline estimate", estimate_review_path(params[:token]), params: { decision: "declined" }, class: secondary_button_class %>
+</div>

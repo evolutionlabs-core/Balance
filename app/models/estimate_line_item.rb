@@ -1,5 +1,5 @@
 class EstimateLineItem < ApplicationRecord
-  belongs_to :estimate
+  belongs_to :estimate, touch: true
   belongs_to :service, optional: true
 
   validates :description, presence: true

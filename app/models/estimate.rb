@@ -1,7 +1,14 @@
 class Estimate < ApplicationRecord
   include AASM
 
+  class InvalidClientReview < StandardError; end
+
+  generates_token_for :client_review, expires_in: 30.days do
+    [ status, lock_version, Digest::SHA256.hexdigest(review_content.to_json) ]
+  end
+
   STATUSES = %w[draft sent approved declined invoiced].freeze
+  CLIENT_DECISIONS = %w[accepted declined].freeze
 
   belongs_to :workspace
   belongs_to :user
@@ -18,6 +25,7 @@ class Estimate < ApplicationRecord
   end
 
   validates :status, inclusion: { in: STATUSES }
+  validates :client_decision, inclusion: { in: CLIENT_DECISIONS }, allow_nil: true
   validates :currency_code, inclusion: { in: %w[NGN] }
   validate :customer_belongs_to_workspace
   validate :project_belongs_to_workspace
@@ -84,6 +92,37 @@ class Estimate < ApplicationRecord
     )
   end
 
+  def review_content
+    attributes.slice("currency_code", "business_name", "business_email", "business_address",
+      "bill_to_name", "bill_to_email", "bill_to_address", "notes", "subtotal_minor", "total_minor").merge(
+        "number" => number,
+        "business_name" => business_name.presence || workspace.name,
+        "line_items" => line_items.sort_by(&:position).map do |line|
+          line.attributes.slice("description", "quantity", "rate_minor", "amount_minor")
+        end
+      ).as_json
+  end
+
+  def prepare_client_review
+    with_lock do
+      send_to_client! if draft?
+      raise InvalidClientReview unless sent?
+    end
+  end
+
+  def record_client_decision(token, decision)
+    with_lock do
+      unless sent? && CLIENT_DECISIONS.include?(decision) && self.class.find_by_token_for(:client_review, token)&.id == id
+        raise InvalidClientReview
+      end
+
+      self.client_review_snapshot = review_content
+      self.client_decision = decision
+      self.client_decided_at = Time.current
+      decision == "accepted" ? approve! : decline!
+    end
+  end
+
   def use_customer_details
     self.bill_to_name = customer&.name
     self.bill_to_email = customer&.email
@@ -91,10 +130,12 @@ class Estimate < ApplicationRecord
   end
 
   def refresh_business_details
-    self.business_name = workspace.name
-    self.business_email = user.email_address
-    self.business_address = workspace.address
-    save!
+    with_lock do
+      self.business_name = workspace.name
+      self.business_email = user.email_address
+      self.business_address = workspace.address
+      save!
+    end
   end
 
   def populate_party_details

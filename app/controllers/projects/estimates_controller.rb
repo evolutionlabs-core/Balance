@@ -46,7 +46,7 @@ class Projects::EstimatesController < ApplicationController
   end
 
   def update
-    if @estimate.update(estimate_params)
+    if @estimate.with_lock { @estimate.update(estimate_params) }
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_out_of_frame project_estimate_path(@estimate), notice: "Estimate saved." }
