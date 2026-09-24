@@ -149,8 +149,9 @@ class EstimateReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to project_estimate_path(@estimate)
     assert @estimate.reload.sent?
     follow_redirect!
-    assert_select "input#client-review-link[readonly]"
-    assert_select "button", text: "Copy link"
+    assert_select "button", text: "Client actions"
+    assert_select "button[data-copy-value-value]", text: /Copy client link/
+    assert_select "input#client-review-link", count: 0
     assert_select "form[action=?]", project_estimate_approval_path(@estimate)
     assert_select "form[action=?]", project_estimate_decline_path(@estimate)
     assert_select "a[href=?]", project_estimate_path(@estimate, format: :pdf)

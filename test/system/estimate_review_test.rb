@@ -19,11 +19,12 @@ class EstimateReviewTest < ApplicationSystemTestCase
     assert_current_path root_path
 
     visit project_estimate_path(@estimate)
-    click_on "Create client review link"
-    assert_selector "input#client-review-link"
-    link = find("#client-review-link").value
-    click_on "Copy link"
-    assert_selector "[role='status']", text: /Link copied|Select and copy/
+    click_on "Create client link"
+    click_on "Client actions"
+    copy_button = find("button[data-controller='copy']")
+    link = copy_button["data-copy-value-value"]
+    copy_button.click
+    assert_button "Link copied"
 
     Capybara.reset_sessions!
     visit link
