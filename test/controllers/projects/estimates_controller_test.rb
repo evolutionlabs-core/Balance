@@ -65,6 +65,9 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "span[aria-current='page']", text: "Estimates"
     assert_select "td", text: /EST-/
+    estimate = @project.estimates.last
+    assert_select "button[aria-label=?]", "Actions for #{estimate.number}"
+    assert_select "a[href=?]", edit_project_estimate_path(estimate), text: "Edit"
   end
 
   test "renders the full-page editor for new and edit" do

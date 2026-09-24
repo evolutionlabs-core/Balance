@@ -20,7 +20,7 @@ class EstimateReviewTest < ApplicationSystemTestCase
 
     visit project_estimate_path(@estimate)
     click_on "Create client link"
-    click_on "Client actions"
+    find("button[aria-label='Client actions']").click
     copy_button = find("button[data-controller='copy']")
     link = copy_button["data-copy-value-value"]
     copy_button.click

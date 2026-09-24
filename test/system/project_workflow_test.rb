@@ -70,7 +70,8 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_selector "a[href='#{project_estimate_path(estimate, format: :pdf)}']", text: "Download"
     click_on "Mark as sent"
     assert_text "Estimate #{estimate.number} sent."
-    click_on "Approve"
+    find("button[aria-label='Client actions']").click
+    click_on "Approve manually"
     assert_text "Estimate #{estimate.number} approved."
     click_on "Convert to Invoice"
     assert_current_path %r{\A/invoices/\d+\z}
