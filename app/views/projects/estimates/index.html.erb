@@ -22,7 +22,7 @@
           <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Estimate</th>
           <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Total</th>
           <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
-          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500"><span class="sr-only">Actions</span></th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
         </tr>
       </thead>
       <tbody class="bg-white">
@@ -39,8 +39,41 @@
                 <%= estimate_status_badge(estimate) %>
               <% end %>
             </td>
-            <td class="px-4 py-4 text-right text-sm whitespace-nowrap">
-              <%= link_to "Edit", edit_project_estimate_path(estimate), class: "font-medium text-[#0f7082] hover:underline" %>
+            <td class="px-4 py-2 text-right text-sm whitespace-nowrap">
+              <div data-controller="menu" data-action="keydown->menu#dismiss" class="relative inline-block text-left">
+                <button type="button" data-menu-target="button" data-action="menu#toggle"
+                    class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                    aria-label="Actions for <%= estimate.number %>" aria-haspopup="menu" aria-expanded="false">
+                  <%= inline_svg_tag "icons/dots-vertical.svg", class: "h-4 w-4" %>
+                </button>
+                <div data-menu-target="menu" role="menu" class="z-50 hidden w-48 rounded-md border border-neutral-200 bg-white p-1 text-left shadow-md">
+                  <% if estimate.draft? %>
+                    <%= button_to "Mark as sent", project_estimate_delivery_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                    <%= button_to "Create client link", project_estimate_review_link_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                  <% elsif estimate.sent? %>
+                    <button type="button" role="menuitem" data-controller="copy"
+                        data-copy-value-value="<%= estimate_review_url(estimate.generate_token_for(:client_review)) %>"
+                        data-action="copy#copy" class="<%= menu_item_class %>">
+                      <span data-copy-target="defaultIcon">Copy client link</span>
+                      <span hidden data-copy-target="doneIcon" class="text-green-600">Link copied</span>
+                    </button>
+                    <%= button_to "Approve manually", project_estimate_approval_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                    <%= button_to "Decline manually", project_estimate_decline_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                  <% elsif estimate.may_convert_to_invoice? %>
+                    <%= button_to "Convert to invoice", project_estimate_conversion_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                  <% elsif estimate.may_reopen? %>
+                    <%= button_to "Reopen estimate", project_estimate_reopening_path(estimate),
+                        class: menu_item_class, form: { class: "contents" }, role: "menuitem" %>
+                  <% end %>
+                  <%= link_to "Download PDF", project_estimate_path(estimate, format: :pdf),
+                      class: menu_item_class, role: "menuitem", data: { turbo: false } %>
+                </div>
+              </div>
             </td>
           </tr>
         <% end %>

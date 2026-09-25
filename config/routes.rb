@@ -11,6 +11,9 @@ Rails.application.routes.draw do
     end
   end
 
+  get "estimate_reviews/:token", to: "estimate_reviews#show", as: :estimate_review
+  post "estimate_reviews/:token", to: "estimate_reviews#create"
+
   resource :session, only: %i[new create destroy]
   resource :registration, only: %i[new create]
   resources :passwords, param: :token, only: %i[new create edit update]
@@ -44,6 +47,7 @@ Rails.application.routes.draw do
   resources :projects, only: %i[index new create show edit update] do
     scope module: :projects, as: :project do
       resources :estimates, shallow: true, only: %i[index new create show edit update destroy] do
+        resource :review_link, only: %i[create]
         resource :delivery, only: %i[create]
         resource :approval, only: %i[create]
         resource :decline, only: %i[create]

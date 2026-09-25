@@ -65,6 +65,31 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "span[aria-current='page']", text: "Estimates"
     assert_select "td", text: /EST-/
+    estimate = @project.estimates.last
+    assert_select "button[aria-label=?]", "Actions for #{estimate.number}"
+    assert_select "form[action=?]", project_estimate_delivery_path(estimate)
+    assert_select "form[action=?]", project_estimate_review_link_path(estimate)
+    assert_select "a[href=?]", project_estimate_path(estimate, format: :pdf), text: "Download PDF"
+  end
+
+  test "lists the lifecycle actions allowed for each estimate" do
+    sent = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+    sent.send_to_client!
+    approved = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+    approved.send_to_client!
+    approved.approve!
+
+    get project_project_estimates_path(@project)
+
+    assert_select "tr", text: /#{sent.number}/ do
+      assert_select "button[data-copy-value-value]", text: /Copy client link/
+      assert_select "form[action=?]", project_estimate_approval_path(sent)
+      assert_select "form[action=?]", project_estimate_decline_path(sent)
+    end
+    assert_select "tr", text: /#{approved.number}/ do
+      assert_select "form[action=?]", project_estimate_conversion_path(approved)
+      assert_select "a[href=?]", project_estimate_path(approved, format: :pdf), text: "Download PDF"
+    end
   end
 
   test "renders the full-page editor for new and edit" do

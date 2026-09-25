@@ -8,7 +8,7 @@ class Projects::ActionsController < ApplicationController
     end
 
     def respond_with_transition(notice:, alert:)
-      yield
+      @estimate.with_lock { yield }
       redirect_to project_estimate_path(@estimate), notice: notice
     rescue AASM::InvalidTransition
       redirect_to project_estimate_path(@estimate), alert: alert
