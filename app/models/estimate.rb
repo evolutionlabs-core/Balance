@@ -130,12 +130,10 @@ class Estimate < ApplicationRecord
   end
 
   def refresh_business_details
-    with_lock do
-      self.business_name = workspace.name
-      self.business_email = user.email_address
-      self.business_address = workspace.address
-      save!
-    end
+    self.business_name = workspace.name
+    self.business_email = user.email_address
+    self.business_address = workspace.address
+    save!
   end
 
   def populate_party_details
