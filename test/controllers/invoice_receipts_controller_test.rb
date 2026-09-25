@@ -19,7 +19,7 @@ class InvoiceReceiptsControllerTest < ActionDispatch::IntegrationTest
       due_date: Date.current + 30.days,
       invoice_lines_attributes: [ { service: service, description: "Work", quantity: 1, rate_minor: 100_000 } ]
     )
-    assert @invoice.post(receivable_account: @receivable).success?
+    assert @invoice.issue.success?
   end
 
   test "new offers only workspace Bank or Cash accounts" do
@@ -103,7 +103,7 @@ class InvoiceReceiptsControllerTest < ActionDispatch::IntegrationTest
         { service: @invoice.invoice_lines.first.service, description: "Older work", quantity: 1, rate_minor: 50_000 }
       ]
     )
-    assert older_invoice.post(receivable_account: @receivable).success?
+    assert older_invoice.issue.success?
 
     post invoice_receipt_path(@invoice), params: {
       invoice_receipt: { account_id: @bank.id, received_on: Date.current, amount: "1000.00" }

@@ -59,7 +59,8 @@ class ProjectTest < ActiveSupport::TestCase
       status: "draft", invoice_lines_attributes: [ { service: @service, description: "Draft work", quantity: 1, rate_minor: 125_000 } ])
     invoice = project.invoices.create!(workspace: @workspace, user: @user, customer: @customer,
       invoice_lines_attributes: [ { service: @service, description: "Posted work", quantity: 1, rate_minor: 75_000 } ])
-    assert invoice.post(receivable_account: Account.for_role!(@workspace, :receivable)).success?
+    Account.for_role!(@workspace, :receivable)
+    assert invoice.issue.success?
 
     summary = project.summary
 

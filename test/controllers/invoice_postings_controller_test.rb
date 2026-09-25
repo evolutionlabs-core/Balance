@@ -14,23 +14,26 @@ class InvoicePostingsControllerTest < ActionDispatch::IntegrationTest
     @service = @workspace.services.create!(name: "Posting service", income_account: @revenue)
   end
 
-  test "new shows each line income account without an accounts receivable picker" do
+  test "new confirms the business action without account controls" do
     invoice = create_invoice
 
     get new_invoice_posting_path(invoice)
 
     assert_response :success
     assert_select "#modal dialog", text: /Issue invoice/
-    assert_select "#modal select[name='receivable_account_id']", count: 0
-    assert_select "#modal select[name='revenue_account_id']", count: 0
-    assert_select "#modal select[name='invoice[invoice_lines_attributes][0][account_id]'] option[selected]", text: @revenue.name
+    assert_select "#modal", text: /Hosting/
+    assert_select "#modal select", count: 0
   end
 
-  test "create posts the invoice and redirects with a notice" do
+  test "create ignores account parameters and posts from saved mappings" do
     invoice = create_invoice
+    other_revenue = @workspace.accounts.create!(name: "Other Posting Income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
 
     assert_difference("JournalEntry.count", 1) do
-      post invoice_posting_path(invoice)
+      post invoice_posting_path(invoice), params: {
+        invoice: { invoice_lines_attributes: { "0" => { id: invoice.invoice_lines.sole.id, account_id: other_revenue.id } } }
+      }
     end
 
     assert_redirected_to invoice_path(invoice)
@@ -49,7 +52,7 @@ class InvoicePostingsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference("JournalEntry.count") { post invoice_posting_path(invoice) }
 
     assert_response :unprocessable_content
-    assert_select "#modal", text: /workspace income/
+    assert_select "#modal", text: /income account must be an income account in this workspace/
     assert invoice.reload.draft?
   end
 

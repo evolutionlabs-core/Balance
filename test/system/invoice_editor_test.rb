@@ -7,6 +7,8 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     workspace = workspaces(:ada_store)
     income = workspace.accounts.create!(name: "Consulting income", base_type: "income",
       account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    workspace.update!(default_sales_account: income)
+    Account.for_role!(workspace, :receivable)
     bank = Account.for_role!(workspace, :checking)
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
@@ -45,7 +47,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     click_on "Issue invoice"
     within "#modal dialog" do
       assert_text "Consulting"
-      select income.name, from: "Income account"
+      assert_no_selector "select"
       click_on "Issue invoice"
     end
     assert_text "Invoice #{invoice.invoice_number} issued."

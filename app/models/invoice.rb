@@ -17,6 +17,10 @@ class Invoice < ApplicationRecord
 
   enum :status, { draft: "draft", posted: "posted" }, validate: true
 
+  generates_token_for :client_view, expires_in: 90.days do
+    [ workspace_id, status, journal_entry_id ]
+  end
+
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
   after_create :assign_invoice_number, if: -> { invoice_number.blank? }
@@ -70,28 +74,8 @@ class Invoice < ApplicationRecord
     save!
   end
 
-  def post(receivable_account:, line_accounts: [])
-    result = nil
-    with_lock do
-      if posted?
-        errors.add(:base, "has already been posted")
-        return Accounting::PostingService::Result.new(nil, errors.full_messages, nil)
-      end
-
-      invoice_lines.reset
-      invoice_lines.lock.load
-      self.invoice_lines_attributes = line_accounts if line_accounts.present?
-      valid?
-      validate_posting_accounts(receivable_account)
-      if errors.any?
-        return Accounting::PostingService::Result.new(nil, errors.full_messages.uniq, nil)
-      end
-
-      save!
-      result = Accounting::PostingService.call(source: self, entry_builder: -> { journal_entry_draft(receivable_account) })
-      raise ActiveRecord::Rollback unless result.success?
-    end
-    result
+  def issue
+    Accounting::InvoiceIssuance.call(invoice: self)
   end
 
   def record_posting!(entry)
@@ -176,22 +160,6 @@ class Invoice < ApplicationRecord
       update_column(:invoice_number, invoice_number)
     end
 
-    def validate_posting_accounts(receivable_account)
-      if receivable_account.blank? || receivable_account.workspace_id != workspace_id
-        errors.add(:base, "receivable account must belong to the workspace")
-      elsif receivable_account.role != "receivable"
-        errors.add(:base, "receivable account must be Accounts Receivable")
-      end
-
-      invoice_lines.each do |line|
-        if line.account.blank?
-          errors.add(:base, "every invoice line must have an income account")
-        elsif line.account.workspace_id != workspace_id || line.account.base_type != "income"
-          errors.add(:base, "every invoice line account must be workspace income")
-        end
-      end
-    end
-
     def validate_receipt(account, amount_kobo)
       errors.add(:base, "invoice must be issued before recording payment") unless posted?
       errors.add(:base, "invoice has no outstanding balance") if balance_due_kobo.zero?
@@ -205,17 +173,6 @@ class Invoice < ApplicationRecord
 
     def failed_posting_result
       Accounting::PostingService::Result.new(nil, errors.full_messages.uniq, nil)
-    end
-
-    def journal_entry_draft(receivable_account)
-      workspace.journal_entries.build(
-        entry_date: issue_date || Date.current,
-        description: "Invoice #{invoice_number}",
-        journal_entry_lines_attributes:
-          invoice_lines.map do |line|
-            { account: line.account, debit_kobo: 0, credit_kobo: line.amount_minor }
-          end.push(account: receivable_account, debit_kobo: total_minor, credit_kobo: 0, counterparty: customer)
-      )
     end
 
     def calculate_totals

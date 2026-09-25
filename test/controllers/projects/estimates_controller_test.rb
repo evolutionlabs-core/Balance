@@ -232,16 +232,19 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
       workspace: @workspace, user: @user, customer: @customer,
       line_items_attributes: { "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" } }
     )
-    estimate.send_to_client!
-    estimate.approve!
-
-    post project_estimate_conversion_path(estimate)
+    assert_no_difference("JournalEntry.count") do
+      estimate.send_to_client!
+      estimate.approve!
+      post project_estimate_conversion_path(estimate)
+    end
     invoice = Invoice.order(:id).last
 
     assert estimate.reload.invoiced?
     assert_equal @project, invoice.project
     assert_equal estimate, invoice.estimate
     assert_equal 12 * 500_000, invoice.total_minor
+    assert invoice.draft?
+    assert_nil invoice.journal_entry
 
     receivable = Account.for_role!(@workspace, :receivable)
     assert_difference("JournalEntry.count", 1) do

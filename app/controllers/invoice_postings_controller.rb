@@ -1,16 +1,12 @@
 class InvoicePostingsController < ApplicationController
   before_action :set_invoice
   before_action :ensure_draft, only: %i[new create]
-  before_action :set_income_accounts
 
   def new
   end
 
   def create
-    receivable_account = Account.for_role!(current_workspace, :receivable)
-    attributes = params.fetch(:invoice, ActionController::Parameters.new).permit(invoice_lines_attributes: [ :id, :account_id ])
-    result = @invoice.post(receivable_account: receivable_account,
-      line_accounts: attributes.fetch(:invoice_lines_attributes, []))
+    result = @invoice.issue
 
     if result.success?
       redirect_out_of_frame invoice_path(@invoice), notice: "Invoice #{@invoice.invoice_number} issued."
@@ -21,10 +17,6 @@ class InvoicePostingsController < ApplicationController
   end
 
   private
-    def set_income_accounts
-      @income_accounts = current_workspace.accounts.where(base_type: "income").ordered
-    end
-
     def set_invoice
       @invoice = current_workspace.invoices.includes(:customer, :invoice_lines).find(params[:invoice_id])
     end
