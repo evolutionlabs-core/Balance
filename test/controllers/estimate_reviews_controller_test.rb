@@ -174,16 +174,12 @@ class EstimateReviewsControllerTest < ActionDispatch::IntegrationTest
     assert @estimate.reload.approved?
   end
 
-  test "owner can inspect the original client decision after later edits" do
+  test "preserves the original client review after later edits" do
     post estimate_review_path(@token), params: { decision: "accepted" }
     @estimate.reload.update!(notes: "Updated terms")
-    sign_in_as(users(:one))
 
-    get project_estimate_path(@estimate)
-    assert_response :success
-    assert_select "summary", text: /Client accepted/
-    assert_select "details", text: /Review these terms/
-    assert_select "details", text: /Updated terms/, count: 0
+    assert_equal "Review these terms", @estimate.client_review_snapshot.fetch("notes")
+    assert_equal "Updated terms", @estimate.notes
   end
 
   test "creating links requires authentication and workspace ownership" do
