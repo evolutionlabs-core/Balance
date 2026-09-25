@@ -54,8 +54,8 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
   test "locks posted invoices as read-only" do
     invoice = create_invoice
-    receivable = Account.for_role!(@workspace, :receivable)
-    invoice.post(receivable_account: receivable)
+    Account.for_role!(@workspace, :receivable)
+    invoice.issue
 
     get edit_invoice_path(invoice)
     assert_redirected_to invoice_path(invoice)
@@ -95,7 +95,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     invoice = create_invoice
     receivable = Account.for_role!(@workspace, :receivable)
     bank = Account.for_role!(@workspace, :checking)
-    assert invoice.post(receivable_account: receivable).success?
+    assert invoice.issue.success?
     receipt = @workspace.journal_entries.build(
       description: "Partial customer receipt",
       entry_date: Date.current,

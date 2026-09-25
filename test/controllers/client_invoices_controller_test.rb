@@ -12,7 +12,8 @@ class ClientInvoicesControllerTest < ActionDispatch::IntegrationTest
     @invoice = @workspace.invoices.create!(user: @user, customer: @customer, issue_date: Date.current,
       due_date: Date.current + 30.days, currency_code: "NGN",
       invoice_lines_attributes: [ { service: service, description: "Consulting", quantity: 2, rate: 150 } ])
-    assert @invoice.post(receivable_account: Account.for_role!(@workspace, :receivable)).success?
+    Account.for_role!(@workspace, :receivable)
+    assert @invoice.issue.success?
     @token = @invoice.generate_token_for(:client_view)
   end
 

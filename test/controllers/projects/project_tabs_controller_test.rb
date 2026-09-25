@@ -30,7 +30,8 @@ class Projects::ProjectTabsControllerTest < ActionDispatch::IntegrationTest
       status: "approved", line_items_attributes: [ { service: @service, description: "Approved work", quantity: 1, rate_minor: 50_000 } ])
     invoice = @project.invoices.create!(workspace: @workspace, user: @user, customer: @customer,
       invoice_lines_attributes: [ { service: @service, description: "Posted work", quantity: 1, rate_minor: 30_000 } ])
-    assert invoice.post(receivable_account: Account.for_role!(@workspace, :receivable)).success?
+    Account.for_role!(@workspace, :receivable)
+    assert invoice.issue.success?
 
     get project_path(@project)
 
