@@ -17,6 +17,10 @@ class Invoice < ApplicationRecord
 
   enum :status, { draft: "draft", posted: "posted" }, validate: true
 
+  generates_token_for :client_view, expires_in: 90.days do
+    [ workspace_id, status, journal_entry_id ]
+  end
+
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
   after_create :assign_invoice_number, if: -> { invoice_number.blank? }

@@ -68,7 +68,17 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a", text: "Edit", count: 0
     assert_select "a", text: "Post to ledger", count: 0
+    assert_select "button[data-copy-value-value]", text: /Copy secure link/
     assert_select "a", text: "Invoice paid"
+  end
+
+  test "draft invoices do not expose client links" do
+    invoice = create_invoice
+
+    get invoice_path(invoice)
+
+    assert_response :success
+    assert_select "button[data-copy-value-value]", text: /Copy secure link/, count: 0
   end
 
   test "show downloads the saved invoice as a PDF" do
