@@ -112,7 +112,7 @@ class Accounting::ReceivableAllocatorTest < ActiveSupport::TestCase
           { service: @service, description: "Customer work", quantity: 1, rate_minor: amount_kobo }
         ]
       )
-      result = invoice.post(receivable_account: @receivable)
+      result = invoice.issue
       assert result.success?, result.errors.to_sentence
       invoice.reload
     end

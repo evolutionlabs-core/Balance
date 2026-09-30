@@ -10,6 +10,7 @@ class InvoiceTest < ActiveSupport::TestCase
       email: "customer@example.com"
     )
     @service = @workspace.services.create!(name: "Consulting service", income_account: revenue_account)
+    Account.for_role!(@workspace, :receivable)
   end
 
   test "calculates line amounts and invoice totals in minor units" do
@@ -107,7 +108,7 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
   end
 
-  test "free-form invoice accounts are snapshotted and reviewed before posting" do
+  test "free-form invoice account snapshots survive later default changes" do
     @workspace.update!(default_sales_account: revenue_account)
     invoice = build_invoice(lines: [ { service: nil, description: "One-off work", quantity: 2, rate_minor: 500 } ])
     invoice.save!
@@ -119,11 +120,10 @@ class InvoiceTest < ActiveSupport::TestCase
     invoice.update!(due_date: Date.current + 20)
     assert_equal revenue_account, invoice.reload.invoice_lines.sole.account
 
-    result = invoice.post(receivable_account: receivable_account,
-      line_accounts: [ { id: invoice.invoice_lines.sole.id, account_id: replacement.id } ])
+    result = invoice.issue
     assert result.success?, result.errors.to_sentence
-    assert_equal replacement, invoice.reload.invoice_lines.sole.account
-    assert_equal [ [ receivable_account.id, 1000, 0 ], [ replacement.id, 0, 1000 ] ].sort,
+    assert_equal revenue_account, invoice.reload.invoice_lines.sole.account
+    assert_equal [ [ receivable_account.id, 1000, 0 ], [ revenue_account.id, 0, 1000 ] ].sort,
       result.entry.journal_entry_lines.map { |line| [ line.account_id, line.debit_kobo, line.credit_kobo ] }.sort
 
     reversal = result.entry.reverse!
@@ -132,20 +132,13 @@ class InvoiceTest < ActiveSupport::TestCase
       reversal.journal_entry_lines.map { |line| [ line.account_id, line.debit_kobo, line.credit_kobo ] }.sort
   end
 
-  test "unmapped drafts cannot post and invalid review does not persist changes" do
+  test "unmapped drafts cannot be issued" do
     invoice = build_invoice(lines: [ { service: nil, description: "One-off work", quantity: 1, rate_minor: 500 } ])
     invoice.save!
     assert_no_difference("JournalEntry.count") do
-      result = invoice.post(receivable_account: receivable_account)
+      result = invoice.issue
       assert_not result.success?
       assert_includes result.errors.to_sentence, "income account"
-    end
-
-    foreign = Account.for_role!(workspaces(:bola_shop), :uncategorized_income)
-    assert_no_difference("JournalEntry.count") do
-      result = invoice.post(receivable_account: receivable_account,
-        line_accounts: [ { id: invoice.invoice_lines.sole.id, account_id: foreign.id } ])
-      assert_not result.success?
     end
     assert_nil invoice.reload.invoice_lines.sole.account
     assert invoice.draft?
@@ -161,7 +154,7 @@ class InvoiceTest < ActiveSupport::TestCase
       account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
     invoice.invoice_lines.first.update!(account: other_income)
 
-    result = invoice.post(receivable_account: receivable_account)
+    result = invoice.issue
 
     assert result.success?, result.errors.to_sentence
     assert invoice.reload.posted?
@@ -182,10 +175,10 @@ class InvoiceTest < ActiveSupport::TestCase
     invoice = build_invoice
     invoice.save!
 
-    assert invoice.post(receivable_account: receivable_account).success?
+    assert invoice.issue.success?
 
     assert_no_difference("JournalEntry.count") do
-      result = invoice.post(receivable_account: receivable_account)
+      result = invoice.issue
 
       assert_not result.success?
     end
@@ -194,7 +187,7 @@ class InvoiceTest < ActiveSupport::TestCase
   test "rechecks the persisted balance after locking invoices for a receipt" do
     invoice = build_invoice
     invoice.save!
-    assert invoice.post(receivable_account: receivable_account).success?
+    assert invoice.issue.success?
 
     stale_invoice = Invoice.includes(:receivable_applications).find(invoice.id)
     assert_predicate stale_invoice.receivable_applications, :loaded?
@@ -215,32 +208,17 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_equal 10_000, stale_invoice.applied_amount_kobo
   end
 
-  test "rejects posting accounts outside the workspace or of the wrong type" do
+  test "rejects an invalid saved income account" do
     invoice = build_invoice
     invoice.save!
-    other_workspace = workspaces(:bola_shop)
-    foreign = other_workspace.accounts.create!(name: "Foreign", base_type: "asset",
-      account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    bank_account = @workspace.accounts.create!(name: "Not Receivable", base_type: "asset",
-      account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
     expense_account = @workspace.accounts.create!(name: "Materials", base_type: "expense",
       account_type: "Personal Outflows", detail_type: "Transportation")
 
-    result = invoice.post(receivable_account: foreign)
-
-    assert_not result.success?
-    assert_includes result.errors.to_sentence, "receivable account must belong to the workspace"
-
-    result = invoice.post(receivable_account: bank_account)
-
-    assert_not result.success?
-    assert_includes result.errors.to_sentence, "receivable account must be Accounts Receivable"
-
     invoice.invoice_lines.first.update_column(:account_id, expense_account.id)
-    result = invoice.post(receivable_account: receivable_account)
+    result = invoice.issue
 
     assert_not result.success?
-    assert_includes result.errors.to_sentence, "every invoice line account must be workspace income"
+    assert_includes result.errors.to_sentence, "income account must be an income account in this workspace"
     assert invoice.reload.draft?
     assert_nil invoice.journal_entry_id
   end
@@ -248,7 +226,7 @@ class InvoiceTest < ActiveSupport::TestCase
   test "locks lines once posted" do
     invoice = build_invoice
     invoice.save!
-    invoice.post(receivable_account: receivable_account)
+    invoice.issue
     line = invoice.reload.invoice_lines.first
 
     assert_not line.update(description: "Changed")

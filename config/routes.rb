@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  scope :client, as: :client do
+    resources :invoices, only: :show, param: :token, controller: "client_invoices"
+  end
+
   resources :models, only: %i[index show], controller: "llm/models"
   resource :model_catalog, only: %i[update], controller: "llm/model_catalogs"
 

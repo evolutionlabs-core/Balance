@@ -1,0 +1,16 @@
+<% content_for :title, "Invoice #{@invoice.invoice_number}" %>
+
+<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Secure invoice</p>
+    <h1 class="mt-1 text-lg font-semibold text-neutral-950"><%= @invoice.invoice_number %></h1>
+  </div>
+  <%= link_to "Download PDF", client_invoice_path(params[:token], format: :pdf),
+      class: primary_button_class(size: :sm), data: { turbo: false } %>
+</div>
+
+<%= render "invoices/document", invoice: @invoice %>
+
+<p class="mt-5 text-center text-xs text-neutral-500">
+  This private invoice was shared with you by <%= @invoice.business_name.presence || @invoice.workspace.name %>.
+</p>

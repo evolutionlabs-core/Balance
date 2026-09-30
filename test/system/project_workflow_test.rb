@@ -7,6 +7,10 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     @workspace = workspaces(:ada_store)
     @bank = @workspace.accounts.create!(name: "Workflow Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
     @category = @workspace.accounts.create!(name: "Workflow Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    income = @workspace.accounts.create!(name: "Workflow Income", base_type: "income",
+      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @workspace.update!(default_sales_account: income)
+    Account.for_role!(@workspace, :receivable)
     @customer = @workspace.customers.create!(name: "Workflow Customer", customer_type: "business", email: "workflow@example.com")
     sign_in(@user)
   end
@@ -81,7 +85,11 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_nil invoice.invoice_lines.sole.service
     assert invoice.draft?
     click_on "Issue invoice"
-    assert_selector "#modal select", count: 1
+    within "#modal dialog" do
+      assert_no_selector "select"
+      click_on "Issue invoice"
+    end
+    assert invoice.reload.posted?
   end
 
   test "creates a task then logs time against it from the task row" do
