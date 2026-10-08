@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -194,6 +194,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_000100) do
     t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
     t.index ["counterparty_type", "counterparty_id"], name: "index_journal_entry_lines_on_counterparty"
     t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
+  end
+
+  create_table "ledger_accounts", force: :cascade do |t|
+    t.string "base_type", null: false
+    t.datetime "created_at", null: false
+    t.bigint "ledger_id", null: false
+    t.string "name", null: false
+    t.string "normal_balance", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ledger_id", "name"], name: "index_ledger_accounts_on_ledger_id_and_name", unique: true
+    t.index ["ledger_id"], name: "index_ledger_accounts_on_ledger_id"
+    t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying, 'liability'::character varying, 'equity'::character varying, 'revenue'::character varying, 'expense'::character varying]::text[])", name: "chk_ledger_accounts_base_type"
+    t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying, 'credit'::character varying]::text[])", name: "chk_ledger_accounts_normal_balance"
+  end
+
+  create_table "ledger_entries", force: :cascade do |t|
+    t.string "action"
+    t.datetime "created_at", null: false
+    t.date "effective_date", null: false
+    t.bigint "ledger_id", null: false
+    t.bigint "source_id"
+    t.string "source_type"
+    t.datetime "updated_at", null: false
+    t.index ["ledger_id", "effective_date"], name: "index_ledger_entries_on_ledger_id_and_effective_date"
+    t.index ["ledger_id", "source_type", "source_id", "action"], name: "idx_ledger_entries_unique_source_effect", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL) AND (action IS NOT NULL))"
+    t.index ["ledger_id"], name: "index_ledger_entries_on_ledger_id"
+  end
+
+  create_table "ledger_lines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "credit", precision: 19, scale: 4, default: "0.0", null: false
+    t.decimal "debit", precision: 19, scale: 4, default: "0.0", null: false
+    t.bigint "ledger_account_id", null: false
+    t.bigint "ledger_entry_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ledger_account_id"], name: "index_ledger_lines_on_ledger_account_id"
+    t.index ["ledger_entry_id"], name: "index_ledger_lines_on_ledger_entry_id"
+    t.check_constraint "debit > 0::numeric AND credit = 0::numeric OR credit > 0::numeric AND debit = 0::numeric", name: "chk_ledger_lines_one_sided_non_zero"
+  end
+
+  create_table "ledgers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "currency_code", null: false
+    t.string "name", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["workspace_id", "name"], name: "index_ledgers_on_workspace_id_and_name", unique: true
+    t.index ["workspace_id"], name: "index_ledgers_on_workspace_id"
   end
 
   create_table "llm_activities", force: :cascade do |t|
@@ -455,6 +504,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_000100) do
   add_foreign_key "journal_entries", "workspaces"
   add_foreign_key "journal_entry_lines", "accounts"
   add_foreign_key "journal_entry_lines", "journal_entries"
+  add_foreign_key "ledger_accounts", "ledgers"
+  add_foreign_key "ledger_entries", "ledgers"
+  add_foreign_key "ledger_lines", "ledger_accounts"
+  add_foreign_key "ledger_lines", "ledger_entries"
+  add_foreign_key "ledgers", "workspaces"
   add_foreign_key "llm_activities", "llm_chats"
   add_foreign_key "llm_chats", "llm_models"
   add_foreign_key "llm_chats", "workspaces"
