@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -205,7 +205,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
     t.datetime "updated_at", null: false
     t.index ["ledger_id", "name"], name: "index_ledger_accounts_on_ledger_id_and_name", unique: true
     t.index ["ledger_id"], name: "index_ledger_accounts_on_ledger_id"
-    t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying, 'liability'::character varying, 'equity'::character varying, 'revenue'::character varying, 'expense'::character varying]::text[])", name: "chk_ledger_accounts_base_type"
+    t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying, 'liability'::character varying, 'equity'::character varying, 'income'::character varying, 'expense'::character varying]::text[])", name: "chk_ledger_accounts_base_type"
     t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying, 'credit'::character varying]::text[])", name: "chk_ledger_accounts_normal_balance"
   end
 

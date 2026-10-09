@@ -77,8 +77,7 @@ Keep validation pure and persistence transactional. Never mix database writes
 into `Accounting::Engine`. Construct entries explicitly, validate them through
 the engine, and persist them through `Accounting::PostingService`.
 
-Use integer kobo at persistence and API boundaries. Convert to decimal naira
-only for input parsing and display. A balanced entry may still be semantically
+A balanced entry may still be semantically
 wrong, so preserve account taxonomy and workspace checks.
 
 ## Asynchronous work

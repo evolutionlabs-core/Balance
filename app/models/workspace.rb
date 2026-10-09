@@ -8,6 +8,7 @@ class Workspace < ApplicationRecord
   has_many :expenses, dependent: :destroy
   has_many :customers, dependent: :destroy
   has_many :accounts, dependent: :destroy
+  has_many :ledgers, dependent: :restrict_with_error
   has_many :invoices, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :estimates, dependent: :destroy
