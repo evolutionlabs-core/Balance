@@ -7,7 +7,6 @@ module Engine::Validation
         source_type: command.source_type,
         source_id: command.source_id,
         action: command.action,
-        reverses_ledger_entry: command.reverses_ledger_entry,
         metadata: command.metadata,
         lines: command.lines.map do |line|
           Engine::Command::Line.new(

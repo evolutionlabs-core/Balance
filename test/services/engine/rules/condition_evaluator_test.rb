@@ -4,8 +4,8 @@ class Engine::Rules::ConditionEvaluatorTest < ActiveSupport::TestCase
   setup do
     @workspace = Workspace.create!(name: "Conditions Test", currency_code: "NGN")
     @ledger = Ledger.create!(workspace: @workspace, name: "General", currency_code: "NGN")
-    @cash = LedgerAccount.create!(ledger: @ledger, name: "Cash", base_type: "asset", normal_balance: "debit")
-    @income = LedgerAccount.create!(ledger: @ledger, name: "Income", base_type: "income", normal_balance: "credit")
+    @cash = LedgerAccount.create!(ledger: @ledger, name: "Cash", base_type: "asset", normal_balance: "debit", code: "1010", subtype: "cash")
+    @income = LedgerAccount.create!(ledger: @ledger, name: "Income", base_type: "income", normal_balance: "credit", code: "4010", subtype: "operating")
   end
 
   test "an empty condition list matches unconditionally" do

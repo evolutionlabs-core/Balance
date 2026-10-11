@@ -15,12 +15,20 @@ class CreateLedgerCoreTables < ActiveRecord::Migration[8.1]
       t.string :name, null: false
       t.string :base_type, null: false
       t.string :normal_balance, null: false
+      t.string :code, null: false
+      t.string :subtype, null: false
+      t.boolean :system, null: false, default: false
+      t.boolean :active, null: false, default: true
+      t.string :created_by, null: false, default: "admin"
+      t.text :description
 
       t.timestamps
     end
     add_index :ledger_accounts, [ :ledger_id, :name ], unique: true
-    add_check_constraint :ledger_accounts, "base_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')", name: "chk_ledger_accounts_base_type"
+    add_index :ledger_accounts, [ :ledger_id, :code ], unique: true
+    add_check_constraint :ledger_accounts, "base_type IN ('asset', 'liability', 'equity', 'income', 'expense')", name: "chk_ledger_accounts_base_type"
     add_check_constraint :ledger_accounts, "normal_balance IN ('debit', 'credit')", name: "chk_ledger_accounts_normal_balance"
+    add_check_constraint :ledger_accounts, "created_by IN ('system', 'admin', 'agent')", name: "chk_ledger_accounts_created_by"
 
     create_table :ledger_entries do |t|
       t.references :ledger, null: false, foreign_key: true
@@ -49,5 +57,22 @@ class CreateLedgerCoreTables < ActiveRecord::Migration[8.1]
     add_check_constraint :ledger_lines,
       "(debit > 0 AND credit = 0) OR (credit > 0 AND debit = 0)",
       name: "chk_ledger_lines_one_sided_non_zero"
+
+    create_table :rules do |t|
+      t.string :name, null: false
+      t.references :ledger, null: true, foreign_key: true
+      t.string :source_type
+      t.string :action
+      t.jsonb :conditions, null: false, default: []
+      t.string :severity, null: false
+      t.text :message, null: false
+      t.boolean :active, null: false, default: true
+
+      t.timestamps
+    end
+    add_index :rules, [ :active, :ledger_id, :source_type, :action ], name: "idx_rules_fetch"
+    add_check_constraint :rules,
+      "severity IN ('block', 'require_approval', 'warn')",
+      name: "chk_rules_severity"
   end
 end

@@ -1,0 +1,33 @@
+key: standard_sme
+name: Standard SME Chart
+description: Simple accrual chart for a single-entity small business
+accounts:
+  # --- Assets (1xxx)
+  - { code: "1010", name: Cash,                     base_type: asset,     subtype: cash,                    normal_balance: debit }
+  - { code: "1020", name: Bank,                     base_type: asset,     subtype: cash,                    normal_balance: debit }
+  - { code: "1100", name: Accounts Receivable,      base_type: asset,     subtype: accounts_receivable,     normal_balance: debit }
+  - { code: "1200", name: Inventory,                base_type: asset,     subtype: inventory,               normal_balance: debit }
+  - { code: "1500", name: Fixed Assets,             base_type: asset,     subtype: fixed_asset,             normal_balance: debit }
+  - { code: "1590", name: Accumulated Depreciation, base_type: asset,     subtype: accumulated_depreciation, normal_balance: credit }
+  # --- Liabilities (2xxx)
+  - { code: "2010", name: Accounts Payable,         base_type: liability, subtype: accounts_payable,        normal_balance: credit }
+  - { code: "2020", name: Credit Card Payable,      base_type: liability, subtype: credit_card,             normal_balance: credit }
+  - { code: "2100", name: Tax Payable,              base_type: liability, subtype: tax_payable,             normal_balance: credit }
+  - { code: "2500", name: Loan Payable,             base_type: liability, subtype: loan,                    normal_balance: credit }
+  # --- Equity (3xxx)
+  - { code: "3010", name: Owner Contributions,      base_type: equity,    subtype: owner_equity,            normal_balance: credit }
+  - { code: "3020", name: Owner Draws,              base_type: equity,    subtype: owner_draws,             normal_balance: debit }
+  - { code: "3900", name: Retained Earnings,        base_type: equity,    subtype: retained_earnings,       normal_balance: credit, system: true }
+  - { code: "3990", name: Opening Balance Equity,  base_type: equity,    subtype: opening_balance_equity,  normal_balance: credit, system: true }
+  # --- Revenue (4xxx)
+  - { code: "4010", name: Sales,                    base_type: income,    subtype: operating,               normal_balance: credit }
+  - { code: "4090", name: Other Revenue,            base_type: income,    subtype: other,                   normal_balance: credit }
+  # --- Expenses (5xxx)
+  - { code: "5010", name: Cost of Goods Sold,       base_type: expense,   subtype: cogs,                    normal_balance: debit }
+  - { code: "5100", name: Payroll,                  base_type: expense,   subtype: payroll,                 normal_balance: debit }
+  - { code: "5200", name: Rent,                     base_type: expense,   subtype: rent,                    normal_balance: debit }
+  - { code: "5300", name: Marketing,                base_type: expense,   subtype: marketing,               normal_balance: debit }
+  - { code: "5400", name: Professional Fees,        base_type: expense,   subtype: professional_fees,       normal_balance: debit }
+  - { code: "5500", name: Utilities,                base_type: expense,   subtype: other_expense,           normal_balance: debit }
+  - { code: "5600", name: Depreciation Expense,     base_type: expense,   subtype: depreciation,            normal_balance: debit }
+  - { code: "5900", name: Other Expense,            base_type: expense,   subtype: other_expense,           normal_balance: debit }

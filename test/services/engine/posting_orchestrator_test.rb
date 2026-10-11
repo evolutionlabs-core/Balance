@@ -4,8 +4,8 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
   setup do
     @workspace = Workspace.create!(name: "Engine Test", currency_code: "NGN")
     @ledger = Ledger.create!(workspace: @workspace, name: "General", currency_code: "NGN")
-    @cash = LedgerAccount.create!(ledger: @ledger, name: "Cash", base_type: "asset", normal_balance: "debit")
-    @income = LedgerAccount.create!(ledger: @ledger, name: "Income", base_type: "income", normal_balance: "credit")
+    @cash = LedgerAccount.create!(ledger: @ledger, name: "Cash", base_type: "asset", normal_balance: "debit", code: "1010", subtype: "cash")
+    @income = LedgerAccount.create!(ledger: @ledger, name: "Income", base_type: "income", normal_balance: "credit", code: "4010", subtype: "operating")
   end
 
   test "posts a balanced command and returns a success receipt" do
@@ -77,7 +77,7 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
   test "rejects a line whose account belongs to another ledger" do
     other_workspace = Workspace.create!(name: "Other Workspace", currency_code: "NGN")
     other = Ledger.create!(workspace: other_workspace, name: "General", currency_code: "NGN")
-    foreign = LedgerAccount.create!(ledger: other, name: "Cash", base_type: "asset", normal_balance: "debit")
+    foreign = LedgerAccount.create!(ledger: other, name: "Cash", base_type: "asset", normal_balance: "debit", code: "1010", subtype: "cash")
 
     command = Engine::Command.new(
       ledger: @ledger,

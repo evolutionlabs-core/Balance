@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000300) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -197,15 +197,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000300) do
   end
 
   create_table "ledger_accounts", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
     t.string "base_type", null: false
+    t.string "code", null: false
     t.datetime "created_at", null: false
+    t.string "created_by", default: "admin", null: false
+    t.text "description"
     t.bigint "ledger_id", null: false
     t.string "name", null: false
     t.string "normal_balance", null: false
+    t.string "subtype", null: false
+    t.boolean "system", default: false, null: false
     t.datetime "updated_at", null: false
+    t.index ["ledger_id", "code"], name: "index_ledger_accounts_on_ledger_id_and_code", unique: true
     t.index ["ledger_id", "name"], name: "index_ledger_accounts_on_ledger_id_and_name", unique: true
     t.index ["ledger_id"], name: "index_ledger_accounts_on_ledger_id"
     t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying, 'liability'::character varying, 'equity'::character varying, 'income'::character varying, 'expense'::character varying]::text[])", name: "chk_ledger_accounts_base_type"
+    t.check_constraint "created_by::text = ANY (ARRAY['system'::character varying, 'admin'::character varying, 'agent'::character varying]::text[])", name: "chk_ledger_accounts_created_by"
     t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying, 'credit'::character varying]::text[])", name: "chk_ledger_accounts_normal_balance"
   end
 
@@ -214,14 +222,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000300) do
     t.datetime "created_at", null: false
     t.date "effective_date", null: false
     t.bigint "ledger_id", null: false
-    t.bigint "reverses_ledger_entry_id"
     t.bigint "source_id"
     t.string "source_type"
     t.datetime "updated_at", null: false
     t.index ["ledger_id", "effective_date"], name: "index_ledger_entries_on_ledger_id_and_effective_date"
     t.index ["ledger_id", "source_type", "source_id", "action"], name: "idx_ledger_entries_unique_source_effect", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL) AND (action IS NOT NULL))"
     t.index ["ledger_id"], name: "index_ledger_entries_on_ledger_id"
-    t.index ["reverses_ledger_entry_id"], name: "index_ledger_entries_on_reverses_ledger_entry_id"
   end
 
   create_table "ledger_lines", force: :cascade do |t|
@@ -523,7 +529,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000300) do
   add_foreign_key "journal_entry_lines", "accounts"
   add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "ledger_accounts", "ledgers"
-  add_foreign_key "ledger_entries", "ledger_entries", column: "reverses_ledger_entry_id"
   add_foreign_key "ledger_entries", "ledgers"
   add_foreign_key "ledger_lines", "ledger_accounts"
   add_foreign_key "ledger_lines", "ledger_entries"
