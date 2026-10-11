@@ -1,43 +1,49 @@
 class Engine::PostingOrchestrator
-  def self.call(command, rules: [])
-    new(command, rules).call
+  def self.call(command)
+    new(command).call
   end
 
-  def initialize(command, rules)
+  def initialize(command)
     @command = command
-    @rules = rules
   end
 
   def call
     errors = []
     verdict = :reject
     entry = nil
+    warnings = []
 
     LedgerEntry.transaction do
       validation = Engine::Validation.call(command)
-      rules_result = Engine::Rules.call(command, rules: rules)
-      period_state = Engine::PeriodState.call(command)
 
-      errors = validation.errors + rules_result.errors + period_state.errors
-      verdict = decide(rules_result.verdict, errors)
+      if validation.ok?
+        scoped = validation.command
+        rules_result = Engine::Rules.call(scoped)
+        warnings = rules_result.command.metadata.fetch("warnings", [])
+        period_state = Engine::PeriodState.call(rules_result.command)
 
-      if verdict == :allow
-        entry = Engine::Writer.call(command)
+        errors = period_state.errors
+        verdict = decide(rules_result.verdict, errors)
+
+        if verdict == :allow
+          entry = Engine::Writer.call(rules_result.command).entry
+        else
+          raise ActiveRecord::Rollback
+        end
       else
+        errors = validation.errors
         raise ActiveRecord::Rollback
       end
     end
 
-    Engine::Receipt.new(entry, errors.freeze, verdict)
+    Engine::Receipt.new(entry, errors.freeze, verdict, warnings.freeze)
   end
 
   private
-    attr_reader :command, :rules
+    attr_reader :command
 
-    # Any failure wins over pause, and pause wins over allow. The rules
-    # verdict is honoured even when a rule rejects without a message.
     def decide(rule_verdict, errors)
-      if errors.any? || rule_verdict == :reject
+      if errors.any?
         :reject
       elsif rule_verdict == :pause
         :pause

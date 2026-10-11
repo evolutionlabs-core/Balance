@@ -75,7 +75,8 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
   end
 
   test "rejects a line whose account belongs to another ledger" do
-    other = Ledger.create!(workspace: @workspace, name: "Other", currency_code: "NGN")
+    other_workspace = Workspace.create!(name: "Other Workspace", currency_code: "NGN")
+    other = Ledger.create!(workspace: other_workspace, name: "General", currency_code: "NGN")
     foreign = LedgerAccount.create!(ledger: other, name: "Cash", base_type: "asset", normal_balance: "debit")
 
     command = Engine::Command.new(
@@ -90,40 +91,77 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
     receipt = Engine::PostingOrchestrator.call(command)
 
     refute receipt.success?
-    assert_includes receipt.errors.join, "account in ledger"
+    assert_includes receipt.errors.join, "another ledger"
     assert_equal 0, @ledger.ledger_entries.count
   end
 
-  test "honours a rule that rejects without an error message" do
-    receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 1000), rules: [ SilentRejectRule.new ])
+  test "rejects a command with no ledger" do
+    bad = Engine::Command.new(
+      ledger: nil,
+      effective_date: Date.current,
+      lines: [
+        Engine::Command::Line.new(ledger_account: @cash, debit: 1000, credit: 0),
+        Engine::Command::Line.new(ledger_account: @income, debit: 0, credit: 1000)
+      ]
+    )
+
+    receipt = Engine::PostingOrchestrator.call(bad)
 
     refute receipt.success?
-    assert_equal :reject, receipt.verdict
-    assert_empty receipt.errors
+    assert_includes receipt.errors.join, "missing ledger"
     assert_equal 0, @ledger.ledger_entries.count
   end
 
-  test "pauses without writing when a rule asks for approval" do
-    receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 1000), rules: [ PauseRule.new ])
+  test "rejects a non-numeric amount instead of misparsing it" do
+    bad = Engine::Command.new(
+      ledger: @ledger,
+      effective_date: Date.current,
+      lines: [
+        Engine::Command::Line.new(ledger_account: @cash, debit: "lots", credit: 0),
+        Engine::Command::Line.new(ledger_account: @income, debit: 0, credit: 1000)
+      ]
+    )
+
+    receipt = Engine::PostingOrchestrator.call(bad)
 
     refute receipt.success?
-    assert_equal :pause, receipt.verdict
-    assert_nil receipt.entry
+    assert_includes receipt.errors.join, "must be numbers"
     assert_equal 0, @ledger.ledger_entries.count
   end
 
-  class SilentRejectRule
-    Verdict = Data.define(:verdict, :errors)
+  test "rejects an account that was never persisted" do
+    ghost = LedgerAccount.new(ledger: @ledger, name: "Ghost", base_type: "asset", normal_balance: "debit")
+    bad = Engine::Command.new(
+      ledger: @ledger,
+      effective_date: Date.current,
+      lines: [
+        Engine::Command::Line.new(ledger_account: ghost, debit: 1000, credit: 0),
+        Engine::Command::Line.new(ledger_account: @income, debit: 0, credit: 1000)
+      ]
+    )
 
-    def applies_to?(_command) = true
-    def evaluate(_command) = Verdict.new(:reject, [])
+    receipt = Engine::PostingOrchestrator.call(bad)
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "not persisted"
+    assert_equal 0, @ledger.ledger_entries.count
   end
 
-  class PauseRule
-    Verdict = Data.define(:verdict, :errors)
+  test "rejects a ledger that was never persisted" do
+    draft = Ledger.new(workspace: @workspace, name: "Draft", currency_code: "NGN")
+    bad = Engine::Command.new(
+      ledger: draft,
+      effective_date: Date.current,
+      lines: [
+        Engine::Command::Line.new(ledger_account: @cash, debit: 1000, credit: 0),
+        Engine::Command::Line.new(ledger_account: @income, debit: 0, credit: 1000)
+      ]
+    )
 
-    def applies_to?(_command) = true
-    def evaluate(_command) = Verdict.new(:pause, [])
+    receipt = Engine::PostingOrchestrator.call(bad)
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "not persisted"
   end
 
   private

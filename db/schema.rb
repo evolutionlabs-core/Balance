@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_000300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -214,12 +214,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
     t.datetime "created_at", null: false
     t.date "effective_date", null: false
     t.bigint "ledger_id", null: false
+    t.bigint "reverses_ledger_entry_id"
     t.bigint "source_id"
     t.string "source_type"
     t.datetime "updated_at", null: false
     t.index ["ledger_id", "effective_date"], name: "index_ledger_entries_on_ledger_id_and_effective_date"
     t.index ["ledger_id", "source_type", "source_id", "action"], name: "idx_ledger_entries_unique_source_effect", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL) AND (action IS NOT NULL))"
     t.index ["ledger_id"], name: "index_ledger_entries_on_ledger_id"
+    t.index ["reverses_ledger_entry_id"], name: "index_ledger_entries_on_reverses_ledger_entry_id"
   end
 
   create_table "ledger_lines", force: :cascade do |t|
@@ -432,6 +434,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
     t.index ["workspace_id"], name: "index_receivable_applications_on_workspace_id"
   end
 
+  create_table "rules", force: :cascade do |t|
+    t.string "action"
+    t.boolean "active", default: true, null: false
+    t.jsonb "conditions", default: [], null: false
+    t.datetime "created_at", null: false
+    t.bigint "ledger_id"
+    t.text "message", null: false
+    t.string "name", null: false
+    t.string "severity", null: false
+    t.string "source_type"
+    t.datetime "updated_at", null: false
+    t.index ["active", "ledger_id", "source_type", "action"], name: "idx_rules_fetch"
+    t.index ["ledger_id"], name: "index_rules_on_ledger_id"
+    t.check_constraint "severity::text = ANY (ARRAY['block'::character varying, 'require_approval'::character varying, 'warn'::character varying]::text[])", name: "chk_rules_severity"
+  end
+
   create_table "services", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -505,6 +523,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
   add_foreign_key "journal_entry_lines", "accounts"
   add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "ledger_accounts", "ledgers"
+  add_foreign_key "ledger_entries", "ledger_entries", column: "reverses_ledger_entry_id"
   add_foreign_key "ledger_entries", "ledgers"
   add_foreign_key "ledger_lines", "ledger_accounts"
   add_foreign_key "ledger_lines", "ledger_entries"
@@ -534,6 +553,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_000100) do
   add_foreign_key "receivable_applications", "journal_entries"
   add_foreign_key "receivable_applications", "receivable_applications", column: "reverses_receivable_application_id"
   add_foreign_key "receivable_applications", "workspaces"
+  add_foreign_key "rules", "ledgers"
   add_foreign_key "services", "accounts", column: "income_account_id"
   add_foreign_key "services", "workspaces"
   add_foreign_key "sessions", "users"
