@@ -30,15 +30,11 @@ class Workspace < ApplicationRecord
   end
 
   def payment_accounts
-    credit_card_accounts = accounts.where(
-      base_type: "liability",
-      account_type: catalog.account_type_names_for(:credit_card)
-    ).or(accounts.where(
-      base_type: "liability",
-      detail_type: catalog.detail_type_names_for(:credit_card)
-    ))
+    ledger_accounts.where(subtype: %w[cash credit_card])
+  end
 
-    accounts.where(base_type: "asset").or(credit_card_accounts)
+  def expense_categories
+    ledger_accounts.where(base_type: "expense")
   end
 
   def receipt_accounts
@@ -52,6 +48,10 @@ class Workspace < ApplicationRecord
   end
 
   private
+    def ledger_accounts
+      LedgerAccount.where(ledger: ledgers)
+    end
+
     def default_sales_account_is_workspace_income
       return if default_sales_account.blank?
 

@@ -5,8 +5,9 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
     Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
-    @bank = create_account(name: "Checking Account", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @housing = create_account(name: "Housing", base_type: "expense", account_type: "Personal Outflows", detail_type: "Housing & Utilities")
+    @ledger = @workspace.ledgers.first
+    @bank = @ledger.ledger_accounts.find_by!(name: "Checking Account")
+    @housing = @ledger.ledger_accounts.find_by!(name: "Housing")
   end
 
   test "creates the expense and its ledger entry through the engine" do
@@ -36,16 +37,15 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
-  test "creates nothing when the engine rejects the command" do
-    stale = create_account(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
-    merged = {
-      expense: expense_params[:expense].merge(expense_lines_attributes: {
-        "0" => { account_id: stale.id, description: "Fuel", amount: "40000.00", position: 0 }
-      })
-    }
+  test "creates nothing when a category is outside the workspace ledger" do
+    other_workspace = workspaces(:bola_shop)
+    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
+    foreign = other_ledger.ledger_accounts.find_by!(name: "Rent")
+    params = expense_params
+    params[:expense][:expense_lines_attributes]["0"][:account_id] = foreign.id
 
-    assert_no_difference("Expense.count") { post expenses_path, params: merged }
-    assert_no_difference("LedgerEntry.count") { post expenses_path, params: merged }
+    assert_no_difference("Expense.count") { post expenses_path, params: params }
+    assert_no_difference("LedgerEntry.count") { post expenses_path, params: params }
 
     assert_response :unprocessable_content
   end
@@ -75,12 +75,11 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
 
   test "cannot access another workspace expense" do
     other_workspace = workspaces(:bola_shop)
-    other_bank = other_workspace.accounts.create!(name: "Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    other_category = other_workspace.accounts.create!(name: "Food", base_type: "expense", account_type: "Personal Outflows", detail_type: "Living & Daily Needs")
+    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
     expense = other_workspace.expenses.create!(
       payment_date: Date.current,
-      payment_account: other_bank,
-      expense_lines_attributes: [ { account: other_category, description: "Food", amount_kobo: 1_000, position: 0 } ]
+      payment_account: other_ledger.ledger_accounts.find_by!(name: "Bank"),
+      expense_lines_attributes: [ { account: other_ledger.ledger_accounts.find_by!(name: "Rent"), description: "Rent", amount_kobo: 1_000, position: 0 } ]
     )
 
     get expense_path(expense)
@@ -89,10 +88,6 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
-    def create_account(**attributes)
-      @workspace.accounts.create!(attributes)
-    end
-
     def expense_params
       {
         expense: {

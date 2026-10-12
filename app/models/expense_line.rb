@@ -1,6 +1,6 @@
 class ExpenseLine < ApplicationRecord
   belongs_to :expense, inverse_of: :expense_lines
-  belongs_to :account
+  belongs_to :account, class_name: "LedgerAccount"
 
   validates :description, presence: true
   validates :amount_kobo, numericality: { only_integer: true, greater_than: 0 }, unless: :invalid_amount_input?
@@ -48,7 +48,7 @@ class ExpenseLine < ApplicationRecord
 
     def account_belongs_to_workspace
       return if account.blank? || expense.blank? || expense.workspace_id.blank?
-      return if account.workspace_id == expense.workspace_id
+      return if account.ledger.workspace_id == expense.workspace_id
 
       errors.add(:account, "must belong to the workspace")
     end

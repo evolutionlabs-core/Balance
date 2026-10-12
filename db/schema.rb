@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -510,10 +510,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000100) do
   add_foreign_key "estimates", "projects"
   add_foreign_key "estimates", "users"
   add_foreign_key "estimates", "workspaces"
-  add_foreign_key "expense_lines", "accounts"
   add_foreign_key "expense_lines", "expenses"
-  add_foreign_key "expenses", "accounts", column: "payment_account_id"
+  add_foreign_key "expense_lines", "ledger_accounts", column: "account_id", validate: false
   add_foreign_key "expenses", "journal_entries"
+  add_foreign_key "expenses", "ledger_accounts", column: "payment_account_id", validate: false
   add_foreign_key "expenses", "workspaces"
   add_foreign_key "invoice_lines", "accounts"
   add_foreign_key "invoice_lines", "invoices"

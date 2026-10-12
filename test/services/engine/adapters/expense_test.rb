@@ -3,10 +3,10 @@ require "test_helper"
 class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
-    @bank = create_account(name: "Checking Account", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @groceries = create_account(name: "Groceries", base_type: "expense", account_type: "Personal Outflows", detail_type: "Living & Daily Needs")
-    @housing = create_account(name: "Housing", base_type: "expense", account_type: "Personal Outflows", detail_type: "Housing & Utilities")
+    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @bank = ledger_account("Checking Account")
+    @groceries = ledger_account("Groceries")
+    @housing = ledger_account("Housing")
   end
 
   test "builds a debit line per category and one credit line for the payment account" do
@@ -68,7 +68,7 @@ class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
     assert_equal 2_000_000, lines.sum(&:credit)
   end
 
-  test "infers the ledger account from the old account name" do
+  test "resolves the ledger account directly from the selected account" do
     command = Engine::Adapters::Expense.call(
       workspace: @workspace,
       attributes: attributes,
@@ -92,36 +92,32 @@ class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
 
   test "provisions the workspace ledger on demand" do
     workspace = Workspace.create!(name: "Fresh Workspace", currency_code: "NGN")
-    workspace.accounts.create!(
-      name: "Checking Account", base_type: "asset",
-      account_type: "Cash & Liquid Assets", detail_type: "Checking Account"
-    )
-    workspace.accounts.create!(
-      name: "Housing", base_type: "expense",
-      account_type: "Personal Outflows", detail_type: "Housing & Utilities"
-    )
-    params = ActionController::Parameters.new(expense: {
-      payment_date: Date.current,
-      payment_account_id: workspace.accounts.find_by(name: "Checking Account").id,
-      expense_lines_attributes: {
-        "0" => { account_id: workspace.accounts.find_by(name: "Housing").id, amount: "20000.00", position: 0 }
-      }
-    }).expect(expense: [ :payment_date, :payment_account_id, expense_lines_attributes: [ [ :account_id, :amount, :position ] ] ])
 
-    command = Engine::Adapters::Expense.call(workspace: workspace, attributes: params, source_id: 7)
+    adapter = Engine::Adapters::Expense.new(workspace: workspace, attributes: {}, source_id: nil)
 
-    ledger = workspace.ledgers.first
-    assert_equal ledger, command.ledger
-    assert_equal "General", ledger.name
-    assert_equal 17, ledger.ledger_accounts.count
-    assert_includes ledger.ledger_accounts.map(&:name), "Housing"
+    assert_equal "General", adapter.send(:ledger).name
+    assert_includes workspace.ledgers.first.ledger_accounts.map(&:name), "Housing"
+  end
+
+  test "raises when the selected account is not in the workspace ledger" do
+    other_workspace = workspaces(:bola_shop)
+    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
+    foreign = other_ledger.ledger_accounts.find_by!(name: "Bank")
+
+    assert_raises(ActiveRecord::RecordNotFound) do
+      Engine::Adapters::Expense.call(
+        workspace: @workspace,
+        attributes: attributes(payment_account_id: foreign.id),
+        source_id: 7
+      )
+    end
   end
 
   private
-    def attributes
+    def attributes(payment_account_id: @bank.id)
       params = ActionController::Parameters.new(expense: {
         payment_date: Date.current,
-        payment_account_id: @bank.id,
+        payment_account_id: payment_account_id,
         expense_lines_attributes: {
           "0" => { account_id: @groceries.id, amount: "40000.00", position: 0 },
           "1" => { account_id: @housing.id, amount: "20000.00", position: 1 }
@@ -134,10 +130,6 @@ class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
     end
 
     def ledger_account(name)
-      @workspace.ledgers.first.ledger_accounts.find_by!(name: name)
-    end
-
-    def create_account(**attributes)
-      @workspace.accounts.create!(attributes)
+      @ledger.ledger_accounts.find_by!(name: name)
     end
 end

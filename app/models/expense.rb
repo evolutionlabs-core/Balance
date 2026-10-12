@@ -1,6 +1,6 @@
 class Expense < ApplicationRecord
   belongs_to :workspace
-  belongs_to :payment_account, class_name: "Account"
+  belongs_to :payment_account, class_name: "LedgerAccount"
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense
   has_one :ledger_entry, -> { where(source_type: "Expense") }, foreign_key: "source_id", inverse_of: false
 
@@ -62,7 +62,7 @@ class Expense < ApplicationRecord
 
     def payment_account_belongs_to_workspace
       return if payment_account.blank? || workspace.blank?
-      return if payment_account.workspace_id == workspace_id
+      return if payment_account.ledger.workspace_id == workspace_id
 
       errors.add(:payment_account, "must belong to the workspace")
     end
@@ -71,7 +71,7 @@ class Expense < ApplicationRecord
       return if payment_account.blank? || workspace.blank?
       return if workspace.payment_accounts.exists?(payment_account.id)
 
-      errors.add(:payment_account, "must be an asset or credit-card account")
+      errors.add(:payment_account, "must be a cash or credit-card account")
     end
 
     def has_category_lines

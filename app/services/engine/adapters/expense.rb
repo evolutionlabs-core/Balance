@@ -13,7 +13,7 @@ module Engine
         def lines
           debits = category_lines.map do |line|
             Engine::Command::Line.new(
-              ledger_account: ledger_account_for(workspace.accounts.find(line[:account_id]).name),
+              ledger_account: ledger_account(line[:account_id]),
               debit: kobo(line[:amount]),
               credit: 0
             )
@@ -28,10 +28,14 @@ module Engine
 
         def payment_line(total_kobo)
           Engine::Command::Line.new(
-            ledger_account: ledger_account_for(workspace.accounts.find(attributes[:payment_account_id]).name),
+            ledger_account: ledger_account(attributes[:payment_account_id]),
             debit: 0,
             credit: total_kobo
           )
+        end
+
+        def ledger_account(id)
+          ledger.ledger_accounts.find(id)
         end
     end
   end

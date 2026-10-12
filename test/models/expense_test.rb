@@ -3,8 +3,9 @@ require "test_helper"
 class ExpenseTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @bank = create_account(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @fuel = create_account(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @bank = ledger_account("Checking Account")
+    @fuel = ledger_account("Groceries")
   end
 
   test "stores the computed total" do
@@ -16,25 +17,25 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "supports split category lines" do
-    uniforms = create_account(name: "Uniforms", base_type: "expense", account_type: "Personal Outflows", detail_type: "Living & Daily Needs")
+    uniforms = ledger_account("Housing")
     expense = build_expense
     expense.expense_lines.build(account: uniforms, description: "Uniform", amount_kobo: 1_000_000, position: 1)
 
     assert_equal 5_000_000, expense.total_kobo
     assert_equal "Fuel and Uniform", expense.description
-    assert_equal "Fuel and Uniforms", expense.category_label
+    assert_equal "Groceries and Housing", expense.category_label
   end
 
   test "rejects an ineligible payment account" do
-    loan = create_account(name: "Loan", base_type: "liability", account_type: "Short-Term Debt", detail_type: "Short-Term Loans")
+    loan = ledger_account("Auto Loan")
     expense = build_expense(payment_account: loan)
 
     assert_not expense.valid?
-    assert_includes expense.errors[:payment_account], "must be an asset or credit-card account"
+    assert_includes expense.errors[:payment_account], "must be a cash or credit-card account"
   end
 
-  test "accepts payment accounts identified by the workspace catalog" do
-    credit_card = create_account(name: "Card", base_type: "liability", account_type: "Short-Term Debt", detail_type: "Credit Cards")
+  test "accepts a credit-card payment account" do
+    credit_card = ledger_account("Credit Card")
 
     assert build_expense(payment_account: credit_card).valid?
   end
@@ -48,7 +49,7 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "rejects an ineligible category account" do
-    income = create_account(name: "Salary", base_type: "income", account_type: "Personal Inflows", detail_type: "Earned Salary & Wages")
+    income = ledger_account("Salary")
     expense = build_expense(category: income)
 
     assert_not expense.valid?
@@ -79,8 +80,8 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   private
-    def create_account(**attributes)
-      @workspace.accounts.create!(attributes)
+    def ledger_account(name)
+      @ledger.ledger_accounts.find_by!(name: name)
     end
 
     def build_expense(payment_account: @bank, category: @fuel, memo: nil, payment_date: Date.current)
