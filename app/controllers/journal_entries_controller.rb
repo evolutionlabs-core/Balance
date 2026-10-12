@@ -1,10 +1,12 @@
 class JournalEntriesController < ApplicationController
   def index
-    @journal_entries = current_workspace.journal_entries
-      .includes(journal_entry_lines: :account)
-    @journal_entries = @journal_entries.where("description ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%") if params[:q].present?
-    @journal_entries = @journal_entries.where(entry_date: parsed_date_range) if parsed_date_range
-    @journal_entries = @journal_entries.order(entry_date: :desc, id: :desc)
+    @ledger_entries = (current_workspace.ledgers.first&.ledger_entries || LedgerEntry.none)
+      .includes(ledger_lines: :ledger_account)
+    @ledger_entries = @ledger_entries.joins(ledger_lines: :ledger_account)
+      .where("ledger_accounts.name ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%")
+      .distinct if params[:q].present?
+    @ledger_entries = @ledger_entries.where(effective_date: parsed_date_range) if parsed_date_range
+    @ledger_entries = @ledger_entries.order(effective_date: :desc, id: :desc)
   end
 
   def new

@@ -23,5 +23,26 @@ module ActiveSupport
         ]
       )
     end
+
+    def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current)
+      ledger = workspace.ledgers.first ||
+        Ledgers::Provisioner.call(workspace: workspace, template: workspace.ledger_template)
+      command = Engine::Command.new(
+        ledger: ledger,
+        effective_date: effective_date,
+        source_type: nil,
+        source_id: nil,
+        action: "create",
+        lines: [
+          Engine::Command::Line.new(ledger_account: debit_ledger_account, debit: amount_kobo, credit: 0),
+          Engine::Command::Line.new(ledger_account: credit_ledger_account, debit: 0, credit: amount_kobo)
+        ]
+      )
+
+      receipt = Engine.post(command)
+      raise "Ledger entry rejected: #{receipt.errors.map(&:to_sentence).join(', ')}" unless receipt.success?
+
+      receipt.entry
+    end
   end
 end

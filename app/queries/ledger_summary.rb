@@ -78,11 +78,10 @@ class LedgerSummary
   end
 
   def liquid_balance_kobo(as_of: Date.current)
-    JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: ..as_of })
-      .where(accounts: { account_type: liquid_account_types })
-      .where.not(accounts: { detail_type: "Suspense / Clearing" })
-      .sum("journal_entry_lines.debit_kobo - journal_entry_lines.credit_kobo")
+    ledger_lines.joins(:ledger_account)
+      .where(ledger_entries: { effective_date: ..as_of })
+      .where(ledger_accounts: { subtype: "cash" })
+      .sum("ledger_lines.debit - ledger_lines.credit")
   end
 
   def performance_series(days: 30)
@@ -102,10 +101,10 @@ class LedgerSummary
     start_date = Date.current - (days - 1)
     range = start_date..Date.current
 
-    rows = JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: range })
-      .group("journal_entries.entry_date", "accounts.base_type")
-      .pluck(Arel.sql("journal_entries.entry_date"), Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo)"), Arel.sql("SUM(journal_entry_lines.credit_kobo)"))
+    rows = ledger_lines.joins(:ledger_account)
+      .where(ledger_entries: { effective_date: range })
+      .group("ledger_entries.effective_date", "ledger_accounts.base_type")
+      .pluck(Arel.sql("ledger_entries.effective_date"), Arel.sql("ledger_accounts.base_type"), Arel.sql("SUM(ledger_lines.debit)"), Arel.sql("SUM(ledger_lines.credit)"))
 
     by_date = rows.group_by { |date, _base_type, _debit, _credit| date }
 
@@ -122,13 +121,12 @@ class LedgerSummary
   end
 
   def trial_balance
-    raw_balances = JournalEntryLine.joins(:journal_entry)
-      .where(journal_entries: { workspace_id: workspace.id })
-      .group(:account_id)
-      .pluck(:account_id, Arel.sql("SUM(journal_entry_lines.debit_kobo) - SUM(journal_entry_lines.credit_kobo)"))
+    raw_balances = ledger_lines
+      .group(:ledger_account_id)
+      .pluck(:ledger_account_id, Arel.sql("SUM(ledger_lines.debit) - SUM(ledger_lines.credit)"))
       .to_h
 
-    workspace.accounts.ordered.filter_map do |account|
+    ledger_accounts.ordered.filter_map do |account|
       raw = raw_balances[account.id].to_i
       next if raw.zero?
 
@@ -152,10 +150,10 @@ class LedgerSummary
   end
 
   def profit_and_loss(date_range)
-    totals = JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: date_range })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo)"), Arel.sql("SUM(journal_entry_lines.credit_kobo)"))
+    totals = ledger_lines.joins(:ledger_account)
+      .where(ledger_entries: { effective_date: date_range })
+      .group("ledger_accounts.base_type")
+      .pluck(Arel.sql("ledger_accounts.base_type"), Arel.sql("SUM(ledger_lines.debit)"), Arel.sql("SUM(ledger_lines.credit)"))
 
     income_row = totals.find { |base_type, _debit, _credit| base_type == "income" }
     expense_row = totals.find { |base_type, _debit, _credit| base_type == "expense" }
@@ -170,15 +168,19 @@ class LedgerSummary
 
   attr_reader :workspace
 
-  def liquid_account_types
-    workspace.personal? ? [ "Cash & Liquid Assets" ] : [ "Bank" ]
+  def ledger_lines
+    LedgerLine.joins(ledger_entry: :ledger).where(ledgers: { workspace_id: workspace.id })
+  end
+
+  def ledger_accounts
+    LedgerAccount.where(ledger: workspace.ledgers)
   end
 
   def base_type_totals(as_of:)
-    JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: ..as_of })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo) - SUM(journal_entry_lines.credit_kobo)"))
+    ledger_lines.joins(:ledger_account)
+      .where(ledger_entries: { effective_date: ..as_of })
+      .group("ledger_accounts.base_type")
+      .pluck(Arel.sql("ledger_accounts.base_type"), Arel.sql("SUM(ledger_lines.debit) - SUM(ledger_lines.credit)"))
       .to_h
   end
 end
