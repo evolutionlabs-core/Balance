@@ -3,7 +3,7 @@
     data: { controller: "expense-lines" } do |form| %>
   <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-neutral-950"><%= expense.persisted? ? "Edit expense" : "New expense" %></h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-neutral-950">New expense</h1>
       <p class="mt-1 text-sm text-neutral-500">Describe what was paid for and the account that funded it.</p>
     </div>
     <div class="sm:text-right">
@@ -64,12 +64,8 @@
     </button>
   </section>
 
-  <% if @return_to.present? %>
-    <%= hidden_field_tag :return_to, @return_to %>
-  <% end %>
-
   <div class="flex items-center justify-end gap-2 border-t border-neutral-200 pt-5">
-    <%= link_to "Cancel", @return_to || expenses_path, class: secondary_button_class %>
-    <%= form.submit "Review expense", class: primary_button_class %>
+    <%= link_to "Cancel", expenses_path, class: secondary_button_class %>
+    <%= form.submit "Record expense", class: primary_button_class %>
   </div>
 <% end %>

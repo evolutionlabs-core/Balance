@@ -1,6 +1,5 @@
 class ExpensesController < ApplicationController
-  before_action :set_expense, only: %i[show edit update]
-  before_action :require_draft_expense, only: %i[edit update]
+  before_action :set_expense, only: %i[show]
 
   def index
     @expenses = current_workspace.expenses
@@ -14,42 +13,25 @@ class ExpensesController < ApplicationController
   end
 
   def create
-    @expense = current_workspace.expenses.build(expense_params)
+    result = Expenses::Creator.call(workspace: current_workspace, attributes: expense_params)
 
-    if @expense.save
-      redirect_to expense_path(@expense)
+    if result.success?
+      redirect_to expense_path(result.expense)
     else
+      @expense = result.expense
       render :new, status: :unprocessable_content
     end
   end
 
-  def edit
-  end
-
-  def update
-    if @expense.update(expense_params)
-      redirect_to expense_path(@expense)
-    else
-      render :edit, status: :unprocessable_content
-    end
-  end
-
   def show
-    @journal_entry = @expense.posted? ? @expense.journal_entry : @expense.journal_entry_draft
-    @engine_result = Accounting::Engine.check(@journal_entry.journal_entry_lines)
-    @possible_duplicates = @expense.possible_duplicates.limit(5)
-    @can_post = @expense.draft? && @expense.valid? && @journal_entry.valid?
+    @ledger_entry = @expense.ledger_entry
   end
 
   private
     def set_expense
       @expense = current_workspace.expenses
-        .includes(:payment_account, expense_lines: :account)
+        .includes(:payment_account, expense_lines: :account, ledger_entry: { ledger_lines: :ledger_account })
         .find(params[:id])
-    end
-
-    def require_draft_expense
-      raise ActiveRecord::RecordNotFound unless @expense.draft?
     end
 
     def expense_params

@@ -16,12 +16,14 @@ class Engine::RulesTest < ActiveSupport::TestCase
     assert_empty receipt.warnings
   end
 
-  test "a BLOCK rule raises a typed error and writes nothing" do
-    rule = create_rule(severity: "block", message: "blocked by policy")
+  test "a BLOCK rule returns a rejecting receipt and writes nothing" do
+    create_rule(severity: "block", message: "blocked by policy")
 
-    error = assert_raises(Engine::Errors::BusinessRuleError) { post }
-    assert_equal "blocked by policy", error.message
-    assert_equal rule.id, error.rule.id
+    receipt = post
+
+    refute receipt.success?
+    assert_equal :reject, receipt.verdict
+    assert_equal [ "blocked by policy" ], receipt.errors
     assert_equal 0, @ledger.ledger_entries.count
   end
 
@@ -29,8 +31,9 @@ class Engine::RulesTest < ActiveSupport::TestCase
     create_rule(severity: "warn", message: "first warning")
     create_rule(severity: "block", message: "blocked")
 
-    error = assert_raises(Engine::Errors::BusinessRuleError) { post }
-    assert_equal [ "first warning" ], error.warnings
+    receipt = post
+
+    assert_equal [ "first warning" ], receipt.warnings
     assert_equal 0, @ledger.ledger_entries.count
   end
 
@@ -38,8 +41,9 @@ class Engine::RulesTest < ActiveSupport::TestCase
     create_rule(severity: "block", message: "blocked")
     create_rule(severity: "warn", message: "never seen")
 
-    error = assert_raises(Engine::Errors::BusinessRuleError) { post }
-    assert_empty error.warnings
+    receipt = post
+
+    assert_empty receipt.warnings
   end
 
   test "REQUIRE_APPROVAL pauses without writing" do
@@ -67,7 +71,7 @@ class Engine::RulesTest < ActiveSupport::TestCase
     create_rule(severity: "block", message: "invoices only", source_type: "Invoice")
 
     assert post.success?
-    assert_raises(Engine::Errors::BusinessRuleError) { post(source_type: "Invoice", action: "issue") }
+    refute post(source_type: "Invoice", action: "issue").success?
   end
 
   test "conditions filter which commands a rule fires on" do
@@ -78,7 +82,7 @@ class Engine::RulesTest < ActiveSupport::TestCase
     )
 
     assert post(amount: 1000).success?
-    assert_raises(Engine::Errors::BusinessRuleError) { post(amount: 2_000_000) }
+    refute post(amount: 2_000_000).success?
   end
 
   test "conditions read business facts from command metadata" do

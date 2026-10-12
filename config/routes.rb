@@ -26,9 +26,7 @@ Rails.application.routes.draw do
   patch "onboarding/:step", to: "onboarding#update"
 
   resource :overview, only: %i[show]
-  resources :expenses, only: %i[index new create show edit update] do
-    resource :posting, only: %i[create], controller: "expense_postings"
-  end
+  resources :expenses, only: %i[index new create show]
 
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create]

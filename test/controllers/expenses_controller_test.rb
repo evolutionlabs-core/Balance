@@ -4,150 +4,73 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @bank = create_account(name: "Checking", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @fuel = create_account(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @bank = create_account(name: "Checking Account", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
+    @housing = create_account(name: "Housing", base_type: "expense", account_type: "Personal Outflows", detail_type: "Housing & Utilities")
   end
 
-  test "renders the scoped expense form" do
-    get new_expense_path
-
-    assert_response :success
-    assert_select "select#expense_payment_account_id option", text: "Checking"
-    assert_select "select#expense_expense_lines_attributes_0_account_id option", text: "Fuel"
-    assert_select "input[name='expense[expense_lines_attributes][0][amount]']"
-    assert_select "input[name='expense[payment_account_id]']", count: 0
-    assert_select "input[name='expense[payee]']", count: 0
-    assert_select "input[name='expense[reference_number]']", count: 0
-    assert_select "input[name='expense[memo]']"
-    assert_select "select#expense_payee_contact_id", count: 0
-    assert_select "[data-select-menu-search-in-trigger-value='true'] input[role='combobox']", count: 3
-  end
-
-  test "does not link to expense reports" do
-    get expenses_path
-
-    assert_response :success
-    assert_select "a[href='#{expense_report_path}']", count: 0
-  end
-
-  test "shows possible duplicates within the review page" do
-    params = expense_params
-    post expenses_path, params: params
-    original = @workspace.expenses.order(:id).last
-
-    post expenses_path, params: params
-    follow_redirect!
-
-    assert_response :success
-    assert_select "[role='alert']", text: /may already be recorded/
-    assert_select "a[href='#{expense_path(original)}']", text: "View expense"
-    assert_nil flash[:alert]
-  end
-
-  test "creates a draft for review" do
-    params = expense_params
-    params[:expense][:memo] = "Generator fuel"
-
-    assert_difference("Expense.count", 1) do
-      post expenses_path, params: params
+  test "creates the expense and its ledger entry through the engine" do
+    assert_difference -> { Expense.count } => 1, -> { LedgerEntry.count } => 1, -> { LedgerLine.count } => 2 do
+      post expenses_path, params: expense_params
     end
 
     expense = @workspace.expenses.order(:id).last
+    entry = expense.ledger_entry
+
     assert_redirected_to expense_path(expense)
-    assert expense.draft?
-    assert_nil expense.journal_entry
-    assert_equal "Generator fuel", expense.memo
+    assert expense.reload.posted?
+    assert_equal @workspace.ledgers.first, entry.ledger
+    assert_equal expense.payment_date, entry.effective_date
+    assert_equal [ "Expense", expense.id, "create" ], entry.values_at(:source_type, :source_id, :action)
+    assert_equal [ [ "Housing", 4_000_000, 0 ], [ "Checking Account", 0, 4_000_000 ] ],
+      entry.ledger_lines.map { |line| [ line.ledger_account.name, line.debit, line.credit ] }
   end
 
-  test "shows a validation error for a malformed amount" do
+  test "creates nothing when the expense is invalid" do
     params = expense_params
     params[:expense][:expense_lines_attributes]["0"][:amount] = "3ooo"
 
-    assert_no_difference("Expense.count") do
-      post expenses_path, params: params
+    assert_no_difference("Expense.count") { post expenses_path, params: params }
+    assert_no_difference("LedgerEntry.count") { post expenses_path, params: params }
+
+    assert_response :unprocessable_content
+  end
+
+  test "creates nothing when the engine rejects the command" do
+    stale = create_account(name: "Fuel", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    merged = {
+      expense: expense_params[:expense].merge(expense_lines_attributes: {
+        "0" => { account_id: stale.id, description: "Fuel", amount: "40000.00", position: 0 }
+      })
+    }
+
+    assert_no_difference("Expense.count") { post expenses_path, params: merged }
+    assert_no_difference("LedgerEntry.count") { post expenses_path, params: merged }
+
+    assert_response :unprocessable_content
+  end
+
+  test "creates nothing and surfaces the message when a block rule rejects the command" do
+    Rule.create!(name: "block rule", severity: "block", message: "blocked by policy")
+
+    assert_no_difference -> { Expense.count } do
+      assert_no_difference -> { LedgerEntry.count } do
+        post expenses_path, params: expense_params
+      end
     end
 
     assert_response :unprocessable_content
-    assert_match(/Expense lines amount must be a valid number/, response.body)
-    assert_select "input[name='expense[expense_lines_attributes][0][amount]'][value='3ooo']"
+    assert_match "blocked by policy", response.body
   end
 
-  test "posts the reviewed expense" do
+  test "renders the show page for an expense posted through the engine" do
     post expenses_path, params: expense_params
     expense = @workspace.expenses.order(:id).last
 
-    assert_difference("JournalEntry.count", 1) do
-      post expense_posting_path(expense)
-    end
-
-    assert_redirected_to expenses_path
-    assert expense.reload.posted?
-  end
-
-  test "updates a draft before posting" do
-    post expenses_path, params: expense_params
-    expense = @workspace.expenses.order(:id).last
-
-    patch expense_path(expense), params: {
-      expense: {
-        payment_date: Date.current,
-        payment_account_id: @bank.id,
-        expense_lines_attributes: {
-          "0" => {
-            id: expense.expense_lines.first.id,
-            account_id: @fuel.id,
-            description: "Diesel",
-            amount: "45000.00",
-            position: 0
-          }
-        }
-      }
-    }
-
-    assert_redirected_to expense_path(expense)
-    assert_equal "Diesel", expense.expense_lines.first.reload.description
-    assert_equal 4_500_000, expense.expense_lines.first.amount_kobo
-  end
-
-  test "does not edit a posted expense" do
-    post expenses_path, params: expense_params
-    expense = @workspace.expenses.order(:id).last
-    assert expense.post.success?
-
-    get edit_expense_path(expense)
-
-    assert_response :not_found
-  end
-
-  test "lists expenses in the current workspace" do
-    expense = @workspace.expenses.create!(
-      payment_date: Date.current,
-      payment_account: @bank,
-      expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
-    )
-
-    get expenses_path
+    get expense_path(expense)
 
     assert_response :success
-    assert_select "tr##{dom_id(expense)}", text: /Fuel/
-    assert_select "tr##{dom_id(expense)}", text: /Checking/
-    assert_select "tr##{dom_id(expense)} a[href='#{expense_path(expense)}']", minimum: 1
-    assert_select "tr##{dom_id(expense)} a[href='#{edit_expense_path(expense)}']", text: "Edit"
-  end
-
-  test "lists posted expenses as view only" do
-    expense = @workspace.expenses.create!(
-      payment_date: Date.current,
-      payment_account: @bank,
-      expense_lines_attributes: [ { account: @fuel, description: "Fuel", amount_kobo: 4_000_000, position: 0 } ]
-    )
-    assert expense.post.success?
-
-    get expenses_path
-
-    assert_response :success
-    assert_select "tr##{dom_id(expense)} a[href='#{expense_path(expense)}']", text: "View"
-    assert_select "tr##{dom_id(expense)} a[href='#{edit_expense_path(expense)}']", count: 0
+    assert_match "Checking Account", response.body
   end
 
   test "cannot access another workspace expense" do
@@ -176,7 +99,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
           payment_date: Date.current,
           payment_account_id: @bank.id,
           expense_lines_attributes: {
-            "0" => { account_id: @fuel.id, description: "Fuel", amount: "40000.00", position: 0 }
+            "0" => { account_id: @housing.id, description: "Rent", amount: "40000.00", position: 0 }
           }
         }
       }

@@ -164,6 +164,23 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
     assert_includes receipt.errors.join, "not persisted"
   end
 
+  test "returns a rejecting receipt instead of raising when a rule blocks" do
+    Rule.create!(
+      name: "block rule",
+      severity: "block",
+      message: "blocked by policy",
+      conditions: []
+    )
+
+    receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 1000))
+
+    refute receipt.success?
+    assert_equal :reject, receipt.verdict
+    assert_equal [ "blocked by policy" ], receipt.errors
+    assert_equal 0, @ledger.ledger_entries.count
+    assert_equal 0, LedgerLine.count
+  end
+
   private
     def command(debit:, credit:, source_type: nil, source_id: nil, action: nil)
       Engine::Command.new(

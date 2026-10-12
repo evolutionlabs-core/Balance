@@ -56,7 +56,7 @@ class ExpenseReportTest < ActiveSupport::TestCase
     def create_posted_expense(**attributes)
       create_expense(**attributes).tap do |expense|
         expense.save!
-        assert expense.post.success?
+        expense.mark_posted!
       end
     end
 

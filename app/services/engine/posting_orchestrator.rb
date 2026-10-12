@@ -37,6 +37,8 @@ class Engine::PostingOrchestrator
     end
 
     Engine::Receipt.new(entry, errors.freeze, verdict, warnings.freeze)
+  rescue Engine::Errors::BusinessRuleError => error
+    Engine::Receipt.new(nil, [ error.message ].freeze, :reject, error.warnings.freeze)
   end
 
   private
