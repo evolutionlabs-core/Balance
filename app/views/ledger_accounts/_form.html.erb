@@ -1,0 +1,44 @@
+<%= form_with model: ledger_account, url: ledger_account.persisted? ? ledger_account_path(ledger_account) : ledger_accounts_path do |form| %>
+  <%= render "shared/modal/header", title: ledger_account.persisted? ? "Edit account" : "New account" %>
+
+  <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+    <%= render "shared/form_errors", record: ledger_account %>
+
+    <div>
+      <%= form.label :code, class: field_label_class %>
+      <%= form.text_field :code, required: true, autofocus: true, placeholder: "1010", class: "#{field_class} font-mono" %>
+    </div>
+
+    <div>
+      <%= form.label :name, class: field_label_class %>
+      <%= form.text_field :name, required: true, placeholder: "Account name", class: field_class %>
+    </div>
+
+    <div>
+      <%= form.label :base_type, "Type", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :base_type,
+          options: options_for_select(LedgerSubtypes::SUBTYPES.keys.map { |type| [ type.humanize, type ] }, ledger_account.base_type),
+          prompt: "Select type",
+          select_data: {} %>
+    </div>
+
+    <div>
+      <%= form.label :subtype, "Subtype", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :subtype,
+          options: grouped_options_for_select(
+            LedgerSubtypes::SUBTYPES.map { |type, subtypes| [ type.humanize, subtypes.map { |subtype| [ subtype.humanize, subtype ] } ] },
+            ledger_account.subtype
+          ),
+          prompt: "Select subtype",
+          select_data: {},
+          searchable: true, search_placeholder: "Search subtypes…", empty_message: "No subtypes found" %>
+    </div>
+
+    <div>
+      <%= form.label :description, class: field_label_class %>
+      <%= form.text_area :description, rows: 2, placeholder: "Optional", class: field_class %>
+    </div>
+  </div>
+
+  <%= render "shared/modal/footer", form: form, submit_label: ledger_account.persisted? ? "Save changes" : "Create account" %>
+<% end %>

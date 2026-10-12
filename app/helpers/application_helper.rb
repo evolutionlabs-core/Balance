@@ -10,7 +10,7 @@ module ApplicationHelper
         { path: projects_path, svg: "icons/services.svg", text: "Projects" },
         { path: services_path, svg: "icons/project.svg", text: "Services" },
         { path: journal_entries_path, svg: "icons/list.svg", text: "Journal entries" },
-        { path: accounts_path, svg: "icons/wallet.svg", text: "Accounts" }
+        { path: ledger_accounts_path, svg: "icons/wallet.svg", text: "Accounts" }
       ] }
     ]
   end

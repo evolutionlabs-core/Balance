@@ -1,0 +1,23 @@
+<% content_for :title, "Accounts" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Accounts" } ] %>
+<% end %>
+
+<% new_account = link_to(new_ledger_account_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New account
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Accounts",
+    description: "Your chart of accounts.",
+    action: new_account %>
+
+<% if @ledger_accounts.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/wallet.svg",
+      title: "No accounts yet",
+      description: "Accounts appear here once your chart of accounts is provisioned." %>
+<% else %>
+  <%= render "list", ledger_accounts: @ledger_accounts %>
+<% end %>
