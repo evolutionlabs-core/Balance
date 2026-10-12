@@ -37,6 +37,12 @@ class Workspace < ApplicationRecord
     ledger_accounts.where(base_type: "expense")
   end
 
+  def owned_by?(user)
+    return false if user.nil?
+
+    memberships.owner.exists?(user: user)
+  end
+
   def receipt_accounts
     account_type = business? ? "Bank" : "Cash & Liquid Assets"
     cash_accounts = accounts.where(base_type: "asset", account_type: account_type)

@@ -32,6 +32,44 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
       receipt.entry.values_at(:source_type, :source_id, :action)
   end
 
+  test "rejects an entry dated inside the closed window" do
+    close_ledger_through(7.days.ago.to_date)
+    closed = Engine::Command.new(
+      ledger: @ledger,
+      effective_date: 14.days.ago.to_date,
+      lines: [
+        Engine::Command::Line.new(ledger_account: @cash, debit: 1000, credit: 0),
+        Engine::Command::Line.new(ledger_account: @income, debit: 0, credit: 1000)
+      ]
+    )
+
+    receipt = Engine::PostingOrchestrator.call(closed)
+
+    refute receipt.success?
+    assert_equal :reject, receipt.verdict
+    assert_includes receipt.errors.join, "closed through"
+    assert_equal 0, @ledger.ledger_entries.count
+  end
+
+  test "allows a posting dated after the closed window" do
+    close_ledger_through(7.days.ago.to_date)
+
+    receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 1000))
+
+    assert receipt.success?
+    assert_equal 1, @ledger.ledger_entries.count
+  end
+
+  test "rejects a line on an inactive account" do
+    @cash.update!(active: false, created_by: "admin")
+
+    receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 1000))
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "inactive"
+    assert_equal 0, @ledger.ledger_entries.count
+  end
+
   test "rejects an unbalanced command and writes nothing" do
     receipt = Engine::PostingOrchestrator.call(command(debit: 1000, credit: 900))
 
@@ -182,6 +220,13 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
   end
 
   private
+    def close_ledger_through(date)
+      actor = User.create!(full_name: "Close Owner", email_address: "closeowner@example.com", password: "supersecret123")
+      @workspace.memberships.create!(user: actor, role: :owner)
+      close = Ledgers::Close.call(ledger: @ledger, through: date, actor: actor)
+      raise close.error unless close.ok?
+    end
+
     def command(debit:, credit:, source_type: nil, source_id: nil, action: nil)
       Engine::Command.new(
         ledger: @ledger,

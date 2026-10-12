@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -244,6 +244,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_010000) do
   end
 
   create_table "ledgers", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.bigint "closed_by_id"
+    t.date "closed_through"
     t.datetime "created_at", null: false
     t.string "currency_code", null: false
     t.string "name", null: false
@@ -533,6 +536,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_010000) do
   add_foreign_key "ledger_entries", "ledgers"
   add_foreign_key "ledger_lines", "ledger_accounts"
   add_foreign_key "ledger_lines", "ledger_entries"
+  add_foreign_key "ledgers", "users", column: "closed_by_id"
   add_foreign_key "ledgers", "workspaces"
   add_foreign_key "llm_activities", "llm_chats"
   add_foreign_key "llm_chats", "llm_models"

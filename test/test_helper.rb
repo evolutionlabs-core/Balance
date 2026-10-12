@@ -41,7 +41,7 @@ module ActiveSupport
       )
 
       receipt = Engine.post(command)
-      raise "Ledger entry rejected: #{receipt.errors.map(&:to_sentence).join(', ')}" unless receipt.success?
+      raise "Ledger entry rejected: #{receipt.errors.map(&:to_s).join(', ')}" unless receipt.success?
 
       receipt.entry
     end
