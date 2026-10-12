@@ -25,6 +25,10 @@ class Workspace < ApplicationRecord
     AccountCatalog.for(workspace_type)
   end
 
+  def ledger_template
+    personal? ? "personal_finance" : "standard_sme"
+  end
+
   def payment_accounts
     credit_card_accounts = accounts.where(
       base_type: "liability",

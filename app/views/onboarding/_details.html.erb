@@ -1,7 +1,9 @@
-<% content_for :title, "Personal workspace — Balance" %>
+<% workspace_type = @onboarding_data["workspace_type"] %>
+
+<% content_for :title, "#{workspace_type.capitalize} workspace — Balance" %>
 
 <div class="mb-6">
-  <p class="mb-2 text-sm font-medium text-balance-teal-700">Personal workspace</p>
+  <p class="mb-2 text-sm font-medium text-balance-teal-700"><%= workspace_type.capitalize %> workspace</p>
   <h1 class="text-3xl font-medium tracking-tight text-neutral-950 sm:text-4xl">Name your workspace</h1>
   <p class="mt-2 max-w-lg text-base leading-7 text-neutral-500">This name appears in navigation and reports. You can change it later.</p>
 </div>
@@ -9,7 +11,8 @@
 <%= form_with url: onboarding_step_path(:details), method: :patch, class: "max-w-lg space-y-5" do %>
   <div>
     <%= label_tag :workspace_name, "Workspace name", class: field_label_class %>
-    <%= text_field_tag :workspace_name, @onboarding_data["workspace_name"], required: true, autofocus: true, placeholder: "My personal finances", class: field_class %>
+    <%= text_field_tag :workspace_name, @onboarding_data["workspace_name"], required: true, autofocus: true,
+        placeholder: workspace_type == "personal" ? "My personal finances" : "My business", class: field_class %>
   </div>
 
   <div>
@@ -18,7 +21,7 @@
       <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-neutral-500">₦</span>
       <%= number_field_tag :opening_balance_naira, @onboarding_data.fetch("opening_balance_naira", "0"), min: 0, step: 0.01, class: "#{field_class} pl-8", inputmode: "decimal" %>
     </div>
-    <p class="mt-1.5 text-sm text-neutral-500">Your starting Bank Account balance. Leave this at ₦0 if you are starting fresh.</p>
+    <p class="mt-1.5 text-sm text-neutral-500">Your starting bank balance. Leave this at ₦0 if you are starting fresh.</p>
   </div>
 
   <div class="border-y border-neutral-200 py-5">

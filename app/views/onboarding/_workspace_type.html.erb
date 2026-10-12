@@ -17,13 +17,15 @@
     <span class="h-4 w-4 rounded-full border border-neutral-300 p-[3px] peer-checked:border-balance-teal-700 peer-checked:bg-balance-teal-700"></span>
   </label>
 
-  <div class="flex cursor-not-allowed items-center gap-5 border-b border-neutral-200 px-1 py-5 opacity-55" aria-disabled="true">
-    <span class="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-lg text-neutral-500">B</span>
+  <label class="group flex cursor-pointer items-center gap-5 border-b border-neutral-200 bg-white px-1 py-5 transition hover:border-neutral-400">
+    <%= radio_button_tag :workspace_type, "business", false, class: "peer sr-only" %>
+    <span class="flex h-11 w-11 items-center justify-center rounded-full bg-balance-teal-100 text-lg text-balance-teal-700">B</span>
     <span class="min-w-0 flex-1">
-      <span class="flex items-center gap-2 text-base font-medium text-neutral-700">Business <span class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-neutral-500">Coming soon</span></span>
+      <span class="block text-base font-medium text-neutral-950">Business</span>
       <span class="mt-1 block text-sm text-neutral-500">Accounting for companies, teams, customers, and operations.</span>
     </span>
-  </div>
+    <span class="h-4 w-4 rounded-full border border-neutral-300 p-[3px] peer-checked:border-balance-teal-700 peer-checked:bg-balance-teal-700"></span>
+  </label>
 
   <div class="flex justify-end pt-4">
     <%= submit_tag "Continue", class: primary_button_class %>

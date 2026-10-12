@@ -4,6 +4,7 @@ class OnboardingController < ApplicationController
   skip_before_action :require_current_workspace
 
   STEPS = %w[workspace_type details].freeze
+  WORKSPACE_TYPES = %w[personal business].freeze
 
   before_action :redirect_completed_user
   before_action :set_step
@@ -24,24 +25,24 @@ class OnboardingController < ApplicationController
   private
 
   def choose_workspace_type
-    if params[:workspace_type] == "personal"
-      onboarding_data["workspace_type"] = "personal"
+    if WORKSPACE_TYPES.include?(params[:workspace_type])
+      onboarding_data["workspace_type"] = params[:workspace_type]
       redirect_to onboarding_step_path(:details)
     else
-      render_error("Business workspaces are coming soon.")
+      render_error("Choose a workspace type to continue.")
     end
   end
 
   def provision_workspace
     name = params[:workspace_name].to_s.strip
-    return render_error("Enter a name for your personal workspace.") if name.blank?
+    return render_error("Enter a name for your workspace.") if name.blank?
     onboarding_data["workspace_name"] = name
     onboarding_data["opening_balance_naira"] = params[:opening_balance_naira].presence || "0"
 
     opening_balance_kobo = parse_opening_balance(onboarding_data["opening_balance_naira"])
     return render_error("Opening balance must be zero or more.") unless opening_balance_kobo
 
-    workspace = Workspaces::Provisioner.call(
+    workspace = Workspaces::Creator.call(
       user: Current.user,
       name: name,
       workspace_type: onboarding_data.fetch("workspace_type"),
@@ -51,7 +52,7 @@ class OnboardingController < ApplicationController
 
     Current.session.update!(workspace: workspace)
     session.delete(:onboarding)
-    redirect_to overview_path, notice: "Your personal workspace is ready."
+    redirect_to overview_path, notice: "Your workspace is ready."
   rescue ActiveRecord::RecordInvalid => invalid
     render_error(invalid.record.errors.full_messages.to_sentence)
   end

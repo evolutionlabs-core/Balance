@@ -31,11 +31,7 @@ module Engine
 
         def ledger
           @ledger ||= workspace.ledgers.first ||
-            Ledgers::Provisioner.call(workspace: workspace, template: template)
-        end
-
-        def template
-          workspace.personal? ? "personal_finance" : "standard_sme"
+            Ledgers::Provisioner.call(workspace: workspace, template: workspace.ledger_template)
         end
 
         def kobo(amount)
