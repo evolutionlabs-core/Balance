@@ -55,6 +55,7 @@ class Workspaces::CreatorTest < ActiveSupport::TestCase
 
     assert_equal 12_500_050, entry.ledger_lines.find_by!(ledger_account: bank).debit
     assert_equal 12_500_050, entry.ledger_lines.find_by!(ledger_account: equity).credit
+    assert_equal "Opening balance", entry.description
   end
 
   test "posts a business opening balance to the business bank account" do

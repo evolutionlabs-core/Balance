@@ -73,6 +73,21 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_match "Checking Account", response.body
   end
 
+  test "carries the expense description onto the ledger entry" do
+    params = expense_params
+    params[:expense][:memo] = "Team lunch"
+
+    post expenses_path, params: params
+
+    assert_equal "Team lunch", @workspace.expenses.order(:id).last.ledger_entry.description
+  end
+
+  test "falls back to category descriptions when the expense has no memo" do
+    post expenses_path, params: expense_params
+
+    assert_equal "Rent", @workspace.expenses.order(:id).last.ledger_entry.description
+  end
+
   test "cannot access another workspace expense" do
     other_workspace = workspaces(:bola_shop)
     other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")

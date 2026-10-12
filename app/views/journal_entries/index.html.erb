@@ -15,7 +15,7 @@
 
 <%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>
   <div class="relative min-w-0 flex-1">
-    <%= form.search_field :q, value: params[:q], placeholder: "Search accounts", class: field_class %>
+    <%= form.search_field :q, value: params[:q], placeholder: "Search entries", class: field_class %>
   </div>
   <div class="relative sm:w-64">
     <%= form.text_field :range,

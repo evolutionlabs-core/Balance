@@ -50,7 +50,8 @@ class Expenses::Creator
       command = Engine::Adapters::Expense.call(
         workspace: @workspace,
         attributes: @attributes,
-        source_id: expense.id
+        source_id: expense.id,
+        description: expense.description
       )
       Engine.post(command)
     rescue ActiveRecord::RecordNotFound => error

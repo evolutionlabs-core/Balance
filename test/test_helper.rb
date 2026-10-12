@@ -24,7 +24,7 @@ module ActiveSupport
       )
     end
 
-    def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current)
+    def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current, description: nil)
       ledger = workspace.ledgers.first ||
         Ledgers::Provisioner.call(workspace: workspace, template: workspace.ledger_template)
       command = Engine::Command.new(
@@ -33,6 +33,7 @@ module ActiveSupport
         source_type: nil,
         source_id: nil,
         action: "create",
+        description: description,
         lines: [
           Engine::Command::Line.new(ledger_account: debit_ledger_account, debit: amount_kobo, credit: 0),
           Engine::Command::Line.new(ledger_account: credit_ledger_account, debit: 0, credit: amount_kobo)

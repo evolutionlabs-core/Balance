@@ -13,6 +13,10 @@ module Engine
           "create"
         end
 
+        def description
+          "Opening balance"
+        end
+
         def lines
           bank = ledger.ledger_accounts.find_by!(code: BANK_CODE)
           equity = ledger_account_for(EQUITY_NAME)

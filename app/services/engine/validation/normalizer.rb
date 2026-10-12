@@ -7,6 +7,7 @@ module Engine::Validation
         source_type: command.source_type,
         source_id: command.source_id,
         action: command.action,
+        description: command.description,
         metadata: command.metadata,
         lines: command.lines.map do |line|
           Engine::Command::Line.new(

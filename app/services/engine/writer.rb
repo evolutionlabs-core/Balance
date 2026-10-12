@@ -4,7 +4,8 @@ module Engine::Writer
       effective_date: command.effective_date,
       source_type: command.source_type,
       source_id: command.source_id,
-      action: command.action
+      action: command.action,
+      description: command.description
     )
 
     command.lines.each do |line|

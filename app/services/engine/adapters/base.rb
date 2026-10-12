@@ -1,14 +1,15 @@
 module Engine
   module Adapters
     class Base
-      def self.call(workspace:, attributes:, source_id:)
-        new(workspace: workspace, attributes: attributes, source_id: source_id).call
+      def self.call(workspace:, attributes:, source_id:, description: nil)
+        new(workspace: workspace, attributes: attributes, source_id: source_id, description: description).call
       end
 
-      def initialize(workspace:, attributes:, source_id:)
+      def initialize(workspace:, attributes:, source_id:, description: nil)
         @workspace = workspace
         @attributes = attributes
         @source_id = source_id
+        @description = description
       end
 
       def call
@@ -18,12 +19,13 @@ module Engine
           source_type: source_type,
           source_id: source_id,
           action: action,
+          description: description,
           lines: lines
         )
       end
 
       private
-        attr_reader :workspace, :attributes, :source_id
+        attr_reader :workspace, :attributes, :source_id, :description
 
         def source_type
           self.class.name.demodulize
