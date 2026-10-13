@@ -4,6 +4,6 @@ module Engine
   end
 
   def self.read(spec)
-    Query.call(spec)
+    Query.call(**spec)
   end
 end
