@@ -232,7 +232,7 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
       workspace: @workspace, user: @user, customer: @customer,
       line_items_attributes: { "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" } }
     )
-    assert_no_difference("JournalEntry.count") do
+    assert_no_difference("LedgerEntry.count") do
       estimate.send_to_client!
       estimate.approve!
       post project_estimate_conversion_path(estimate)

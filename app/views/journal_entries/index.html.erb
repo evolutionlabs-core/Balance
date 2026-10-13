@@ -37,8 +37,7 @@
   <%= render "shared/empty_state",
       icon: "icons/list.svg",
       title: "No entries yet",
-      description: "Entries recorded in your ledger appear here.",
-      action: new_entry %>
+      description: "Entries recorded in your ledger appear here." %>
 <% else %>
   <%= render "journal_entries/table", ledger_entries: @ledger_entries %>
 <% end %>

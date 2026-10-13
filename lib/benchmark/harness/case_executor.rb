@@ -1,10 +1,10 @@
 module Llm
   module Harness
-    # Runs one corpus case against the real pipeline: isolated Workspace, seeded
-    # ledger state, then the prompt delivered through Llm::ChatTurn exactly as a
-    # Solid Queue job would drive it. Captures everything the Scorer needs.
+    # Runs one corpus case against the real pipeline: isolated Workspace with a
+    # provisioned ledger, seeded ledger state, then the prompt delivered through
+    # Llm::ChatTurn exactly as a Solid Queue job would drive it. Captures
+    # everything the Scorer needs.
     class CaseExecutor
-      DEFAULT_ACCOUNT_ROLES = %w[cash uncategorized_expense].freeze
       FAILURE_PATTERNS = [
         /couldn't finish this request in time/,
         /temporarily unavailable/,
@@ -27,7 +27,7 @@ module Llm
           workspace_type: @test_case.fetch("workspace_type", "personal"),
           currency_code: "NGN"
         )
-        seed_accounts!
+        @ledger = @workspace.provision_ledger!(template: @workspace.ledger_template)
         seed_posted_entries!
         @chat = @workspace.llm_chats.create!(llm_model: @llm_model, title: @test_case.fetch("id"))
         seed_pending_proposal! if seed_pending_proposal?
@@ -52,50 +52,46 @@ module Llm
         @test_case["setup"] || {}
       end
 
-      def seed_accounts!
-        roles = setup.key?("accounts") ? Array(setup["accounts"]) : []
-        roles = DEFAULT_ACCOUNT_ROLES if roles.empty? && setup["account_specs"].blank?
-
-        roles.each do |role|
-          Account.for_role!(@workspace, role.to_sym)
-        end
-
-        Array(setup["account_specs"]).each do |attributes|
-          @workspace.accounts.create!(attributes)
-        end
-      end
-
       def seed_posted_entries!
         Array(setup["posted_entries"]).each do |spec|
           amount = spec.fetch("amount_kobo")
-          @workspace.journal_entries.create!(
-            description: spec["description"] || "Test entry",
-            entry_date: Date.current,
-            journal_entry_lines_attributes: [
-              { account_id: @workspace.accounts.find_by!(role: "uncategorized_expense").id, debit_kobo: amount },
-              { account_id: @workspace.accounts.find_by!(role: "cash").id, credit_kobo: amount }
-            ]
+          cash = @ledger.ledger_accounts.find_by!(subtype: "cash")
+          expense = @ledger.ledger_accounts.find_by!(subtype: "other_expense")
+
+          Engine.post(
+            Engine::Adapters::Entry.call(
+              workspace: @workspace,
+              attributes: {
+                effective_date: Date.current,
+                lines: [
+                  { ledger_account_id: expense.id, debit: amount, credit: 0 },
+                  { ledger_account_id: cash.id, debit: 0, credit: amount }
+                ]
+              },
+              source_id: nil,
+              description: spec["description"] || "Test entry"
+            )
           )
         end
       end
 
       def seed_pending_proposal?
-        setup.fetch("pending_journal_entry_proposal", false)
+        setup.fetch("pending_entry_proposal", false)
       end
 
       def seed_pending_proposal!
-        expense = @workspace.accounts.find_by!(role: "uncategorized_expense")
-        cash = @workspace.accounts.find_by!(role: "cash")
+        expense = @ledger.ledger_accounts.find_by!(subtype: "other_expense")
+        cash = @ledger.ledger_accounts.find_by!(subtype: "cash")
 
         @workspace.proposals.create!(
           llm_chat: @chat,
-          proposal_type: "journal_entry",
+          proposal_type: "entry",
           data: {
             "description" => "Pending expense",
-            "entry_date" => Date.current.to_s,
+            "effective_date" => Date.current.to_s,
             "lines" => [
-              { "account_id" => expense.id, "side" => "debit", "amount_kobo" => 100_000 },
-              { "account_id" => cash.id, "side" => "credit", "amount_kobo" => 100_000 }
+              { "ledger_account_id" => expense.id, "side" => "debit", "amount_kobo" => 100_000 },
+              { "ledger_account_id" => cash.id, "side" => "credit", "amount_kobo" => 100_000 }
             ]
           }
         )
@@ -108,7 +104,7 @@ module Llm
       end
 
       def interpolate(content)
-        latest_id = @workspace.journal_entries.order(entry_date: :desc, id: :desc).pick(:id)
+        latest_id = @ledger.ledger_entries.order(effective_date: :desc, id: :desc).pick(:id)
         content.gsub("{{latest_posted_id}}", latest_id.to_s)
       end
 
@@ -116,8 +112,8 @@ module Llm
       # proposals — belongs to this case's turn.
       def baseline_snapshot
         {
-          journal_entries: @workspace.journal_entries.count,
-          accounts: @workspace.accounts.count,
+          ledger_entries: @ledger.ledger_entries.count,
+          ledger_accounts: @ledger.ledger_accounts.count,
           proposals_proposed: Proposal.where(workspace_id: @workspace.id).proposed.count,
           last_message_id: @chat.llm_messages.maximum(:id) || 0,
           max_proposal_id: Proposal.where(workspace_id: @workspace.id).maximum(:id) || 0
@@ -160,8 +156,8 @@ module Llm
           final_response: assistant.last,
           failure_reported: assistant.select { |content| failure?(content) },
           infrastructure_failure: assistant.find { |content| content.match?(/temporarily unavailable/i) },
-          journal_entries_delta: @workspace.journal_entries.count - baseline[:journal_entries],
-          accounts_delta: @workspace.accounts.count - baseline[:accounts],
+          ledger_entries_delta: @ledger.ledger_entries.count - baseline[:ledger_entries],
+          ledger_accounts_delta: @ledger.ledger_accounts.count - baseline[:ledger_accounts],
           proposals_created: created_proposals(baseline),
           superseded_count: superseded_count(baseline),
           wall_clock_ms: wall_clock_ms

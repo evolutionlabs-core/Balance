@@ -5,8 +5,6 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     @user = users(:one)
     @user.update!(password: "password")
     @workspace = workspaces(:ada_store)
-    @bank = @workspace.accounts.create!(name: "Workflow Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @category = @workspace.accounts.create!(name: "Workflow Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
     ledger = @workspace.provision_ledger!(template: "personal_finance")
     income = ledger.ledger_accounts.find_by!(name: "Other Income")
     @workspace.update!(default_sales_ledger_account: income)

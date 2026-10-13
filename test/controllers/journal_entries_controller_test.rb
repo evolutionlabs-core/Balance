@@ -80,4 +80,49 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='select-menu'][data-select-menu-searchable-value='true']", count: 3
     assert_select "[data-controller='select-menu'][data-select-menu-search-in-trigger-value='true'] input[role='combobox']", count: 3
   end
+
+  test "records a manual entry through the ledger engine" do
+    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
+    groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+
+    assert_difference "LedgerEntry.count", 1 do
+      post journal_entries_path, params: { entry: {
+        effective_date: Date.current.to_s,
+        description: "Manual shop",
+        lines: {
+          "0" => { ledger_account_id: groceries.id, debit: "1000.00", credit: "" },
+          "1" => { ledger_account_id: cash.id, debit: "", credit: "1000.00" }
+        }
+      } }
+    end
+
+    assert_redirected_to journal_entries_path
+
+    entry = @ledger.ledger_entries.sole
+    assert_equal "Manual shop", entry.description
+    assert_equal "Entry", entry.source_type
+    assert_nil entry.source_id
+
+    groceries_line = entry.ledger_lines.find_by(debit: 100_000)
+    assert_equal groceries, groceries_line&.ledger_account
+  end
+
+  test "rejects an unbalanced manual entry" do
+    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
+    groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+
+    assert_no_difference "LedgerEntry.count" do
+      post journal_entries_path, params: { entry: {
+        effective_date: Date.current.to_s,
+        description: "Unbalanced",
+        lines: {
+          "0" => { ledger_account_id: groceries.id, debit: "1000.00", credit: "" },
+          "1" => { ledger_account_id: cash.id, debit: "", credit: "500.00" }
+        }
+      } }
+    end
+
+    assert_response :unprocessable_content
+    assert_includes response.body, "Total debits (100000.0) must equal total credits (50000.0)"
+  end
 end

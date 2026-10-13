@@ -10,26 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_14_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "accounts", force: :cascade do |t|
-    t.string "account_type", null: false
-    t.string "base_type", null: false
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "detail_type", null: false
-    t.string "name", null: false
-    t.string "role"
-    t.datetime "updated_at", null: false
-    t.bigint "workspace_id", null: false
-    t.index ["workspace_id", "account_type"], name: "index_accounts_on_workspace_id_and_account_type"
-    t.index ["workspace_id", "base_type"], name: "index_accounts_on_workspace_id_and_base_type"
-    t.index ["workspace_id", "name"], name: "index_accounts_on_workspace_id_and_name", unique: true
-    t.index ["workspace_id", "role"], name: "index_accounts_on_workspace_id_and_role", unique: true, where: "(role IS NOT NULL)"
-    t.index ["workspace_id"], name: "index_accounts_on_workspace_id"
-  end
 
   create_table "customers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
@@ -106,7 +89,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
 
   create_table "expenses", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "journal_entry_id"
     t.text "memo"
     t.bigint "payment_account_id", null: false
     t.date "payment_date", null: false
@@ -114,7 +96,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
     t.bigint "total_kobo", null: false
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
-    t.index ["journal_entry_id"], name: "index_expenses_on_journal_entry_id", unique: true, where: "(journal_entry_id IS NOT NULL)"
     t.index ["payment_account_id"], name: "index_expenses_on_payment_account_id"
     t.index ["workspace_id", "payment_date"], name: "index_expenses_on_workspace_id_and_payment_date"
     t.index ["workspace_id", "status"], name: "index_expenses_on_workspace_id_and_status"
@@ -181,32 +162,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
     t.index ["workspace_id", "invoice_number"], name: "index_invoices_on_workspace_id_and_invoice_number", unique: true
     t.index ["workspace_id", "status"], name: "index_invoices_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
-  end
-
-  create_table "journal_entries", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description", null: false
-    t.date "entry_date", null: false
-    t.bigint "reverses_journal_entry_id"
-    t.datetime "updated_at", null: false
-    t.bigint "workspace_id", null: false
-    t.index ["reverses_journal_entry_id"], name: "index_journal_entries_on_reverses_journal_entry_id"
-    t.index ["workspace_id", "entry_date"], name: "index_journal_entries_on_workspace_id_and_entry_date"
-    t.index ["workspace_id"], name: "index_journal_entries_on_workspace_id"
-  end
-
-  create_table "journal_entry_lines", force: :cascade do |t|
-    t.bigint "account_id", null: false
-    t.bigint "counterparty_id"
-    t.string "counterparty_type"
-    t.datetime "created_at", null: false
-    t.bigint "credit_kobo", default: 0, null: false
-    t.bigint "debit_kobo", default: 0, null: false
-    t.bigint "journal_entry_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
-    t.index ["counterparty_type", "counterparty_id"], name: "index_journal_entry_lines_on_counterparty"
-    t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
   end
 
   create_table "ledger_accounts", force: :cascade do |t|
@@ -426,7 +381,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
   create_table "proposals", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.jsonb "data", default: {}, null: false
-    t.bigint "journal_entry_id"
+    t.bigint "ledger_entry_id"
     t.bigint "llm_chat_id", null: false
     t.bigint "llm_message_id"
     t.string "proposal_type", null: false
@@ -434,7 +389,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
     t.datetime "updated_at", null: false
     t.integer "version", default: 1, null: false
     t.bigint "workspace_id", null: false
-    t.index ["journal_entry_id"], name: "index_proposals_on_journal_entry_id"
+    t.index ["ledger_entry_id"], name: "index_proposals_on_ledger_entry_id"
     t.index ["llm_chat_id", "proposal_type", "version"], name: "index_proposals_on_llm_chat_id_and_proposal_type_and_version"
     t.index ["llm_chat_id"], name: "index_proposals_on_llm_chat_id"
     t.index ["llm_message_id"], name: "index_proposals_on_llm_message_id"
@@ -504,7 +459,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
     t.index ["default_sales_ledger_account_id"], name: "index_workspaces_on_default_sales_ledger_account_id"
   end
 
-  add_foreign_key "accounts", "workspaces"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_line_items", "services"
@@ -514,7 +468,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
   add_foreign_key "estimates", "workspaces"
   add_foreign_key "expense_lines", "expenses"
   add_foreign_key "expense_lines", "ledger_accounts", column: "account_id", validate: false
-  add_foreign_key "expenses", "journal_entries"
   add_foreign_key "expenses", "ledger_accounts", column: "payment_account_id", validate: false
   add_foreign_key "expenses", "workspaces"
   add_foreign_key "invoice_lines", "invoices"
@@ -529,10 +482,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
   add_foreign_key "invoices", "projects"
   add_foreign_key "invoices", "users"
   add_foreign_key "invoices", "workspaces"
-  add_foreign_key "journal_entries", "journal_entries", column: "reverses_journal_entry_id"
-  add_foreign_key "journal_entries", "workspaces"
-  add_foreign_key "journal_entry_lines", "accounts"
-  add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "ledger_accounts", "ledgers"
   add_foreign_key "ledger_entries", "ledgers"
   add_foreign_key "ledger_lines", "ledger_accounts"
@@ -556,7 +505,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_000000) do
   add_foreign_key "project_time_entries", "projects"
   add_foreign_key "projects", "customers"
   add_foreign_key "projects", "workspaces"
-  add_foreign_key "proposals", "journal_entries"
+  add_foreign_key "proposals", "ledger_entries"
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"
   add_foreign_key "proposals", "workspaces"

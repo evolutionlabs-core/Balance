@@ -13,8 +13,8 @@ class Llm::ProposalConfirmationsController < Llm::ProposalActionsController
 
   private
     def proposal_attributes
-      return {} unless @proposal.journal_entry_proposal? && !@proposal.reversal_proposal?
+      return {} unless @proposal.entry_proposal? && !@proposal.reversal_proposal?
 
-      params.expect(proposal: [ :description, :entry_date, :reverses_journal_entry_id, lines: [ [ :account_id, :side, :amount_naira, :counterparty_name ] ] ])
+      params.expect(proposal: [ :description, :effective_date, :reverses_ledger_entry_id, lines: [ [ :ledger_account_id, :side, :amount_naira ] ] ])
     end
 end

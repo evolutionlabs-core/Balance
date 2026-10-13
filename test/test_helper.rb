@@ -13,17 +13,6 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    def post_journal_entry!(workspace, debit_account:, credit_account:, amount_kobo:, entry_date: Date.current, description: "Test entry")
-      workspace.journal_entries.create!(
-        description: description,
-        entry_date: entry_date,
-        journal_entry_lines_attributes: [
-          { account_id: debit_account.id, debit_kobo: amount_kobo },
-          { account_id: credit_account.id, credit_kobo: amount_kobo }
-        ]
-      )
-    end
-
     def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current, description: nil)
       ledger = workspace.ledgers.first ||
         workspace.provision_ledger!(template: workspace.ledger_template)

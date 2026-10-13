@@ -13,7 +13,7 @@ class Llm::ProposalConfirmation
     elsif @proposal.account_creation_proposal?
       @proposal.confirm_accounts!(draft: account_draft)
     else
-      @proposal.confirm!(draft: journal_entry_draft)
+      @proposal.confirm!(draft: entry_draft)
     end
 
     resume_after_account_creation if @errors.nil? && @proposal.reload.account_creation_proposal? && @proposal.confirmed?
@@ -31,11 +31,11 @@ class Llm::ProposalConfirmation
       confirmation.errors
     end
 
-    def journal_entry_draft
+    def entry_draft
       if @proposal.reversal_proposal?
-        Llm::JournalEntryProposal.new(workspace: @workspace, data: @proposal.data)
+        Llm::EntryProposal.new(workspace: @workspace, data: @proposal.data)
       else
-        Llm::JournalEntryProposal.from_form(workspace: @workspace, params: @attributes)
+        Llm::EntryProposal.from_form(workspace: @workspace, params: @attributes)
       end
     end
 

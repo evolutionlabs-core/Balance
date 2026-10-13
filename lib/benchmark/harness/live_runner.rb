@@ -153,7 +153,7 @@ module Llm
           "source_files" => SOURCE_PATHS,
           "source_examples" => cases.pluck("source_example").uniq.size,
           "source_entries" => cases.size,
-          "expected_journal_lines" => cases.sum { |test_case| test_case.fetch("expect_lines").size }
+          "expected_entry_lines" => cases.sum { |test_case| test_case.fetch("expect_lines").size }
         }
       end
 

@@ -1,7 +1,7 @@
 require "test_helper"
 
 class Workspace::CreationTest < ActiveSupport::TestCase
-  test "creates a personal workspace with the personal finance chart and no legacy accounts" do
+  test "creates a personal workspace with the personal finance chart" do
     user = User.create!(full_name: "Ife Bello", email_address: "ife@example.com", password: "supersecret123")
 
     workspace = Workspace.create_for_user!(
@@ -12,7 +12,6 @@ class Workspace::CreationTest < ActiveSupport::TestCase
     )
 
     assert_equal user, workspace.memberships.owner.first.user
-    assert_empty workspace.accounts
 
     ledger = workspace.ledgers.sole
     assert_equal "personal_finance", workspace.ledger_template

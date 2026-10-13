@@ -1,5 +1,6 @@
 class ListJournalEntries < RubyLLM::Tool
-  description "List posted journal entries in this workspace. Proposals awaiting confirmation are not included. Each entry includes its reverses_journal_entry_id, which is present only when the entry is itself a reversal."
+  description "List recorded ledger entries in this workspace. Entries the assistant recorded from chat have source \"Entry\". " \
+              "A confirmed reversal proposal carries the source entry under reverses_ledger_entry_id, which is present only when the entry is itself a reversal."
 
   params do
     integer :limit, required: false, description: "maximum number of entries to return, from 1 to 20; defaults to 10"
@@ -18,25 +19,30 @@ class ListJournalEntries < RubyLLM::Tool
     requested_limit = limit.to_i
     requested_limit = 10 unless requested_limit.positive?
 
-    entries = @workspace.journal_entries
-      .includes(journal_entry_lines: :account)
-      .order(entry_date: :desc, id: :desc)
+    entries = ledger.ledger_entries
+      .includes(ledger_lines: :ledger_account)
+      .order(effective_date: :desc, id: :desc)
       .limit([ requested_limit, 20 ].min)
 
-    entries = entries.where(entry_date: dates[:from]..) if dates[:from]
-    entries = entries.where(entry_date: ..dates[:to]) if dates[:to]
+    entries = entries.where(effective_date: dates[:from]..) if dates[:from]
+    entries = entries.where(effective_date: ..dates[:to]) if dates[:to]
+
+    reversals_by_entry = Proposal.where(proposal_type: "entry", status: "confirmed")
+      .where("data -> 'reverses_ledger_entry_id' IS NOT NULL")
+      .index_by(&:ledger_entry_id)
 
     entries.map do |entry|
       {
         id: entry.id,
-        date: entry.entry_date.iso8601,
+        date: entry.effective_date.iso8601,
         description: entry.description,
-        reverses_journal_entry_id: entry.reverses_journal_entry_id,
-        lines: entry.journal_entry_lines.map do |line|
+        source: entry.source_type,
+        reverses_ledger_entry_id: reversals_by_entry[entry.id]&.data&.dig("reverses_ledger_entry_id"),
+        lines: entry.ledger_lines.map do |line|
           {
-            account: line.account.name,
-            debit_naira: format_amount(line.debit_kobo),
-            credit_naira: format_amount(line.credit_kobo)
+            account: line.ledger_account.name,
+            debit_naira: format_amount(line.debit),
+            credit_naira: format_amount(line.credit)
           }
         end
       }
@@ -56,6 +62,11 @@ class ListJournalEntries < RubyLLM::Tool
   end
 
   def format_amount(kobo)
-    format("%.2f", BigDecimal(kobo.to_i) / 100)
+    format("%.2f", BigDecimal(kobo) / 100)
+  end
+
+  def ledger
+    @ledger ||= @workspace.ledgers.first ||
+      @workspace.provision_ledger!(template: @workspace.ledger_template)
   end
 end

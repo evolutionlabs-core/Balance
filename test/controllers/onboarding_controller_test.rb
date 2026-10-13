@@ -6,7 +6,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
   end
 
-  test "provisions a personal NGN workspace with its ledger chart and no legacy accounts" do
+  test "provisions a personal NGN workspace with its ledger chart" do
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
     assert_redirected_to onboarding_step_path(:details)
 
@@ -18,8 +18,6 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_equal "personal", workspace.workspace_type
     assert_equal "NGN", workspace.currency_code
     assert workspace.onboarding_completed_at?
-    assert_empty workspace.journal_entries
-    assert_empty workspace.accounts
     assert_equal "personal_finance", workspace.ledger_template
     assert_equal 18, workspace.ledgers.sole.ledger_accounts.count
     assert_redirected_to overview_path
