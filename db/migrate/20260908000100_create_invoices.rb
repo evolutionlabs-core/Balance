@@ -3,7 +3,6 @@ class CreateInvoices < ActiveRecord::Migration[8.1]
     create_table :invoices do |t|
       t.references :workspace, null: false, foreign_key: true
       t.references :user, null: false, foreign_key: true
-      t.references :contact, foreign_key: true
       t.date :issue_date
       t.date :due_date
       t.string :currency_code, null: false, default: "NGN"
@@ -22,9 +21,11 @@ class CreateInvoices < ActiveRecord::Migration[8.1]
       t.bigint :rate_minor
       t.bigint :amount_minor, null: false, default: 0
       t.integer :position, null: false
+      t.bigint :ledger_account_id
 
       t.timestamps
     end
     add_index :invoice_lines, [ :invoice_id, :position ], unique: true
+    add_index :invoice_lines, :ledger_account_id
   end
 end

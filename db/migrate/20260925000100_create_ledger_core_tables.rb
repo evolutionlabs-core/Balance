@@ -26,9 +26,9 @@ class CreateLedgerCoreTables < ActiveRecord::Migration[8.1]
     end
     add_index :ledger_accounts, [ :ledger_id, :name ], unique: true
     add_index :ledger_accounts, [ :ledger_id, :code ], unique: true
-    add_check_constraint :ledger_accounts, "base_type IN ('asset', 'liability', 'equity', 'income', 'expense')", name: "chk_ledger_accounts_base_type"
-    add_check_constraint :ledger_accounts, "normal_balance IN ('debit', 'credit')", name: "chk_ledger_accounts_normal_balance"
-    add_check_constraint :ledger_accounts, "created_by IN ('system', 'admin', 'agent')", name: "chk_ledger_accounts_created_by"
+    add_check_constraint :ledger_accounts, "base_type::text = ANY (ARRAY['asset'::character varying::text, 'liability'::character varying::text, 'equity'::character varying::text, 'income'::character varying::text, 'expense'::character varying::text])", name: "chk_ledger_accounts_base_type"
+    add_check_constraint :ledger_accounts, "normal_balance::text = ANY (ARRAY['debit'::character varying::text, 'credit'::character varying::text])", name: "chk_ledger_accounts_normal_balance"
+    add_check_constraint :ledger_accounts, "created_by::text = ANY (ARRAY['system'::character varying::text, 'admin'::character varying::text, 'agent'::character varying::text])", name: "chk_ledger_accounts_created_by"
 
     create_table :ledger_entries do |t|
       t.references :ledger, null: false, foreign_key: true
@@ -72,7 +72,7 @@ class CreateLedgerCoreTables < ActiveRecord::Migration[8.1]
     end
     add_index :rules, [ :active, :ledger_id, :source_type, :action ], name: "idx_rules_fetch"
     add_check_constraint :rules,
-      "severity IN ('block', 'require_approval', 'warn')",
+      "severity::text = ANY (ARRAY['block'::character varying::text, 'require_approval'::character varying::text, 'warn'::character varying::text])",
       name: "chk_rules_severity"
   end
 end

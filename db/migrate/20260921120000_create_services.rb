@@ -2,7 +2,7 @@ class CreateServices < ActiveRecord::Migration[8.1]
   def change
     create_table :services do |t|
       t.references :workspace, null: false, foreign_key: true
-      t.references :income_account, null: false, foreign_key: { to_table: :accounts }
+      t.bigint :income_ledger_account_id, null: false
       t.string :name, null: false
       t.text :description
       t.bigint :default_rate_minor
@@ -10,7 +10,7 @@ class CreateServices < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-
+    add_index :services, :income_ledger_account_id
     add_index :services, [ :workspace_id, :name ], unique: true
     add_reference :estimate_line_items, :service, foreign_key: true
     add_reference :invoice_lines, :service, foreign_key: true
