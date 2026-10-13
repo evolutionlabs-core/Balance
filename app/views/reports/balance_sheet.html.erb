@@ -1,0 +1,30 @@
+<% content_for :title, "Balance sheet" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Balance sheet" } ] %>
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Balance sheet",
+    description: "Everything you own, owe, and keep, as of #{Date.current.strftime("%B %-d, %Y")}.",
+    action: render("tabs", active: :balance_sheet) %>
+
+<% unless @report %>
+  <%= render "shared/empty_state",
+      icon: "icons/gauge.svg",
+      title: "No accounts yet",
+      description: "Your balance sheet appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <div class="mt-6 space-y-8">
+    <% earnings_row = { code: "", name: "Current earnings (unclosed)", normal_balance: "credit", balance: -@report[:current_earnings] } %>
+
+    <%= render "section", title: "Assets", rows: @report[:assets], total: @report[:total_assets] %>
+    <%= render "section", title: "Liabilities", rows: @report[:liabilities], total: @report[:total_liabilities] %>
+    <%= render "section", title : "Equity", rows: @report[:equity] + [ earnings_row ], total: @report[:total_equity],
+        note: "Earnings through #{Date.current.strftime("%b %-d")} are folded in until books close" %>
+
+    <p class="flex items-center gap-2 text-sm <%= @report[:balance_check] ? "text-green-700" : "text-red-700" %>">
+      <%= inline_svg_tag(@report[:balance_check] ? "icons/check-circle.svg" : "icons/minus-circle.svg", class: "h-4 w-4 flex-none") %>
+      <%= @report[:balance_check] ? "Balanced — assets equal liabilities plus equity." : "Out of balance — assets do not equal liabilities plus equity." %>
+    </p>
+  </div>
+<% end %>

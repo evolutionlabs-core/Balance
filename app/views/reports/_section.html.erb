@@ -1,0 +1,35 @@
+<section aria-labelledby="<%= title.parameterize %>-heading" class="min-w-0">
+  <div class="flex items-baseline justify-between gap-4">
+    <h2 id="<%= title.parameterize %>-heading" class="text-base font-semibold text-neutral-950"><%= title %></h2>
+    <% if local_assigns[:note] %>
+      <p class="text-xs text-neutral-500"><%= note %></p>
+    <% end %>
+  </div>
+
+  <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
+    <div class="hidden grid-cols-[minmax(10rem,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)] gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-[11px] font-semibold tracking-wide text-neutral-500 uppercase sm:grid">
+      <span>Code</span>
+      <span>Account</span>
+      <span class="text-right">Amount</span>
+    </div>
+
+    <div class="divide-y divide-neutral-100">
+      <% rows.each do |row| %>
+        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2.5 sm:grid-cols-[minmax(10rem,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)]">
+          <span class="order-2 text-xs text-neutral-400 sm:order-1"><%= row[:code] %></span>
+          <span class="order-1 truncate text-sm font-medium text-neutral-900 sm:order-2"><%= row[:name] %></span>
+          <span class="order-3 text-right text-sm font-semibold tabular-nums text-neutral-950"><%= statement_amount(row[:balance], row[:normal_balance]) %></span>
+        </div>
+      <% end %>
+
+      <% if rows.empty? %>
+        <p class="px-4 py-4 text-sm text-neutral-500">No accounts in this section.</p>
+      <% end %>
+    </div>
+
+    <div class="flex items-center justify-between gap-4 border-t border-neutral-200 bg-neutral-50 px-4 py-3">
+      <span class="text-sm font-semibold text-neutral-950">Total <%= title.downcase %></span>
+      <span class="text-sm font-semibold tabular-nums text-neutral-950"><%= naira(total) %></span>
+    </div>
+  </div>
+</section>

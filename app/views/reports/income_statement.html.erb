@@ -1,0 +1,51 @@
+<% content_for :title, "Income statement" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Income statement" } ] %>
+<% end %>
+
+<% period_label = "#{@start_date.strftime("%B %-d")} – #{@end_date.strftime("%B %-d, %Y")}" %>
+
+<%= render "shared/page_header",
+    title: "Income statement",
+    description: "What you earned and spent for #{period_label}.",
+    action: render("tabs", active: :income_statement) %>
+
+<% unless @report %>
+  <%= render "shared/empty_state",
+      icon: "icons/gauge.svg",
+      title: "No accounts yet",
+      description: "Your income statement appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <nav class="mt-4 inline-flex items-center gap-2 text-sm" aria-label="Statement month">
+    <%= link_to income_statement_path(month: (@month.prev_month).iso8601),
+          class: "inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950" do %>
+      <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 rotate-180" %>
+      Previous month
+    <% end %>
+
+    <% unless @month.beginning_of_month == Date.current.beginning_of_month %>
+      <%= link_to "This month", income_statement_path, class: "rounded-md px-2 py-1 font-medium text-balance-teal-700 hover:bg-neutral-100" %>
+    <% end %>
+
+    <% if (@month.next_month).beginning_of_month <= Date.current %>
+      <%= link_to income_statement_path(month: (@month.next_month).iso8601),
+            class: "inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950" do %>
+        Next month
+        <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4" %>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <div class="mt-6 space-y-8">
+    <%= render "section", title: "Income", rows: @report[:income], total: @report[:total_income] %>
+    <%= render "section", title: "Expenses", rows: @report[:expenses], total: @report[:total_expenses] %>
+
+    <section aria-labelledby="net-income-heading" class="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="net-income-heading" class="text-base font-semibold text-neutral-950">Net income</h2>
+        <p class="text-sm text-neutral-500">Income minus expenses for <%= period_label %></p>
+      </div>
+      <p class="mt-2 text-2xl font-semibold tracking-tight tabular-nums <%= @report[:net_income].negative? ? "text-red-700" : "text-neutral-950" %>"><%= naira(@report[:net_income]) %></p>
+    </section>
+  </div>
+<% end %>

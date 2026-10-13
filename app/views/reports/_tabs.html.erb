@@ -1,0 +1,6 @@
+<nav class="inline-flex w-full rounded-lg bg-neutral-100 p-1 sm:w-auto" aria-label="Reports">
+  <% [ [ "Balance sheet", :balance_sheet, balance_sheet_path ], [ "Income statement", :income_statement, income_statement_path ] ].each do |label, key, path| %>
+    <%= link_to label, path, aria: { current: active == key ? "page" : nil },
+        class: "flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors sm:flex-none sm:px-4 #{active == key ? 'bg-white text-neutral-950 shadow-sm' : 'text-neutral-500 hover:text-neutral-950'}" %>
+  <% end %>
+</nav>

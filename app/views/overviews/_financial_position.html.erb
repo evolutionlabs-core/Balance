@@ -1,14 +1,70 @@
-<% position = summary.balance_sheet %>
 <section class="border-t border-neutral-200 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-labelledby="position-heading">
   <h2 id="position-heading" class="text-base font-semibold">Financial position</h2>
   <p class="mt-1 text-sm text-neutral-500">Balances as of <%= Date.current.strftime("%b %-d, %Y") %></p>
-  <dl class="mt-4 divide-y divide-neutral-100 sm:mt-6">
-    <% [["Assets", "What you own", position.assets_kobo], ["Liabilities", "What you owe", position.liabilities_kobo], ["Equity", "What remains after liabilities", position.equity_kobo]].each do |label, explanation, value| %>
-      <div class="flex items-center justify-between gap-4 py-4 first:pt-0 sm:block sm:py-5">
-        <dt class="flex items-baseline justify-between gap-2 text-sm font-medium"><%= label %><span class="text-xs font-normal text-neutral-500"><%= explanation %></span></dt>
-        <dd class="shrink-0 text-lg font-semibold tracking-tight tabular-nums sm:mt-2 sm:text-2xl"><%= naira(value) %></dd>
+
+  <% if balance_sheet.nil? %>
+    <p class="mt-4 rounded-md border border-dashed border-neutral-200 p-4 text-sm text-neutral-500">
+      Account detail appears here once your chart of accounts is provisioned.
+    </p>
+  <% else %>
+    <% composition = [ [ "Assets", "#0f7082", balance_sheet[:total_assets] ],
+                       [ "Liabilities", "#c7d2d4", balance_sheet[:total_liabilities] ],
+                       [ "Equity", "#7ba8ae", balance_sheet[:total_equity] ] ] %>
+
+    <% if composition.any? { |_label, _color, value| !value.zero? } %>
+      <div class="mt-4" role="img" aria-label="Assets, liabilities, and equity in naira. Totals are listed below the chart.">
+        <%= pie_chart composition.to_h { |label, _color, value| [ label, value ] }, height: "220px",
+            colors: composition.map { |_label, color, _value| color },
+            prefix: "₦", thousands: ",", legend: false %>
       </div>
+
+      <dl class="mt-4 space-y-2">
+        <% composition.each do |label, color, value| %>
+          <div class="flex items-center justify-between gap-3 text-sm">
+            <dt class="flex min-w-0 items-center gap-2">
+              <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: <%= color %>"></span>
+              <span class="text-neutral-700"><%= label %></span>
+            </dt>
+            <dd class="shrink-0 font-semibold tabular-nums text-neutral-950"><%= naira(value) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="mt-4 rounded-md border border-dashed border-neutral-200 p-4 text-sm text-neutral-500">
+        Balances appear here once you record entries.
+      </p>
     <% end %>
-  </dl>
-  <%= link_to "Explore accounts →", ledger_accounts_path, class: "mt-5 inline-block text-sm font-medium text-balance-teal-700 hover:underline" %>
+
+    <% earnings_row = { code: "", name: "Current earnings (unclosed)", normal_balance: "credit", balance: -balance_sheet[:current_earnings] } %>
+    <% [ [ "Assets", "What you own", balance_sheet[:assets], balance_sheet[:total_assets] ],
+         [ "Liabilities", "What you owe", balance_sheet[:liabilities], balance_sheet[:total_liabilities] ],
+         [ "Equity", "What remains after liabilities", balance_sheet[:equity] + [ earnings_row ], balance_sheet[:total_equity]] ].each do |label, explanation, rows, total| %>
+      <details class="group border-b border-neutral-100 py-3 first:pt-0 last:border-b-0">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+          <span class="flex min-w-0 items-baseline gap-2 text-sm font-medium">
+            <%= label %>
+            <span class="truncate text-xs font-normal text-neutral-500"><%= explanation %></span>
+          </span>
+          <span class="flex shrink-0 items-center gap-2">
+            <span class="text-base font-semibold tracking-tight tabular-nums"><%= naira(total) %></span>
+            <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 text-neutral-400 transition-transform group-open:rotate-90" %>
+          </span>
+        </summary>
+
+        <dl class="mt-2 space-y-1.5 pl-1">
+          <% rows.each do |row| %>
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <dt class="flex min-w-0 items-baseline gap-2">
+                <span class="font-mono text-xs text-neutral-400"><%= row[:code] %></span>
+                <span class="truncate text-neutral-700"><%= row[:name] %></span>
+              </dt>
+              <dd class="shrink-0 font-medium tabular-nums text-neutral-900"><%= statement_amount(row[:balance], row[:normal_balance]) %></dd>
+            </div>
+          <% end %>
+        </dl>
+      </details>
+    <% end %>
+  <% end %>
+
+  <%= link_to "View balance sheet →", balance_sheet_path, class: "mt-5 inline-block text-sm font-medium text-balance-teal-700 hover:underline" %>
 </section>

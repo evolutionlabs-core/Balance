@@ -21,6 +21,9 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /#{Regexp.escape("₦500.00")}/
     assert_select "body", /#{Regexp.escape("₦200.00")}/
     assert_select "body", /#{Regexp.escape("₦300.00")}/
+    assert_select "[role=img][aria-label*='Assets, liabilities, and equity']", count: 1
+    assert_select "#position-heading + p", text: /Balances as of/
+    assert_select "details summary", text: /Assets/, count: 1
   end
 
   test "shows charts without a separate empty state when there are no ledger entries" do

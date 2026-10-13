@@ -1,0 +1,62 @@
+require "test_helper"
+
+class ReportsControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @workspace = workspaces(:ada_store)
+    sign_in_as(users(:one))
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
+    @salary = @ledger.ledger_accounts.find_by!(name: "Salary")
+  end
+
+  test "balance sheet lists every account with its amount and balances" do
+    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary, amount_kobo: 500_000)
+
+    get balance_sheet_path
+
+    assert_response :success
+    assert_select "body", /Balance sheet/
+    assert_select "section[aria-labelledby=assets-heading] span", text: "Cash"
+    assert_select "section[aria-labelledby=equity-heading] span", text: "Current earnings (unclosed)"
+    assert_select "section[aria-labelledby=equity-heading] span", text: /#{Regexp.escape("₦5,000.00")}/
+    assert_select "section[aria-labelledby=assets-heading] span", text: /#{Regexp.escape("₦5,000.00")}/
+    assert_select "body", /Balanced — assets equal liabilities plus equity/
+  end
+
+  test "income statement shows only the selected month" do
+    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary,
+      amount_kobo: 300_000, effective_date: Date.current)
+    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary,
+      amount_kobo: 900_000, effective_date: Date.current.prev_month)
+
+    get income_statement_path
+
+    assert_response :success
+    assert_select "body", text: /#{Regexp.escape("₦3,000.00")}/, count: 1
+    assert_select "body", text: /#{Regexp.escape("₦9,000.00")}/, count: 0
+    assert_select "section[aria-labelledby=net-income-heading] p", text: /#{Regexp.escape("₦3,000.00")}/
+
+    get income_statement_path(month: Date.current.prev_month.iso8601)
+
+    assert_response :success
+    assert_select "body", text: /#{Regexp.escape("₦9,000.00")}/, count: 1
+    assert_select "body", text: /#{Regexp.escape("₦3,000.00")}/, count: 0
+    assert_select "nav[aria-label='Statement month'] svg", count: 2
+    assert_select "nav[aria-label='Statement month']", { text: /Previous month/, count: 1 }
+  end
+
+  test "reports render an empty state when no ledger is provisioned" do
+    user = User.create!(full_name: "No Ledger", email_address: "noledger@example.com", password: "supersecret123")
+    workspace = Workspace.create!(name: "No Ledger Co", currency_code: "NGN")
+    user.memberships.create!(workspace: workspace, role: :owner)
+    sign_in_as(user)
+
+    get balance_sheet_path
+    assert_response :success
+    assert_select "h2", text: "No accounts yet"
+
+    get income_statement_path
+    assert_response :success
+    assert_select "h2", text: "No accounts yet"
+  end
+end

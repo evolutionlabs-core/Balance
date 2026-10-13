@@ -26,6 +26,8 @@ Rails.application.routes.draw do
   patch "onboarding/:step", to: "onboarding#update"
 
   resource :overview, only: %i[show]
+  get "reports/balance_sheet", to: "reports#balance_sheet", as: :balance_sheet
+  get "reports/income_statement", to: "reports#income_statement", as: :income_statement
   resources :expenses, only: %i[index new create show]
 
   resource :expense_report, only: %i[show]
