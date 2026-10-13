@@ -8,7 +8,7 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows period totals reflecting recorded entries" do
-    ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    ledger = @workspace.provision_ledger!(template: "personal_finance")
     cash = ledger.ledger_accounts.find_by!(name: "Cash")
     income = ledger.ledger_accounts.find_by!(name: "Salary")
     rent = ledger.ledger_accounts.find_by!(name: "Groceries")

@@ -223,8 +223,7 @@ class Engine::PostingOrchestratorTest < ActiveSupport::TestCase
     def close_ledger_through(date)
       actor = User.create!(full_name: "Close Owner", email_address: "closeowner@example.com", password: "supersecret123")
       @workspace.memberships.create!(user: actor, role: :owner)
-      close = Ledgers::Close.call(ledger: @ledger, through: date, actor: actor)
-      raise close.error unless close.ok?
+      @ledger.close_books!(through: date, actor: actor)
     end
 
     def command(debit:, credit:, source_type: nil, source_id: nil, action: nil)

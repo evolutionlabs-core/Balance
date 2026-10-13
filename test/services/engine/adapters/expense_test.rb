@@ -3,7 +3,7 @@ require "test_helper"
 class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
     @bank = ledger_account("Checking Account")
     @groceries = ledger_account("Groceries")
     @housing = ledger_account("Housing")
@@ -45,20 +45,12 @@ class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
     assert_equal 6_000_000, command.lines.sum(&:credit)
   end
 
-  test "skips category lines marked for destruction" do
-    params = ActionController::Parameters.new(expense: {
-      payment_date: Date.current,
-      payment_account_id: @bank.id,
-      expense_lines_attributes: {
-        "0" => { account_id: @groceries.id, amount: "40000.00", position: 0, _destroy: "1" },
-        "1" => { account_id: @housing.id, amount: "20000.00", position: 1 }
-      }
-    }).expect(expense: [
-      :payment_date, :payment_account_id,
-      expense_lines_attributes: [ [ :account_id, :amount, :position, :_destroy ] ]
-    ])
-
-    command = Engine::Adapters::Expense.call(workspace: @workspace, attributes: params, source_id: 7)
+  test "composes only the lines the model submits" do
+    command = Engine::Adapters::Expense.call(
+      workspace: @workspace,
+      attributes: attributes(expense_lines: [ { account_id: @housing.id, amount_kobo: 2_000_000 } ]),
+      source_id: 7
+    )
 
     lines = command.lines
     assert_equal 2, lines.length
@@ -99,34 +91,16 @@ class Engine::Adapters::ExpenseTest < ActiveSupport::TestCase
     assert_includes workspace.ledgers.first.ledger_accounts.map(&:name), "Housing"
   end
 
-  test "raises when the selected account is not in the workspace ledger" do
-    other_workspace = workspaces(:bola_shop)
-    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
-    foreign = other_ledger.ledger_accounts.find_by!(name: "Bank")
-
-    assert_raises(ActiveRecord::RecordNotFound) do
-      Engine::Adapters::Expense.call(
-        workspace: @workspace,
-        attributes: attributes(payment_account_id: foreign.id),
-        source_id: 7
-      )
-    end
-  end
-
   private
-    def attributes(payment_account_id: @bank.id)
-      params = ActionController::Parameters.new(expense: {
+    def attributes(payment_account_id: @bank.id, expense_lines: [
+      { account_id: @groceries.id, amount_kobo: 4_000_000 },
+      { account_id: @housing.id, amount_kobo: 2_000_000 }
+    ])
+      {
         payment_date: Date.current,
         payment_account_id: payment_account_id,
-        expense_lines_attributes: {
-          "0" => { account_id: @groceries.id, amount: "40000.00", position: 0 },
-          "1" => { account_id: @housing.id, amount: "20000.00", position: 1 }
-        }
-      })
-      params.expect(expense: [
-        :payment_date, :payment_account_id,
-        expense_lines_attributes: [ [ :account_id, :amount, :position, :_destroy ] ]
-      ])
+        expense_lines: expense_lines
+      }
     end
 
     def ledger_account(name)

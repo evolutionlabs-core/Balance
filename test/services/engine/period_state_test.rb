@@ -58,8 +58,7 @@ class Engine::PeriodStateTest < ActiveSupport::TestCase
 
   private
     def close_through(date)
-      close = Ledgers::Close.call(ledger: @ledger, through: date, actor: @actor)
-      raise close.error unless close.ok?
+      @ledger.close_books!(through: date, actor: @actor)
     end
 
     def command(effective_date: Date.current)

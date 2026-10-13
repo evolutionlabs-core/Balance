@@ -5,9 +5,9 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     @workspace = workspaces(:ada_store)
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Customer", customer_type: "business", email: "customer@example.com")
-    @income_account = @workspace.accounts.create!(name: "Invoice Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    @service = @workspace.services.create!(name: "Consulting", income_account: @income_account)
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Consulting", income_ledger_account: @income_account)
     sign_in_as(@user)
   end
 
@@ -28,7 +28,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_select "#invoice_errors", text: /Customer can't be blank/
+    assert_select "li", text: /Customer can't be blank/
   end
 
   test "index links rows to show and exposes a separate edit action" do
@@ -52,10 +52,9 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 45_000, invoice.reload.total_minor
   end
 
-  test "locks posted invoices as read-only" do
+  test "locks sent invoices as read-only" do
     invoice = create_invoice
-    Account.for_role!(@workspace, :receivable)
-    invoice.issue
+    assert invoice.issue!
 
     get edit_invoice_path(invoice)
     assert_redirected_to invoice_path(invoice)
@@ -67,9 +66,9 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     get invoice_path(invoice)
     assert_response :success
     assert_select "a", text: "Edit", count: 0
-    assert_select "a", text: "Post to ledger", count: 0
+    assert_select "a", text: "Send invoice", count: 0
     assert_select "button[data-copy-value-value]", text: /Copy secure link/
-    assert_select "a", text: "Invoice paid"
+    assert_select "a", text: "Record payment"
   end
 
   test "draft invoices do not expose client links" do
@@ -91,20 +90,11 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF-")
   end
 
-  test "show displays the remaining balance and payment state from receipt applications" do
+  test "show displays the remaining balance after a partial payment" do
     invoice = create_invoice
-    receivable = Account.for_role!(@workspace, :receivable)
-    bank = Account.for_role!(@workspace, :checking)
-    assert invoice.issue.success?
-    receipt = @workspace.journal_entries.build(
-      description: "Partial customer receipt",
-      entry_date: Date.current,
-      journal_entry_lines_attributes: [
-        { account: bank, debit_kobo: 15_000 },
-        { account: receivable, credit_kobo: 15_000, counterparty: @customer }
-      ]
-    )
-    assert Accounting::PostingService.call(entry: receipt).success?
+    assert invoice.issue!
+    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
+    assert invoice.record_payment!(payment_ledger_account_id: cash.id, received_on: Date.current, amount_kobo: 15_000)
 
     get invoice_path(invoice)
 
@@ -116,8 +106,11 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
   test "invoices are scoped to the current workspace" do
     other_workspace = workspaces(:bola_shop)
+    other_ledger = other_workspace.provision_ledger!(template: "standard_sme")
     other_customer = other_workspace.customers.create!(name: "Other", customer_type: "business", email: "other@example.com")
-    invoice = other_workspace.invoices.create!(user: users(:two), customer: other_customer)
+    service = other_workspace.services.create!(name: "Other Consulting", income_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Sales"))
+    invoice = other_workspace.invoices.create!(user: users(:two), customer: other_customer,
+      invoice_lines_attributes: [ { service_id: service.id, description: "Consulting", quantity: 1, rate: 100 } ])
 
     get invoice_path(invoice)
 
@@ -132,13 +125,13 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",
-        invoice_lines_attributes: [ { service: @service, description: "Consulting", quantity: 2, rate: 150 } ]
+        invoice_lines_attributes: [ { service_id: @service.id, description: "Consulting", quantity: 2, rate: 150 } ]
       )
     end
 
     def invoice_params
       { invoice: {
-      customer_id: @customer.id,
+        customer_id: @customer.id,
         issue_date: Date.current,
         due_date: Date.current + 30.days,
         currency_code: "NGN",

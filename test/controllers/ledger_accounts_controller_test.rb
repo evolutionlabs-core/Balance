@@ -5,7 +5,7 @@ class LedgerAccountsControllerTest < ActionDispatch::IntegrationTest
     @workspace = workspaces(:ada_store)
     @user = users(:one)
     sign_in_as(@user)
-    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
   end
 
   test "lists the workspace ledger chart in code order" do
@@ -35,7 +35,7 @@ class LedgerAccountsControllerTest < ActionDispatch::IntegrationTest
 
   test "does not list another workspace ledger" do
     other = workspaces(:bola_shop)
-    Ledgers::Provisioner.call(workspace: other, template: "standard_sme")
+    other.provision_ledger!(template: "standard_sme")
 
     get ledger_accounts_path
 
@@ -85,7 +85,7 @@ class LedgerAccountsControllerTest < ActionDispatch::IntegrationTest
 
   test "cannot edit another workspace ledger account" do
     other = workspaces(:bola_shop)
-    Ledgers::Provisioner.call(workspace: other, template: "standard_sme")
+    other.provision_ledger!(template: "standard_sme")
     foreign = other.ledgers.sole.ledger_accounts.find_by!(name: "Bank")
 
     patch ledger_account_path(foreign), params: { ledger_account: { name: "Hijacked" } }

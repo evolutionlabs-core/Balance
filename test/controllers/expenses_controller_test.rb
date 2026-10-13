@@ -4,7 +4,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @workspace.provision_ledger!(template: "personal_finance")
     @ledger = @workspace.ledgers.first
     @bank = @ledger.ledger_accounts.find_by!(name: "Checking Account")
     @housing = @ledger.ledger_accounts.find_by!(name: "Housing")
@@ -39,7 +39,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
 
   test "creates nothing when a category is outside the workspace ledger" do
     other_workspace = workspaces(:bola_shop)
-    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
+    other_ledger = other_workspace.provision_ledger!(template: "standard_sme")
     foreign = other_ledger.ledger_accounts.find_by!(name: "Rent")
     params = expense_params
     params[:expense][:expense_lines_attributes]["0"][:account_id] = foreign.id
@@ -90,7 +90,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
 
   test "cannot access another workspace expense" do
     other_workspace = workspaces(:bola_shop)
-    other_ledger = Ledgers::Provisioner.call(workspace: other_workspace, template: "standard_sme")
+    other_ledger = other_workspace.provision_ledger!(template: "standard_sme")
     expense = other_workspace.expenses.create!(
       payment_date: Date.current,
       payment_account: other_ledger.ledger_accounts.find_by!(name: "Bank"),

@@ -26,7 +26,7 @@ module ActiveSupport
 
     def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current, description: nil)
       ledger = workspace.ledgers.first ||
-        Ledgers::Provisioner.call(workspace: workspace, template: workspace.ledger_template)
+        workspace.provision_ledger!(template: workspace.ledger_template)
       command = Engine::Command.new(
         ledger: ledger,
         effective_date: effective_date,

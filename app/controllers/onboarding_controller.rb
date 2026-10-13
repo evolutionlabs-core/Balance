@@ -42,7 +42,7 @@ class OnboardingController < ApplicationController
     opening_balance_kobo = parse_opening_balance(onboarding_data["opening_balance_naira"])
     return render_error("Opening balance must be zero or more.") unless opening_balance_kobo
 
-    workspace = Workspaces::Creator.call(
+    workspace = Workspace.create_for_user!(
       user: Current.user,
       name: name,
       workspace_type: onboarding_data.fetch("workspace_type"),

@@ -4,7 +4,7 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
   end
 
   test "lists ledger entries with their ledger lines" do

@@ -3,7 +3,7 @@ module Engine
     class Expense < Base
       private
         def effective_date
-          attributes[:payment_date].to_date
+          attributes[:payment_date]
         end
 
         def action
@@ -11,10 +11,10 @@ module Engine
         end
 
         def lines
-          debits = category_lines.map do |line|
+          debits = expense_lines.map do |line|
             Engine::Command::Line.new(
-              ledger_account: ledger_account(line[:account_id]),
-              debit: kobo(line[:amount]),
+              ledger_account: ledger_account(line.fetch(:account_id)),
+              debit: line.fetch(:amount_kobo),
               credit: 0
             )
           end
@@ -22,13 +22,13 @@ module Engine
           debits << payment_line(debits.sum(&:debit))
         end
 
-        def category_lines
-          attributes[:expense_lines_attributes].values.reject { |line| line[:_destroy] == "1" }
+        def expense_lines
+          attributes.fetch(:expense_lines)
         end
 
         def payment_line(total_kobo)
           Engine::Command::Line.new(
-            ledger_account: ledger_account(attributes[:payment_account_id]),
+            ledger_account: ledger_account(attributes.fetch(:payment_account_id)),
             debit: 0,
             credit: total_kobo
           )

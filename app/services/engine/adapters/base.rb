@@ -1,15 +1,16 @@
 module Engine
   module Adapters
     class Base
-      def self.call(workspace:, attributes:, source_id:, description: nil)
-        new(workspace: workspace, attributes: attributes, source_id: source_id, description: description).call
+      def self.call(workspace:, attributes:, source_id:, description: nil, metadata: {})
+        new(workspace: workspace, attributes: attributes, source_id: source_id, description: description, metadata: metadata).call
       end
 
-      def initialize(workspace:, attributes:, source_id:, description: nil)
+      def initialize(workspace:, attributes:, source_id:, description: nil, metadata: {})
         @workspace = workspace
         @attributes = attributes
         @source_id = source_id
         @description = description
+        @metadata = metadata
       end
 
       def call
@@ -20,12 +21,13 @@ module Engine
           source_id: source_id,
           action: action,
           description: description,
+          metadata: metadata,
           lines: lines
         )
       end
 
       private
-        attr_reader :workspace, :attributes, :source_id, :description
+        attr_reader :workspace, :attributes, :source_id, :description, :metadata
 
         def source_type
           self.class.name.demodulize
@@ -33,7 +35,7 @@ module Engine
 
         def ledger
           @ledger ||= workspace.ledgers.first ||
-            Ledgers::Provisioner.call(workspace: workspace, template: workspace.ledger_template)
+            workspace.provision_ledger!(template: workspace.ledger_template)
         end
 
         def kobo(amount)
@@ -45,6 +47,13 @@ module Engine
         rescue ActiveRecord::RecordNotFound
           raise ActiveRecord::RecordNotFound,
             "No ledger account matches #{name.inspect} in the #{ledger.name} ledger."
+        end
+
+        def receivable_account
+          ledger.ledger_accounts.find_by!(subtype: "accounts_receivable")
+        rescue ActiveRecord::RecordNotFound
+          raise ActiveRecord::RecordNotFound,
+            "No Accounts Receivable account is provisioned in the #{ledger.name} ledger."
         end
 
         def effective_date

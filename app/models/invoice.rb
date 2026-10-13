@@ -1,31 +1,52 @@
 class Invoice < ApplicationRecord
+  include AASM
+  include Invoices::Posting
+
+  STATUSES = %w[draft sent paid voided].freeze
+
   belongs_to :workspace
   belongs_to :user
   belongs_to :customer, optional: true
   belongs_to :estimate, optional: true
   belongs_to :project, optional: true
-  belongs_to :journal_entry, optional: true
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
-  has_many :receivable_applications, dependent: :restrict_with_error
+  has_many :payments, class_name: "InvoicePayment", dependent: :restrict_with_error
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :blank_line_attributes?
 
+  validates :status, inclusion: { in: STATUSES }
   validates :customer, presence: true, unless: -> { validation_context == :editing }
   validates :invoice_number, uniqueness: { scope: :workspace_id }, allow_nil: true
   validate :at_least_one_line, if: -> { @invoice_lines_submitted }
   validate :customer_belongs_to_workspace
 
-  enum :status, { draft: "draft", posted: "posted" }, validate: true
-
   generates_token_for :client_view, expires_in: 90.days do
-    [ workspace_id, status, journal_entry_id ]
+    [ workspace_id, status, invoice_number ]
   end
 
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
   after_create :assign_invoice_number, if: -> { invoice_number.blank? }
-  before_update { throw(:abort) if status_in_database == "posted" }
-  before_destroy { throw(:abort) if posted? }
+  before_update { throw(:abort) if content_frozen? }
+  before_destroy { throw(:abort) unless draft? }
+
+  aasm column: :status do
+    state :draft, initial: true
+    state :sent, :paid, :voided
+
+    event :send_to_client do
+      transitions from: :draft, to: :sent
+    end
+
+    event :pay do
+      transitions from: :sent, to: :paid, guard: :fully_paid?
+    end
+
+    event :mark_voided do
+      transitions from: :draft, to: :voided
+      transitions from: :sent, to: :voided, guard: :nothing_applied?
+    end
+  end
 
   # Negative form indexes identify saved rows; omitted saved rows are removed on save.
   def invoice_lines_attributes=(attributes)
@@ -74,47 +95,18 @@ class Invoice < ApplicationRecord
     save!
   end
 
-  def issue
-    Accounting::InvoiceIssuance.call(invoice: self)
-  end
-
-  def record_posting!(entry)
-    update!(journal_entry: entry, status: :posted)
-  end
-
   def applied_amount_kobo
-    if receivable_applications.loaded?
-      receivable_applications.sum(&:effective_amount_kobo)
+    if payments.loaded?
+      payments.sum(&:effective_amount_kobo)
     else
-      receivable_applications.sum(
-        Arel.sql("CASE WHEN reverses_receivable_application_id IS NULL THEN amount_kobo ELSE -amount_kobo END")
+      payments.sum(
+        Arel.sql("CASE WHEN reverses_invoice_payment_id IS NULL THEN amount_kobo ELSE -amount_kobo END")
       )
     end
   end
 
   def balance_due_kobo
     [ total_minor - applied_amount_kobo, 0 ].max
-  end
-
-  def record_receipt(account:, received_on:, amount_kobo:)
-    self.class.transaction do
-      workspace.invoices.posted.where(customer_id: customer_id).order(:id).lock.load
-      receivable_applications.reset
-      errors.clear
-      validate_receipt(account, amount_kobo)
-      return failed_posting_result if errors.any?
-
-      receivable_account = Account.for_role!(workspace, :receivable)
-      entry = workspace.journal_entries.build(
-        entry_date: received_on,
-        description: "Payment received for invoice #{invoice_number}",
-        journal_entry_lines_attributes: [
-          { account: account, debit_kobo: amount_kobo, credit_kobo: 0 },
-          { account: receivable_account, debit_kobo: 0, credit_kobo: amount_kobo, counterparty: customer }
-        ]
-      )
-      Accounting::PostingService.call(entry: entry, allocation_invoice: self)
-    end
   end
 
   def refresh_business_details
@@ -137,6 +129,22 @@ class Invoice < ApplicationRecord
   end
 
   private
+    def fully_paid?
+      balance_due_kobo.zero?
+    end
+
+    def nothing_applied?
+      applied_amount_kobo.zero?
+    end
+
+    def content_frozen?
+      status_in_database != "draft" && content_changed?
+    end
+
+    def content_changed?
+      (changes.keys - %w[status updated_at]).any?
+    end
+
     def customer_belongs_to_workspace
       return if customer.blank? || customer.workspace_id == workspace_id
 
@@ -158,21 +166,6 @@ class Invoice < ApplicationRecord
     def assign_invoice_number
       self.invoice_number = format("INV-%06d", id)
       update_column(:invoice_number, invoice_number)
-    end
-
-    def validate_receipt(account, amount_kobo)
-      errors.add(:base, "invoice must be issued before recording payment") unless posted?
-      errors.add(:base, "invoice has no outstanding balance") if balance_due_kobo.zero?
-      unless account && workspace.receipt_accounts.exists?(id: account.id)
-        errors.add(:base, "payment account must be a Bank or Cash account in this workspace")
-      end
-      unless amount_kobo.is_a?(Integer) && amount_kobo.positive? && amount_kobo <= balance_due_kobo
-        errors.add(:base, "payment amount must be positive and no more than the balance due")
-      end
-    end
-
-    def failed_posting_result
-      Accounting::PostingService::Result.new(nil, errors.full_messages.uniq, nil)
     end
 
     def calculate_totals

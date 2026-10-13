@@ -1,19 +1,19 @@
 class InvoiceLine < ApplicationRecord
   belongs_to :invoice
-  belongs_to :account, optional: true
+  belongs_to :ledger_account, optional: true
   belongs_to :service, optional: true
 
   validates :description, presence: true
   validates :quantity, numericality: { greater_than: 0 }, allow_nil: true
   validates :rate_minor, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
-  validate :account_belongs_to_workspace
+  validate :ledger_account_belongs_to_workspace
   validate :service_belongs_to_workspace
 
   before_validation :calculate_amount
   before_validation :snapshot_income_account
-  before_create { throw(:abort) if invoice.persisted? && invoice.posted? }
-  before_update { throw(:abort) if invoice.posted? }
-  before_destroy { throw(:abort) if invoice.posted? }
+  before_create { throw(:abort) if invoice.persisted? && !invoice.draft? }
+  before_update { throw(:abort) if invoice.status_in_database != "draft" }
+  before_destroy { throw(:abort) if invoice.status_in_database != "draft" }
 
   def rate
     if rate_minor
@@ -44,8 +44,8 @@ class InvoiceLine < ApplicationRecord
 
   private
     def snapshot_income_account
-      if service_id_changed? || (account_id.nil? && !account_id_changed?)
-        self.account = service&.income_account || invoice.workspace.default_sales_account
+      if service_id_changed? || (ledger_account_id.nil? && !ledger_account_id_changed?)
+        self.ledger_account = service&.income_ledger_account || invoice.workspace.default_sales_ledger_account
       end
     end
 
@@ -56,10 +56,10 @@ class InvoiceLine < ApplicationRecord
       errors.add(:service, "must belong to the workspace")
     end
 
-    def account_belongs_to_workspace
-      return if account.blank? || invoice.blank?
-      return if account.workspace_id == invoice.workspace_id
+    def ledger_account_belongs_to_workspace
+      return if ledger_account.blank? || invoice.blank?
+      return if ledger_account.ledger.workspace_id == invoice.workspace_id
 
-      errors.add(:account, "must belong to the workspace")
+      errors.add(:ledger_account, "must belong to the workspace")
     end
 end

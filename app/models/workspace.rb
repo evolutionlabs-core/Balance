@@ -1,5 +1,8 @@
 class Workspace < ApplicationRecord
-  belongs_to :default_sales_account, class_name: "Account", optional: true
+  include Ledgers::Provisioning
+  include Workspaces::Creation
+
+  belongs_to :default_sales_ledger_account, class_name: "LedgerAccount", optional: true
   enum :workspace_type, { personal: "personal", business: "business" }, validate: true
 
   has_many :memberships, dependent: :destroy
@@ -13,13 +16,13 @@ class Workspace < ApplicationRecord
   has_many :projects, dependent: :destroy
   has_many :estimates, dependent: :destroy
   has_many :services, dependent: :destroy
-  has_many :receivable_applications, dependent: :restrict_with_error
+  has_many :invoice_payments, dependent: :restrict_with_error
   has_many :llm_chats, class_name: "Llm::Chat", dependent: :destroy
   has_many :proposals, dependent: :destroy
 
   validates :name, presence: true
   validates :currency_code, inclusion: { in: %w[NGN] }
-  validate :default_sales_account_is_workspace_income
+  validate :default_sales_ledger_account_is_workspace_income
 
   def catalog
     AccountCatalog.for(workspace_type)
@@ -31,6 +34,10 @@ class Workspace < ApplicationRecord
 
   def payment_accounts
     ledger_accounts.where(subtype: %w[cash credit_card])
+  end
+
+  def income_accounts
+    ledger_accounts.where(base_type: "income")
   end
 
   def expense_categories
@@ -58,11 +65,11 @@ class Workspace < ApplicationRecord
       LedgerAccount.where(ledger: ledgers)
     end
 
-    def default_sales_account_is_workspace_income
-      return if default_sales_account.blank?
+    def default_sales_ledger_account_is_workspace_income
+      return if default_sales_ledger_account.blank?
 
-      unless default_sales_account.workspace_id == id && default_sales_account.base_type == "income"
-        errors.add(:default_sales_account, "must be an income account in this workspace")
+      unless default_sales_ledger_account.ledger.workspace_id == id && default_sales_ledger_account.base_type == "income"
+        errors.add(:default_sales_ledger_account, "must be an income account in this workspace")
       end
     end
 end

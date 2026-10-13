@@ -4,16 +4,16 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @income_account = @workspace.accounts.create!(name: "Services Controller Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
   end
 
   test "lists only current workspace services" do
-    visible = @workspace.services.create!(name: "Visible service", income_account: @income_account)
-    other_workspace = workspaces(:bola_shop)
-    foreign_account = other_workspace.accounts.create!(name: "Other Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    other_workspace.services.create!(name: "Hidden service", income_account: foreign_account)
+    visible = @workspace.services.create!(name: "Visible service", income_ledger_account: @income_account)
+    other_ledger = workspaces(:bola_shop).provision_ledger!(template: "standard_sme")
+    workspaces(:bola_shop).services.create!(
+      name: "Hidden service", income_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Sales")
+    )
 
     get services_path
 
@@ -26,7 +26,7 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
     assert_difference("@workspace.services.count", 1) do
       post services_path, params: { service: {
         name: "Furniture sourcing", description: "Source furniture", default_rate: "5000",
-        income_account_id: @income_account.id
+        income_ledger_account_id: @income_account.id
       } }
     end
 
@@ -42,14 +42,14 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_select "#modal", text: /Income account must exist/
+    assert_select "#modal", text: /Income ledger account must exist/
   end
 
   test "updates and deactivates a service" do
-    service = @workspace.services.create!(name: "Old name", income_account: @income_account)
+    service = @workspace.services.create!(name: "Old name", income_ledger_account: @income_account)
 
     patch service_path(service), params: { service: {
-      name: "New name", income_account_id: @income_account.id, active: "0"
+      name: "New name", income_ledger_account_id: @income_account.id, active: "0"
     } }
 
     assert_redirected_to services_path
@@ -58,10 +58,10 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "cannot update another workspace service" do
-    other_workspace = workspaces(:bola_shop)
-    foreign_account = other_workspace.accounts.create!(name: "Foreign Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    service = other_workspace.services.create!(name: "Foreign service", income_account: foreign_account)
+    other_ledger = workspaces(:bola_shop).provision_ledger!(template: "standard_sme")
+    service = other_ledger.workspace.services.create!(
+      name: "Foreign service", income_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Sales")
+    )
 
     patch service_path(service), params: { service: { name: "Hijacked" } }
 

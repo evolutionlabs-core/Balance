@@ -1,15 +1,14 @@
 require "application_system_test_case"
 
 class InvoiceEditorTest < ApplicationSystemTestCase
-  test "creates edits and posts a free-form invoice" do
+  test "creates edits and sends a free-form invoice" do
     user = users(:one)
     user.update!(password: "password")
     workspace = workspaces(:ada_store)
-    income = workspace.accounts.create!(name: "Consulting income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    workspace.update!(default_sales_account: income)
-    Account.for_role!(workspace, :receivable)
-    bank = Account.for_role!(workspace, :checking)
+    ledger = workspace.provision_ledger!(template: "personal_finance")
+    income = ledger.ledger_accounts.find_by!(name: "Other Income")
+    workspace.update!(default_sales_ledger_account: income)
+    cash = ledger.ledger_accounts.find_by!(name: "Cash")
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
@@ -44,27 +43,29 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
 
-    click_on "Issue invoice"
+    click_on "Send invoice"
     within "#modal dialog" do
       assert_text "Consulting"
       assert_no_selector "select"
-      click_on "Issue invoice"
+      click_on "Send invoice"
     end
-    assert_text "Invoice #{invoice.invoice_number} issued."
-    assert invoice.reload.posted?
-    assert_equal income, invoice.invoice_lines.sole.account
-    assert_equal 15_000, invoice.journal_entry.journal_entry_lines.sum(:credit_kobo)
+    assert_text "Invoice #{invoice.invoice_number} sent."
+    assert invoice.reload.sent?
+    assert_equal income.id, invoice.invoice_lines.sole.ledger_account_id
+    entry = LedgerEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 15_000, entry.ledger_lines.sum(&:debit)
     assert_no_link "Edit"
 
-    click_on "Invoice paid"
+    click_on "Record payment"
     within "#modal dialog" do
-      select bank.name, from: "Bank or Cash account"
+      select cash.name, from: "Cash or credit-card account"
       click_on "Record payment"
     end
     assert_text "Payment recorded for invoice #{invoice.invoice_number}."
     assert_selector "dd", text: "NGN 0.00"
-    assert_no_link "Invoice paid"
+    assert_no_link "Record payment"
     assert_equal 0, invoice.reload.balance_due_kobo
+    assert invoice.reload.paid?
   end
 
   private

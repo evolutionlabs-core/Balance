@@ -11,11 +11,9 @@ class Projects::ProjectTabsControllerTest < ActionDispatch::IntegrationTest
     @project = @workspace.projects.create!(
       customer: @customer, name: "Tab Project", description: "Fit-out works"
     )
-    @bank = @workspace.accounts.create!(name: "Tab Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @category = @workspace.accounts.create!(name: "Tab Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
-    income_account = @workspace.accounts.create!(name: "Tab Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    @service = @workspace.services.create!(name: "Building work", income_account: income_account)
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Building work", income_ledger_account: income_account)
   end
 
   test "index opens edit inside the modal frame" do
@@ -27,11 +25,10 @@ class Projects::ProjectTabsControllerTest < ActionDispatch::IntegrationTest
 
   test "overview shows project finances and budget" do
     @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer,
-      status: "approved", line_items_attributes: [ { service: @service, description: "Approved work", quantity: 1, rate_minor: 50_000 } ])
+      status: "approved", line_items_attributes: [ { service_id: @service.id, description: "Approved work", quantity: 1, rate_minor: 50_000 } ])
     invoice = @project.invoices.create!(workspace: @workspace, user: @user, customer: @customer,
-      invoice_lines_attributes: [ { service: @service, description: "Posted work", quantity: 1, rate_minor: 30_000 } ])
-    Account.for_role!(@workspace, :receivable)
-    assert invoice.issue.success?
+      invoice_lines_attributes: [ { service_id: @service.id, description: "Posted work", quantity: 1, rate_minor: 30_000 } ])
+    raise "setup failure" unless invoice.issue!
 
     get project_path(@project)
 

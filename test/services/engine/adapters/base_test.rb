@@ -3,7 +3,7 @@ require "test_helper"
 class Engine::Adapters::BaseTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @workspace.provision_ledger!(template: "personal_finance")
     @bank = create_account(name: "Checking Account", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
     @housing = create_account(name: "Housing", base_type: "expense", account_type: "Personal Outflows", detail_type: "Housing & Utilities")
   end

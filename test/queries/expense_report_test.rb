@@ -3,7 +3,7 @@ require "test_helper"
 class ExpenseReportTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = Ledgers::Provisioner.call(workspace: @workspace, template: "personal_finance")
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
     @bank = @ledger.ledger_accounts.find_by!(name: "Checking Account")
     @fuel = @ledger.ledger_accounts.find_by!(name: "Groceries")
     @repairs = @ledger.ledger_accounts.find_by!(name: "Housing")

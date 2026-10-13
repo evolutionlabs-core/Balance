@@ -1,4 +1,6 @@
 class Expense < ApplicationRecord
+  include Expenses::Posting
+
   belongs_to :workspace
   belongs_to :payment_account, class_name: "LedgerAccount"
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense

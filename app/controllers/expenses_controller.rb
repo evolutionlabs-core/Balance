@@ -13,12 +13,11 @@ class ExpensesController < ApplicationController
   end
 
   def create
-    result = Expenses::Creator.call(workspace: current_workspace, attributes: expense_params)
+    @expense = current_workspace.expenses.build(expense_params)
 
-    if result.success?
-      redirect_to expense_path(result.expense)
+    if @expense.record_entry!
+      redirect_to expense_path(@expense)
     else
-      @expense = result.expense
       render :new, status: :unprocessable_content
     end
   end

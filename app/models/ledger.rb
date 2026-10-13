@@ -1,4 +1,6 @@
 class Ledger < ApplicationRecord
+  include Ledgers::Books
+
   belongs_to :workspace
   belongs_to :closed_by, class_name: "User", optional: true
   has_many :ledger_accounts, dependent: :restrict_with_error

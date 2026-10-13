@@ -7,9 +7,9 @@ class EstimateTest < ActiveSupport::TestCase
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Estimate Customer", customer_type: "business", email: "estimate@example.com", address: "12 Allen Ave")
     @project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
-    @income_account = @workspace.accounts.create!(name: "Estimate Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    @service = @workspace.services.create!(name: "Hosting service", income_account: @income_account)
+    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Hosting service", income_ledger_account: @income_account)
   end
 
   test "prefills billing address from customer and totals lines in kobo" do
@@ -36,9 +36,9 @@ class EstimateTest < ActiveSupport::TestCase
   end
 
   test "allows free-form lines and rejects services outside the workspace" do
-    other_income = @other_workspace.accounts.create!(name: "Other Estimate Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    foreign_service = @other_workspace.services.create!(name: "Foreign estimate service", income_account: other_income)
+    other_ledger = @other_workspace.provision_ledger!(template: "standard_sme")
+    other_income = other_ledger.ledger_accounts.find_by!(name: "Sales")
+    foreign_service = @other_workspace.services.create!(name: "Foreign estimate service", income_ledger_account: other_income)
 
     missing = @workspace.estimates.build(user: @user, customer: @customer, project: @project,
       line_items_attributes: { "0" => { description: "Work", quantity: 1, rate: 100 } })
@@ -138,7 +138,7 @@ class EstimateTest < ActiveSupport::TestCase
 
     invoice.save!
 
-    assert_equal [ @income_account ], invoice.invoice_lines.map(&:account)
+    assert_equal [ @income_account ], invoice.invoice_lines.map(&:ledger_account)
     assert_equal 12 * 500_000, invoice.total_minor
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
   end
@@ -152,9 +152,9 @@ class EstimateTest < ActiveSupport::TestCase
     assert_equal 37_500, invoice.total_minor
     assert_equal "Custom work", invoice.invoice_lines.sole.description
     assert_nil invoice.invoice_lines.sole.service
-    assert_nil invoice.invoice_lines.sole.account
+    assert_nil invoice.invoice_lines.sole.ledger_account
     assert invoice.draft?
-    assert_nil invoice.journal_entry
+    assert_empty @ledger.ledger_entries
   end
 
   test "allows edits after sending" do

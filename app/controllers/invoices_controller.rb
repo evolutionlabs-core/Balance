@@ -4,7 +4,7 @@ class InvoicesController < ApplicationController
   before_action :set_services, only: %i[new create edit update]
 
   def index
-    @invoices = current_workspace.invoices.includes(:customer, :receivable_applications).order(created_at: :desc)
+    @invoices = current_workspace.invoices.includes(:customer, :payments).order(created_at: :desc)
   end
 
   def new
@@ -60,13 +60,13 @@ class InvoicesController < ApplicationController
 
   private
     def set_invoice
-      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :receivable_applications).find(params[:id])
+      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments).find(params[:id])
     end
 
     def ensure_draft
-      return unless @invoice.posted?
+      return if @invoice.draft?
 
-      redirect_to invoice_path(@invoice), alert: "Posted invoices cannot be changed."
+      redirect_to invoice_path(@invoice), alert: "Only draft invoices can be changed."
     end
 
     def invoice_params

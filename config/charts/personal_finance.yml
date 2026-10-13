@@ -6,6 +6,7 @@ accounts:
   - { code: "1010", name: Cash,                base_type: asset,     subtype: cash,        normal_balance: debit }
   - { code: "1020", name: Checking Account,    base_type: asset,     subtype: cash,        normal_balance: debit }
   - { code: "1030", name: Savings Account,     base_type: asset,     subtype: cash,        normal_balance: debit }
+  - { code: "1050", name: Accounts Receivable, base_type: asset,     subtype: accounts_receivable, normal_balance: debit }
   - { code: "1100", name: Investments,         base_type: asset,     subtype: investment,  normal_balance: debit }
   - { code: "1200", name: Property,            base_type: asset,     subtype: fixed_asset, normal_balance: debit }
   # --- Liabilities (2xxx)

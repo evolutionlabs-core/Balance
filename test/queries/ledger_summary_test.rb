@@ -3,7 +3,7 @@ require "test_helper"
 class LedgerSummaryTest < ActiveSupport::TestCase
   test "chart series includes only workspace activity in the selected period and fills empty days" do
     workspace = workspaces(:ada_store)
-    ledger = Ledgers::Provisioner.call(workspace: workspace, template: "personal_finance")
+    ledger = workspace.provision_ledger!(template: "personal_finance")
     cash = ledger.ledger_accounts.find_by!(name: "Cash")
     income = ledger.ledger_accounts.find_by!(name: "Salary")
     expense = ledger.ledger_accounts.find_by!(name: "Groceries")
@@ -11,7 +11,7 @@ class LedgerSummaryTest < ActiveSupport::TestCase
     post_ledger_entry!(workspace, debit_ledger_account: expense, credit_ledger_account: cash, amount_kobo: 700_50)
     post_ledger_entry!(workspace, debit_ledger_account: cash, credit_ledger_account: income, amount_kobo: 900_00, effective_date: 8.days.ago.to_date)
     other = workspaces(:bola_shop)
-    other_ledger = Ledgers::Provisioner.call(workspace: other, template: "standard_sme")
+    other_ledger = other.provision_ledger!(template: "standard_sme")
     post_ledger_entry!(
       other,
       debit_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Cash"),
@@ -31,7 +31,7 @@ class LedgerSummaryTest < ActiveSupport::TestCase
 
   test "summarizes balances from ledger lines across all posted entries" do
     workspace = workspaces(:ada_store)
-    ledger = Ledgers::Provisioner.call(workspace: workspace, template: "personal_finance")
+    ledger = workspace.provision_ledger!(template: "personal_finance")
     cash = ledger.ledger_accounts.find_by!(name: "Cash")
     income = ledger.ledger_accounts.find_by!(name: "Salary")
     expense = ledger.ledger_accounts.find_by!(name: "Groceries")

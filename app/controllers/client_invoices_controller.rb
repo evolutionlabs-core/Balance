@@ -19,7 +19,7 @@ class ClientInvoicesController < ApplicationController
   private
     def set_invoice
       @invoice = Invoice.find_by_token_for(:client_view, params[:token])
-      head :not_found unless @invoice&.posted?
+      head :not_found unless @invoice&.sent? || @invoice&.paid?
     end
 
     def set_private_response_headers

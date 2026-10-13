@@ -39,7 +39,7 @@
                 <p class="mt-0.5 max-w-xl truncate text-xs text-neutral-500"><%= service.description %></p>
               <% end %>
             </td>
-            <td class="px-4 py-3 text-sm text-neutral-600"><%= service.income_account.name %></td>
+            <td class="px-4 py-3 text-sm text-neutral-600"><%= service.income_ledger_account.name %></td>
             <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600">
               <%= service.default_rate_minor ? minor_currency(service.default_rate_minor, current_workspace.currency_code) : "—" %>
             </td>

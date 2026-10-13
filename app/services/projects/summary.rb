@@ -21,11 +21,11 @@ module Projects
     end
 
     def amount_owed_kobo
-      project.invoices.posted.includes(:receivable_applications).sum(&:balance_due_kobo)
+      project.invoices.where(status: %w[sent paid]).includes(:payments).sum(&:balance_due_kobo)
     end
 
     def amount_received_kobo
-      project.invoices.posted.includes(:receivable_applications).sum(&:applied_amount_kobo)
+      project.invoices.where(status: %w[sent paid]).includes(:payments).sum(&:applied_amount_kobo)
     end
 
     private

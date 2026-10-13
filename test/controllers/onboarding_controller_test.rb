@@ -21,7 +21,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_empty workspace.journal_entries
     assert_empty workspace.accounts
     assert_equal "personal_finance", workspace.ledger_template
-    assert_equal 17, workspace.ledgers.sole.ledger_accounts.count
+    assert_equal 18, workspace.ledgers.sole.ledger_accounts.count
     assert_redirected_to overview_path
   end
 
