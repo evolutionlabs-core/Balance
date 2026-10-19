@@ -63,13 +63,8 @@ class Llm::EntryProposal
 
   def post!(source_id:)
     if reversal?
-      AccountingEngine.record(
-        AccountingEngine::Builders::Reversal,
-        workspace: @workspace,
-        attributes: { source_type: "Entry", effective_date: parsed_date, entry: original_entry },
-        source_id: source_id,
-        description: data["description"]
-      )
+      AccountingEngine.reverse(original_entry, on: parsed_date, source_type: "Entry", source_id: source_id,
+        description: data["description"])
     else
       AccountingEngine.record(
         AccountingEngine::Builders::Entry,

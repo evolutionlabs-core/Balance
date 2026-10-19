@@ -147,17 +147,8 @@ module Invoices
       end
 
       def post_void_entry
-        record_in_ledger!(
-          AccountingEngine::Builders::Reversal,
-          attributes: {
-            source_type: "Invoice",
-            action: "void",
-            effective_date: Date.current,
-            entry: issue_entry
-          },
-          source_id: id,
-          description: "Invoice #{invoice_number} voided"
-        )
+        reverse_in_ledger!(issue_entry, on: Date.current, source_type: "Invoice", source_id: id, action: "void",
+          description: "Invoice #{invoice_number} voided")
       end
 
       def issue_entry

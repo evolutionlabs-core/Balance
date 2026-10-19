@@ -77,7 +77,7 @@ Keep validation pure and persistence transactional. Never mix database writes
 into `AccountingEngine::Validation`. Build an `AccountingEngine::Command` with a
 builder and post it with `AccountingEngine.post`; only `AccountingEngine::Writer` persists
 journal entries. Correct a posted entry by reversing it with
-`AccountingEngine::Builders::Reversal`, never by editing it.
+`AccountingEngine.reverse`, never by editing it.
 
 A balanced entry may still be semantically
 wrong, so preserve account taxonomy and workspace checks.
