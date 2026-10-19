@@ -47,10 +47,11 @@ class ListAccounts < RubyLLM::Tool
   end
 
   def balance_for(account)
-    JournalEntryLine.joins(:journal_entry)
-      .where(journal_entries: { ledger_id: ledger.id })
-      .where(account_id: account.id)
-      .sum("journal_entry_lines.debit - journal_entry_lines.credit").to_i
+    balances.fetch(account.id, 0)
+  end
+
+  def balances
+    @balances ||= AccountingEngine::Balances.new(ledger).by_account
   end
 
   def recommended_hash(row)

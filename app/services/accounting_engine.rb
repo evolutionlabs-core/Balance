@@ -18,8 +18,4 @@ module AccountingEngine
       description: description
     )
   end
-
-  def self.read(spec)
-    Query.call(**spec)
-  end
 end

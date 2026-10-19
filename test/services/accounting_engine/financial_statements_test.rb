@@ -1,6 +1,6 @@
 require "test_helper"
 
-class AccountingEngine::Query::FinancialStatementsTest < ActiveSupport::TestCase
+class AccountingEngine::FinancialStatementsTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:chidi_supplies)
     @ledger = @workspace.provision_ledger!
@@ -59,7 +59,7 @@ class AccountingEngine::Query::FinancialStatementsTest < ActiveSupport::TestCase
     post({ "rent" => 150_000 }, credit: "bank")
     post({ "bank" => 20_000 }, credit: "other_income")
 
-    @statement = AccountingEngine::Query::FinancialStatements.income_statement(
+    @statement = AccountingEngine::FinancialStatements.income_statement(
       ledger: @ledger, periods: [ [ "this month", Date.current.beginning_of_month, Date.current ] ]
     )
 
@@ -71,7 +71,7 @@ class AccountingEngine::Query::FinancialStatementsTest < ActiveSupport::TestCase
 
   private
     def balance_sheet(dates: [ [ "now", Date.current ] ])
-      @statement = AccountingEngine::Query::FinancialStatements.balance_sheet(ledger: @ledger, dates: dates)
+      @statement = AccountingEngine::FinancialStatements.balance_sheet(ledger: @ledger, dates: dates)
     end
 
     def line(label)

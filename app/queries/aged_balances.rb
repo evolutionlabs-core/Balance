@@ -92,12 +92,9 @@ class AgedBalances
     # Receivables carry debit balances and payables credit balances; both are
     # reported as positive amounts owed.
     def ledger_by_counterparty
-      @ledger_by_counterparty ||= JournalEntryLine
-        .joins(:account)
-        .where(accounts: { ledger_id: workspace.ledger.id, subtype: control_subtype })
-        .group(counterparty_key)
-        .sum(side == :receivables ? "debit - credit" : "credit - debit")
-        .transform_values(&:to_i)
+      @ledger_by_counterparty ||= AccountingEngine::Balances.new(workspace.ledger)
+        .by_counterparty(side == :receivables ? :customer : :vendor, subtype: control_subtype)
+        .transform_values { |raw| side == :receivables ? raw : -raw }
         .reject { |_id, balance| balance.zero? }
     end
 

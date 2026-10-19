@@ -4,14 +4,14 @@ class ReportsController < ApplicationController
     @comparison, dates = ReportPeriod.balance_sheet(@as_of, params[:compare])
     return unless ledger
 
-    @statement = AccountingEngine::Query.call(ledger_id: ledger.id, query_type: "balance_sheet", options: { dates: dates })[:data]
+    @statement = AccountingEngine::FinancialStatements.balance_sheet(ledger: ledger, dates: dates)
   end
 
   def income_statement
     @period, periods = ReportPeriod.income_statement(params[:period])
     return unless ledger
 
-    @statement = AccountingEngine::Query.call(ledger_id: ledger.id, query_type: "income_statement", options: { periods: periods })[:data]
+    @statement = AccountingEngine::FinancialStatements.income_statement(ledger: ledger, periods: periods)
   end
 
   def aged_receivables

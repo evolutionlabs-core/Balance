@@ -72,10 +72,7 @@ class LedgerSummary
   end
 
   def liquid_balance_kobo(as_of: Date.current)
-    journal_entry_lines.joins(:account)
-      .where(journal_entries: { effective_date: ..as_of })
-      .where(accounts: { subtype: "cash" })
-      .sum("journal_entry_lines.debit - journal_entry_lines.credit")
+    raw_by_account(..as_of).sum { |account_id, raw| accounts.fetch(account_id).subtype == "cash" ? raw : 0 }
   end
 
   def performance_series(days: 30)
@@ -97,36 +94,20 @@ class LedgerSummary
   end
 
   def daily_series(days: 30)
-    start_date = Date.current - (days - 1)
-    range = start_date..Date.current
-
-    rows = journal_entry_lines.joins(:account)
-      .where(journal_entries: { effective_date: range })
-      .group("journal_entries.effective_date", "accounts.base_type")
-      .pluck(Arel.sql("journal_entries.effective_date"), Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit)"), Arel.sql("SUM(journal_entry_lines.credit)"))
-
-    by_date = rows.group_by { |date, _base_type, _debit, _credit| date }
+    range = (Date.current - (days - 1))..Date.current
+    by_date = raw_by_date_and_account(range).group_by { |(date, _account_id), _raw| date }
 
     range.map do |date|
-      day_rows = by_date[date] || []
-      income_row = day_rows.find { |_date, base_type, _debit, _credit| base_type == "income" }
-      expense_row = day_rows.find { |_date, base_type, _debit, _credit| base_type == "expense" }
-
-      income_kobo = income_row ? income_row[3].to_i - income_row[2].to_i : 0
-      expense_kobo = expense_row ? expense_row[2].to_i - expense_row[3].to_i : 0
-
-      { date: date, income_kobo: income_kobo, expense_kobo: expense_kobo, net_kobo: income_kobo - expense_kobo }
+      period = period_from((by_date[date] || []).to_h { |(_date, account_id), raw| [ account_id, raw ] })
+      { date: date, income_kobo: period.income_kobo, expense_kobo: period.expense_kobo, net_kobo: period.profit_kobo }
     end
   end
 
   def trial_balance
-    raw_balances = journal_entry_lines
-      .group(:account_id)
-      .pluck(:account_id, Arel.sql("SUM(journal_entry_lines.debit) - SUM(journal_entry_lines.credit)"))
-      .to_h
+    raw_balances = raw_by_account
 
-    accounts.ordered.filter_map do |account|
-      raw = raw_balances[account.id].to_i
+    accounts.values.sort_by(&:name).filter_map do |account|
+      raw = raw_balances.fetch(account.id, 0)
       next if raw.zero?
 
       if raw.positive?
@@ -138,29 +119,35 @@ class LedgerSummary
   end
 
   def profit_and_loss(date_range)
-    totals = journal_entry_lines.joins(:account)
-      .where(journal_entries: { effective_date: date_range })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit)"), Arel.sql("SUM(journal_entry_lines.credit)"))
-
-    income_row = totals.find { |base_type, _debit, _credit| base_type == "income" }
-    expense_row = totals.find { |base_type, _debit, _credit| base_type == "expense" }
-
-    income_kobo = income_row ? income_row[2].to_i - income_row[1].to_i : 0
-    expense_kobo = expense_row ? expense_row[1].to_i - expense_row[2].to_i : 0
-
-    Period.new(income_kobo: income_kobo, expense_kobo: expense_kobo)
+    period_from(raw_by_account(date_range))
   end
 
   private
+    attr_reader :workspace
 
-  attr_reader :workspace
+    def period_from(raw_by_account)
+      income = raw_by_account.sum { |account_id, raw| accounts.fetch(account_id).base_type == "income" ? -raw : 0 }
+      expense = raw_by_account.sum { |account_id, raw| accounts.fetch(account_id).base_type == "expense" ? raw : 0 }
+      Period.new(income_kobo: income, expense_kobo: expense)
+    end
 
-  def journal_entry_lines
-    JournalEntryLine.joins(journal_entry: :ledger).where(ledgers: { workspace_id: workspace.id })
-  end
+    def raw_by_account(dates = nil)
+      balances ? balances.by_account(dates) : {}
+    end
 
-  def accounts
-    Account.where(ledger: workspace.ledgers)
-  end
+    def raw_by_date_and_account(dates)
+      balances ? balances.by_date_and_account(dates) : {}
+    end
+
+    def balances
+      @balances ||= ledger && AccountingEngine::Balances.new(ledger)
+    end
+
+    def ledger
+      @ledger ||= workspace.ledgers.first
+    end
+
+    def accounts
+      @accounts ||= (ledger ? ledger.accounts.to_a : []).index_by(&:id)
+    end
 end
