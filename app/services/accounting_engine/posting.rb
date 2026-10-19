@@ -26,10 +26,10 @@ class AccountingEngine::Posting
     attr_reader :command
 
     def post
-      errors = AccountingEngine::Validation.call(command).errors + AccountingEngine::PeriodState.call(command).errors
+      errors = AccountingEngine::Validation.call(command) + AccountingEngine::PeriodState.call(command)
       return AccountingEngine::Receipt.rejected(errors) if errors.any?
 
-      AccountingEngine::Receipt.posted(AccountingEngine::Writer.call(command).entry)
+      AccountingEngine::Receipt.posted(AccountingEngine::Writer.call(command))
     end
 
     def recorded_entry

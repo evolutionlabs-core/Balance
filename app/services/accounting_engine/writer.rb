@@ -24,6 +24,6 @@ module AccountingEngine::Writer
     end
 
     entry.save!
-    Result.new(entry)
+    entry
   end
 end

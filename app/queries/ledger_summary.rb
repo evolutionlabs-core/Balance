@@ -5,37 +5,6 @@ class LedgerSummary
     end
   end
 
-  Card = Struct.new(:label, :current, :previous, keyword_init: true) do
-    def profit_kobo
-      current.profit_kobo
-    end
-
-    def income_kobo
-      current.income_kobo
-    end
-
-    def expense_kobo
-      current.expense_kobo
-    end
-
-    def change_pct
-      base = previous.profit_kobo
-      value = current.profit_kobo
-
-      if base.zero?
-        return 0.0 if value.zero?
-
-        return value.positive? ? 100.0 : -100.0
-      end
-
-      ((value - base).to_f / base.abs * 100).round(1)
-    end
-
-    def up?
-      current.profit_kobo >= previous.profit_kobo
-    end
-  end
-
   def initialize(workspace)
     @workspace = workspace
   end
@@ -50,14 +19,6 @@ class LedgerSummary
 
   def this_month
     profit_and_loss(Date.current.beginning_of_month..Date.current)
-  end
-
-  def cards
-    [
-      Card.new(label: "Today", current: today, previous: profit_and_loss((Date.current - 1)..(Date.current - 1))),
-      Card.new(label: "This week", current: this_week, previous: profit_and_loss((Date.current.beginning_of_week - 7)..(Date.current - 7))),
-      Card.new(label: "This month", current: this_month, previous: profit_and_loss((Date.current.beginning_of_month - 1.month)..(Date.current - 1.month)))
-    ]
   end
 
   def period(days: 30)

@@ -13,7 +13,7 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
   test "collects an error when the ledger is closed through the effective date" do
     close_through(Date.current)
 
-    errors = AccountingEngine::PeriodState.call(command).errors
+    errors = AccountingEngine::PeriodState.call(command)
 
     assert errors.one?
     assert_equal :period, errors.first.code
@@ -22,24 +22,24 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
   test "allows a posting dated after the closed-through boundary" do
     close_through(1.month.ago.to_date)
 
-    assert_empty AccountingEngine::PeriodState.call(command).errors
+    assert_empty AccountingEngine::PeriodState.call(command)
   end
 
   test "treats the boundary date itself as closed" do
     close_through(Date.current)
 
-    assert_not_empty AccountingEngine::PeriodState.call(command(effective_date: Date.current)).errors
+    assert_not_empty AccountingEngine::PeriodState.call(command(effective_date: Date.current))
   end
 
   test "passes when the ledger was never closed" do
     assert_nil @ledger.closed_through
-    assert_empty AccountingEngine::PeriodState.call(command).errors
+    assert_empty AccountingEngine::PeriodState.call(command)
   end
 
   test "collects an error per line for an inactive account" do
     @cash.update!(active: false, created_by: "admin")
 
-    errors = AccountingEngine::PeriodState.call(command).errors
+    errors = AccountingEngine::PeriodState.call(command)
 
     assert_equal 1, errors.size
     assert_equal :account, errors.first.code
@@ -51,7 +51,7 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
     @ledger.update!(status: "closed")
     close_through(Date.current)
 
-    errors = AccountingEngine::PeriodState.call(command).errors
+    errors = AccountingEngine::PeriodState.call(command)
 
     assert_equal [ :ledger, :account, :period ], errors.map(&:code)
   end
