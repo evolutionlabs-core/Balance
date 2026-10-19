@@ -14,6 +14,7 @@ class Bill::PostingTest < ActiveSupport::TestCase
 
   test "entering a bill posts expenses against payables" do
     assert @bill.issue!
+    assert_equal [ @vendor ], @ap.journal_entry_lines.map(&:vendor)
 
     assert @bill.reload.open?
     entry = JournalEntry.where(source_type: "Bill", source_id: @bill.id, action: "issue").sole

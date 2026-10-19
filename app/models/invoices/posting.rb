@@ -125,6 +125,7 @@ module Invoices
           workspace: workspace,
           attributes: {
             effective_date: issue_date,
+            customer: customer,
             income_lines: posted_income_lines
           },
           source_id: id,
@@ -143,7 +144,8 @@ module Invoices
           attributes: {
             received_on: received_on,
             payment_account_id: payment_account.id,
-            amount_kobo: application.amount_kobo
+            amount_kobo: application.amount_kobo,
+            customer: customer
           },
           source_id: application.id,
           description: "Payment received for invoice #{invoice_number}"

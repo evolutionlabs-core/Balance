@@ -6,6 +6,7 @@ class Accounting::Adapters::InvoiceTest < ActiveSupport::TestCase
     @ledger = @workspace.provision_ledger!
     @income = @ledger.accounts.find_by!(name: "Other Income")
     @ar = @ledger.accounts.find_by!(name: "Accounts Receivable")
+    @customer = @workspace.customers.create!(name: "Adapter Customer", customer_type: "business", email: "adapter@example.com")
   end
 
   test "issue debits receivable and credits each income line" do
@@ -14,6 +15,7 @@ class Accounting::Adapters::InvoiceTest < ActiveSupport::TestCase
       attributes: {
         action: "issue",
         effective_date: Date.current,
+        customer: @customer,
         income_lines: [
           { account: @income, amount_kobo: 30_000 }
         ]
@@ -34,6 +36,7 @@ class Accounting::Adapters::InvoiceTest < ActiveSupport::TestCase
     income_line = lines&.find { |line| line.credit.positive? }
 
     assert_equal @ar, ar_line.account
+    assert_equal @customer, ar_line.customer
     assert_equal 30_000, ar_line.debit
     assert_equal @income, income_line.account
     assert_equal 30_000, income_line.credit
@@ -60,7 +63,7 @@ class Accounting::Adapters::InvoiceTest < ActiveSupport::TestCase
 
     command = Accounting::Adapters::Invoice.call(
       workspace: workspace,
-      attributes: { effective_date: Date.current, income_lines: [ { account: income, amount_kobo: 100 } ] },
+      attributes: { effective_date: Date.current, customer: nil, income_lines: [ { account: income, amount_kobo: 100 } ] },
       source_id: 1
     )
 
@@ -74,12 +77,13 @@ class Accounting::Adapters::InvoicePaymentTest < ActiveSupport::TestCase
     @ledger = @workspace.provision_ledger!
     @cash = @ledger.accounts.find_by!(name: "Cash")
     @ar = @ledger.accounts.find_by!(name: "Accounts Receivable")
+    @customer = @workspace.customers.create!(name: "Paying Customer", customer_type: "business", email: "paying@example.com")
   end
 
   test "apply debits the payment account and credits receivable" do
     command = Accounting::Adapters::InvoicePayment.call(
       workspace: @workspace,
-      attributes: { received_on: Date.current, payment_account_id: @cash.id, amount_kobo: 15_000 },
+      attributes: { received_on: Date.current, payment_account_id: @cash.id, amount_kobo: 15_000, customer: @customer },
       source_id: 3
     )
 
@@ -89,6 +93,7 @@ class Accounting::Adapters::InvoicePaymentTest < ActiveSupport::TestCase
 
     lines = command.lines
     assert_equal [ @cash, @ar ], lines.map(&:account)
+    assert_equal [ nil, @customer ], lines.map(&:customer)
     assert_equal [ 15_000, 0 ], lines.map(&:debit)
     assert_equal [ 0, 15_000 ], lines.map(&:credit)
   end

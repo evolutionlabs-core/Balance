@@ -272,7 +272,60 @@ class Accounting::PostingOrchestratorTest < ActiveSupport::TestCase
     assert_includes undo.errors.join, "Entry #2 is itself a reversal"
   end
 
+  test "rejects a control-account line that names no counterparty" do
+    receivable = control_account(@ledger, "accounts_receivable")
+
+    receipt = Accounting::PostingOrchestrator.call(two_lines(receivable, @income))
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "Accounts Receivable is a control account; record it through invoices and invoice payments"
+  end
+
+  test "posts a control-account line that names a customer in the workspace" do
+    receivable = control_account(@ledger, "accounts_receivable")
+    customer = @workspace.customers.create!(name: "Tolu", customer_type: "single", email: "tolu@example.com")
+
+    receipt = Accounting::PostingOrchestrator.call(two_lines(receivable, @income, customer: customer))
+
+    assert receipt.success?
+    assert_equal customer, receipt.entry.journal_entry_lines.find_by!(account: receivable).customer
+  end
+
+  test "rejects a customer from another workspace" do
+    receivable = control_account(@ledger, "accounts_receivable")
+    stranger = workspaces(:bola_shop).customers.create!(name: "Stranger", customer_type: "single", email: "stranger@example.com")
+
+    receipt = Accounting::PostingOrchestrator.call(two_lines(receivable, @income, customer: stranger))
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "the customer belongs to another workspace"
+  end
+
+  test "rejects a counterparty on an account that is not its control account" do
+    customer = @workspace.customers.create!(name: "Ife", customer_type: "single", email: "ife@example.com")
+
+    receipt = Accounting::PostingOrchestrator.call(two_lines(@cash, @income, customer: customer))
+
+    refute receipt.success?
+    assert_includes receipt.errors.join, "a customer can only be named on a receivables account"
+  end
+
   private
+    def control_account(ledger, subtype)
+      Account.create!(ledger: ledger, name: subtype.titleize, base_type: "asset", code: "1100", subtype: subtype)
+    end
+
+    def two_lines(debit_account, credit_account, customer: nil)
+      Accounting::Command.new(
+        ledger: @ledger,
+        effective_date: Date.current,
+        lines: [
+          Accounting::Command::Line.new(account: debit_account, debit: 500, credit: 0, customer: customer),
+          Accounting::Command::Line.new(account: credit_account, debit: 0, credit: 500)
+        ]
+      )
+    end
+
     def reversal_of(entry, amount: nil)
       Accounting::Command.new(
         ledger: @ledger,

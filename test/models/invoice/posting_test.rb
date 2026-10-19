@@ -143,6 +143,8 @@ class Invoice::PostingTest < ActiveSupport::TestCase
     issue_entry = JournalEntry.where(source_type: "Invoice", source_id: @invoice.id, action: "issue").sole
 
     assert_equal issue_entry, void_entry.reverses_entry
+    assert_equal [ @invoice.customer ], issue_entry.journal_entry_lines.where(account: @ar).map(&:customer)
+    assert_equal [ @invoice.customer ], void_entry.journal_entry_lines.where(account: @ar).map(&:customer)
     assert_equal 30_000, void_entry.journal_entry_lines.sum(&:credit)
     assert_equal 0, @ar.journal_entry_lines.sum(&:debit) - @ar.journal_entry_lines.sum(&:credit)
   end

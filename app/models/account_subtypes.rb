@@ -15,6 +15,13 @@ module AccountSubtypes
     "owner_draws" => "debit"
   }.freeze
 
+  # Control accounts summarize a subledger; every line on one names the
+  # counterparty it belongs to.
+  CONTROL_COUNTERPARTIES = {
+    "accounts_receivable" => "customer",
+    "accounts_payable" => "vendor"
+  }.freeze
+
   def self.valid?(base_type, subtype)
     SUBTYPES.fetch(base_type.to_s, []).include?(subtype.to_s)
   end
@@ -23,5 +30,9 @@ module AccountSubtypes
     CONTRA_NORMAL_BALANCES.fetch(subtype.to_s) do
       DEBIT_NORMAL_BASE_TYPES.include?(base_type.to_s) ? "debit" : "credit"
     end
+  end
+
+  def self.control_counterparty(subtype)
+    CONTROL_COUNTERPARTIES[subtype.to_s]
   end
 end

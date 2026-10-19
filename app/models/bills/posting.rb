@@ -125,6 +125,7 @@ module Bills
           workspace: workspace,
           attributes: {
             effective_date: bill_date,
+            vendor: vendor,
             expense_lines: posted_expense_lines
           },
           source_id: id,
@@ -143,7 +144,8 @@ module Bills
           attributes: {
             paid_on: paid_on,
             payment_account_id: payment_account.id,
-            amount_kobo: application.amount_kobo
+            amount_kobo: application.amount_kobo,
+            vendor: vendor
           },
           source_id: application.id,
           description: "Payment to #{vendor.name} for #{display_name.downcase_first}"

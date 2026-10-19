@@ -7,6 +7,7 @@ class Accounting::Adapters::BillTest < ActiveSupport::TestCase
     @rent = @ledger.accounts.find_by!(key: "rent")
     @inventory = @ledger.accounts.find_by!(key: "inventory")
     @ap = @ledger.accounts.find_by!(key: "accounts_payable")
+    @vendor = @workspace.vendors.create!(name: "Adapter Vendor")
   end
 
   test "issue debits each expense line and credits payables" do
@@ -14,6 +15,7 @@ class Accounting::Adapters::BillTest < ActiveSupport::TestCase
       workspace: @workspace,
       attributes: {
         effective_date: Date.current,
+        vendor: @vendor,
         expense_lines: [
           { account: @rent, amount_kobo: 50_000 },
           { account: @inventory, amount_kobo: 20_000 }
@@ -31,6 +33,7 @@ class Accounting::Adapters::BillTest < ActiveSupport::TestCase
     assert_equal 50_000, lines.find { |line| line.account == @rent }.debit
     assert_equal 20_000, lines.find { |line| line.account == @inventory }.debit
     ap_line = lines.find { |line| line.account == @ap }
+    assert_equal @vendor, ap_line.vendor
     assert_equal 70_000, ap_line.credit
     assert_equal 0, ap_line.debit
   end
@@ -41,7 +44,7 @@ class Accounting::Adapters::BillTest < ActiveSupport::TestCase
     error = assert_raises(ActiveRecord::RecordNotFound) do
       Accounting::Adapters::Bill.call(
         workspace: @workspace,
-        attributes: { effective_date: Date.current, expense_lines: [ { account: @rent, amount_kobo: 100 } ] },
+        attributes: { effective_date: Date.current, vendor: @vendor, expense_lines: [ { account: @rent, amount_kobo: 100 } ] },
         source_id: 9
       )
     end

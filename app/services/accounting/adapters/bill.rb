@@ -16,7 +16,7 @@ module Accounting
           end
 
           expense_cmd_lines + [
-            Accounting::Command::Line.new(account: account_for("accounts_payable"), debit: 0, credit: total_kobo)
+            Accounting::Command::Line.new(account: account_for("accounts_payable"), debit: 0, credit: total_kobo, vendor: attributes.fetch(:vendor))
           ]
         end
 

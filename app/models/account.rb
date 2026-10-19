@@ -10,6 +10,10 @@ class Account < ApplicationRecord
   validate :subtype_belongs_to_base_type
   validate :system_account_stays_active
 
+  def control_counterparty
+    AccountSubtypes.control_counterparty(subtype)
+  end
+
   private
     def derive_normal_balance
       self.normal_balance = AccountSubtypes.normal_balance(base_type, subtype)

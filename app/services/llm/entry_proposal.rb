@@ -80,6 +80,9 @@ class Llm::EntryProposal
       data.fetch("lines", []).each_with_index do |line, index|
         account = line["account_id"] && ledger.accounts.find_by(id: line["account_id"].to_i)
         messages << "Line #{index + 1}: choose an account in this workspace" if account.nil?
+        if account&.control_counterparty && !reversal?
+          messages << "Line #{index + 1}: #{account.name} is a control account; record it through #{Accounting::Validation::CounterpartyCheck::SUBLEDGERS.fetch(account.control_counterparty)}"
+        end
         messages << "Line #{index + 1}: amount must be positive" unless line["amount_kobo"].to_i.positive?
       end
       messages << balance_message unless balanced?

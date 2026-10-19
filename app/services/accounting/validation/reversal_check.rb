@@ -21,11 +21,11 @@ module Accounting::Validation
     class << self
       private
         def mirrored(entry)
-          entry.journal_entry_lines.map { |line| [ line.account_id, line.credit, line.debit ] }.sort
+          entry.journal_entry_lines.map { |line| [ line.account_id, line.credit, line.debit, line.customer_id.to_i, line.vendor_id.to_i ] }.sort
         end
 
         def signature(lines)
-          lines.map { |line| [ line.account.id, line.debit, line.credit ] }.sort
+          lines.map { |line| [ line.account.id, line.debit, line.credit, line.customer&.id.to_i, line.vendor&.id.to_i ] }.sort
         end
 
         def error(message)

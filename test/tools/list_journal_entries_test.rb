@@ -84,7 +84,7 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
       else
         debit_account = ledger.accounts.where(base_type: "expense").ordered.first ||
           ledger.accounts.ordered.first
-        credit_account = ledger.accounts.where(base_type: "asset").ordered.first ||
+        credit_account = ledger.accounts.where(base_type: "asset").where.not(subtype: AccountSubtypes::CONTROL_COUNTERPARTIES.keys).ordered.first ||
           ledger.accounts.ordered.second
 
         [

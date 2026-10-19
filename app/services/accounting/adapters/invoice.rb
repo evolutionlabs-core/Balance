@@ -16,7 +16,7 @@ module Accounting
           end
 
           income_cmd_lines + [
-            Accounting::Command::Line.new(account: account_for("accounts_receivable"), debit: total_kobo, credit: 0)
+            Accounting::Command::Line.new(account: account_for("accounts_receivable"), debit: total_kobo, credit: 0, customer: attributes.fetch(:customer))
           ]
         end
 

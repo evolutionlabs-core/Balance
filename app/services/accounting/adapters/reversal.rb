@@ -22,7 +22,13 @@ module Accounting
 
         def lines
           reverses_entry.journal_entry_lines.map do |line|
-            Accounting::Command::Line.new(account: line.account, debit: line.credit, credit: line.debit)
+            Accounting::Command::Line.new(
+              account: line.account,
+              debit: line.credit,
+              credit: line.debit,
+              customer: line.customer,
+              vendor: line.vendor
+            )
           end
         end
     end

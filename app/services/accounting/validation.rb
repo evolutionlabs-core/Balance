@@ -3,6 +3,6 @@ module Accounting::Validation
     structural = StructureCheck.call(command)
     return Result.new(structural.freeze) if structural.any?
 
-    Result.new((ExistenceCheck.call(command) + MathCheck.call(command) + AmountCheck.call(command) + ReversalCheck.call(command)).freeze)
+    Result.new((ExistenceCheck.call(command) + MathCheck.call(command) + AmountCheck.call(command) + CounterpartyCheck.call(command) + ReversalCheck.call(command)).freeze)
   end
 end

@@ -12,7 +12,7 @@ module Accounting
 
         def lines
           [
-            Accounting::Command::Line.new(account: account_for("accounts_payable"), debit: amount, credit: 0),
+            Accounting::Command::Line.new(account: account_for("accounts_payable"), debit: amount, credit: 0, vendor: attributes.fetch(:vendor)),
             Accounting::Command::Line.new(account: payment_account, debit: 0, credit: amount)
           ]
         end

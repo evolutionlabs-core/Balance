@@ -141,6 +141,20 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
     assert_includes draft.errors, "This entry is itself a reversal"
   end
 
+  test "flags a control account before the user confirms" do
+    receivable = @ledger.accounts.find_by!(key: "accounts_receivable")
+    draft = Llm::EntryProposal.new(workspace: @workspace, data: {
+      "description" => "Owed by Tunde",
+      "effective_date" => Date.current.iso8601,
+      "lines" => [
+        { "account_id" => receivable.id, "side" => "debit", "amount_kobo" => 10_000 },
+        { "account_id" => @cash.id, "side" => "credit", "amount_kobo" => 10_000 }
+      ]
+    })
+
+    assert_includes draft.errors, "Line 1: Accounts Receivable is a control account; record it through invoices and invoice payments"
+  end
+
   private
     def build_draft(amount: "2500", description: "Office expense", effective_date: Date.current.to_s, lines: [
       { account_id: @groceries.id, side: "debit", amount_naira: amount },

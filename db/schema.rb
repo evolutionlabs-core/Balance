@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -259,11 +259,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000100) do
     t.bigint "account_id", null: false
     t.datetime "created_at", null: false
     t.bigint "credit", default: 0, null: false
+    t.bigint "customer_id"
     t.bigint "debit", default: 0, null: false
     t.bigint "journal_entry_id", null: false
     t.datetime "updated_at", null: false
+    t.bigint "vendor_id"
     t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
+    t.index ["customer_id"], name: "index_journal_entry_lines_on_customer_id"
     t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
+    t.index ["vendor_id"], name: "index_journal_entry_lines_on_vendor_id"
+    t.check_constraint "customer_id IS NULL OR vendor_id IS NULL", name: "chk_journal_entry_lines_one_counterparty"
     t.check_constraint "debit > 0 AND credit = 0 OR credit > 0 AND debit = 0", name: "chk_journal_entry_lines_one_sided_non_zero"
   end
 
@@ -565,7 +570,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000100) do
   add_foreign_key "journal_entries", "ledgers"
   add_foreign_key "journal_entries", "users", column: "posted_by_id"
   add_foreign_key "journal_entry_lines", "accounts"
+  add_foreign_key "journal_entry_lines", "customers"
   add_foreign_key "journal_entry_lines", "journal_entries"
+  add_foreign_key "journal_entry_lines", "vendors"
   add_foreign_key "ledgers", "users", column: "closed_by_id"
   add_foreign_key "ledgers", "workspaces"
   add_foreign_key "llm_activities", "llm_chats"

@@ -17,7 +17,9 @@ module Accounting::Writer
       entry.journal_entry_lines.build(
         account: line.account,
         debit: line.debit,
-        credit: line.credit
+        credit: line.credit,
+        customer: line.customer,
+        vendor: line.vendor
       )
     end
 
