@@ -9,3 +9,9 @@ bola_shop:
   workspace_type: personal
   currency_code: NGN
   onboarding_completed_at: <%= Time.current %>
+
+chidi_supplies:
+  name: Chidi Supplies
+  workspace_type: business
+  currency_code: NGN
+  onboarding_completed_at: <%= Time.current %>

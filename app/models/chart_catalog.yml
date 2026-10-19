@@ -14,7 +14,7 @@ accounts:
   - { key: fixed_assets,             code: "1500", name: Fixed Assets,             base_type: asset,     subtype: fixed_asset,              profiles: [business] }
   - { key: accumulated_depreciation, code: "1590", name: Accumulated Depreciation, base_type: asset,     subtype: accumulated_depreciation, profiles: [business] }
   # --- Liabilities (2xxx)
-  - { key: accounts_payable,         code: "2010", name: Accounts Payable,         base_type: liability, subtype: accounts_payable,         profiles: [business] }
+  - { key: accounts_payable,         code: "2010", name: Accounts Payable,         base_type: liability, subtype: accounts_payable,         profiles: [business], system: true }
   - { key: credit_card,              code: "2020", name: Credit Card Payable,      base_type: liability, subtype: credit_card,              profiles: [personal, business], codes: { personal: "2010" }, names: { personal: Credit Card } }
   - { key: tax_payable,              code: "2100", name: Tax Payable,              base_type: liability, subtype: tax_payable,              profiles: [business] }
   - { key: mortgage,                 code: "2100", name: Mortgage Payable,         base_type: liability, subtype: loan,                     profiles: [personal] }

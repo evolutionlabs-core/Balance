@@ -9,3 +9,8 @@ two:
   full_name: Bola Adeyemi
   email_address: two@example.com
   password_digest: <%= password_digest %>
+
+three:
+  full_name: Chidi Nwosu
+  email_address: three@example.com
+  password_digest: <%= password_digest %>

@@ -7,3 +7,8 @@ bola_owner:
   user: two
   workspace: bola_shop
   role: owner
+
+chidi_owner:
+  user: three
+  workspace: chidi_supplies
+  role: owner

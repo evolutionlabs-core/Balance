@@ -1,0 +1,10 @@
+class Vendor < ApplicationRecord
+  belongs_to :workspace
+  has_many :bills, dependent: :restrict_with_error
+  has_many :bill_payments, through: :bills, source: :payments
+
+  validates :name, presence: true
+
+  scope :active, -> { where(active: true) }
+  scope :ordered, -> { order(:name) }
+end

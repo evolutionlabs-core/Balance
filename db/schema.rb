@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -35,6 +35,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
     t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying::text, 'liability'::character varying::text, 'equity'::character varying::text, 'income'::character varying::text, 'expense'::character varying::text])", name: "chk_accounts_base_type"
     t.check_constraint "created_by::text = ANY (ARRAY['system'::character varying::text, 'admin'::character varying::text, 'agent'::character varying::text])", name: "chk_accounts_created_by"
     t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying::text, 'credit'::character varying::text])", name: "chk_accounts_normal_balance"
+  end
+
+  create_table "bill_lines", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "amount_kobo", null: false
+    t.bigint "bill_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.integer "position", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_bill_lines_on_account_id"
+    t.index ["bill_id", "position"], name: "index_bill_lines_on_bill_id_and_position", unique: true
+    t.index ["bill_id"], name: "index_bill_lines_on_bill_id"
+  end
+
+  create_table "bill_payments", force: :cascade do |t|
+    t.bigint "amount_kobo", null: false
+    t.bigint "bill_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "journal_entry_id"
+    t.bigint "reverses_bill_payment_id"
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["bill_id"], name: "index_bill_payments_on_bill_id"
+    t.index ["journal_entry_id", "bill_id"], name: "index_bill_payments_on_journal_entry_id_and_bill_id", unique: true
+    t.index ["journal_entry_id"], name: "index_bill_payments_on_journal_entry_id"
+    t.index ["reverses_bill_payment_id"], name: "index_bill_payments_on_reverses_bill_payment_id", unique: true
+    t.index ["workspace_id"], name: "index_bill_payments_on_workspace_id"
+  end
+
+  create_table "bills", force: :cascade do |t|
+    t.date "bill_date"
+    t.string "bill_number"
+    t.datetime "created_at", null: false
+    t.string "currency_code", default: "NGN", null: false
+    t.date "due_date"
+    t.text "notes"
+    t.string "status", default: "draft", null: false
+    t.bigint "total_kobo", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "vendor_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["user_id"], name: "index_bills_on_user_id"
+    t.index ["vendor_id", "bill_number"], name: "index_bills_on_vendor_id_and_bill_number", unique: true, where: "(bill_number IS NOT NULL)"
+    t.index ["vendor_id"], name: "index_bills_on_vendor_id"
+    t.index ["workspace_id", "status"], name: "index_bills_on_workspace_id_and_status"
+    t.index ["workspace_id"], name: "index_bills_on_workspace_id"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -455,6 +503,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  create_table "vendors", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "address"
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "name", null: false
+    t.string "phone"
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["workspace_id", "name"], name: "index_vendors_on_workspace_id_and_name"
+    t.index ["workspace_id"], name: "index_vendors_on_workspace_id"
+  end
+
   create_table "workspaces", force: :cascade do |t|
     t.text "address"
     t.datetime "created_at", null: false
@@ -468,6 +529,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
   end
 
   add_foreign_key "accounts", "ledgers"
+  add_foreign_key "bill_lines", "accounts"
+  add_foreign_key "bill_lines", "bills"
+  add_foreign_key "bill_payments", "bill_payments", column: "reverses_bill_payment_id"
+  add_foreign_key "bill_payments", "bills"
+  add_foreign_key "bill_payments", "journal_entries"
+  add_foreign_key "bill_payments", "workspaces"
+  add_foreign_key "bills", "users"
+  add_foreign_key "bills", "vendors"
+  add_foreign_key "bills", "workspaces"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_line_items", "services"
@@ -524,5 +594,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
   add_foreign_key "services", "workspaces"
   add_foreign_key "sessions", "users"
   add_foreign_key "sessions", "workspaces"
+  add_foreign_key "vendors", "workspaces"
   add_foreign_key "workspaces", "accounts", column: "default_sales_account_id"
 end

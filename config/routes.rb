@@ -42,6 +42,12 @@ Rails.application.routes.draw do
     resource :payment, only: %i[new create], controller: "invoices/payments"
     resource :void, only: %i[new create], controller: "invoices/voids"
   end
+  resources :vendors, only: %i[index new create show edit update]
+  resources :bills, only: %i[index new create show edit update] do
+    resource :issuance, only: %i[new create], controller: "bills/issuances"
+    resource :payment, only: %i[new create], controller: "bills/payments"
+    resource :void, only: %i[new create], controller: "bills/voids"
+  end
   scope :invoice, module: :invoices, as: :invoice do
     resources :customers, only: %i[index new create show edit update]
     resource :workspace, only: %i[edit update]

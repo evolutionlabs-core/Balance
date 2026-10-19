@@ -1,0 +1,12 @@
+<tr id="<%= dom_id(bill) %>" class="border-t border-neutral-200 transition-colors hover:bg-neutral-50">
+  <td class="p-0 text-sm font-medium text-neutral-900">
+    <%= link_to bill.vendor.name, bill_path(bill), class: "block px-4 py-4" %>
+  </td>
+  <td class="p-0 text-sm text-neutral-600">
+    <%= link_to bill.bill_number.presence || blank_cell, bill_path(bill), class: "block px-4 py-4" %>
+  </td>
+  <td class="px-4 py-4 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= naira(bill.total_kobo) %></td>
+  <td class="px-4 py-4 text-right text-sm tabular-nums whitespace-nowrap text-neutral-600"><%= bill.open? ? naira(bill.balance_due_kobo) : blank_cell %></td>
+  <td class="px-4 py-4 text-sm whitespace-nowrap"><%= bill_status_badge(bill) %></td>
+  <td class="px-4 py-4 text-sm whitespace-nowrap text-neutral-600"><%= bill.due_date&.strftime("%b %-d, %Y") || blank_cell %></td>
+</tr>

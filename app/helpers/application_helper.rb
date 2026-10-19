@@ -7,12 +7,14 @@ module ApplicationHelper
         { path: expenses_path, svg: "icons/banknote.svg", text: "Expenses" },
         { path: invoices_path, svg: "icons/invoice.svg", text: "Invoices" },
         { path: customers_path, svg: "icons/users.svg", text: "Customers" },
+        ({ path: bills_path, svg: "icons/receipt.svg", text: "Bills" } if current_workspace&.business?),
+        ({ path: vendors_path, svg: "icons/users.svg", text: "Vendors" } if current_workspace&.business?),
         { path: projects_path, svg: "icons/services.svg", text: "Projects" },
         { path: services_path, svg: "icons/project.svg", text: "Services" },
         { path: journal_entries_path, svg: "icons/list.svg", text: "Journal entries" },
         { path: balance_sheet_path, svg: "icons/gauge.svg", text: "Reports" },
         { path: accounts_path, svg: "icons/wallet.svg", text: "Accounts" }
-      ] }
+      ].compact }
     ]
   end
 
