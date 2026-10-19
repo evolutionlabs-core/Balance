@@ -1,0 +1,46 @@
+<article class="mt-6 rounded-xl border border-neutral-200 bg-white px-4 py-6 sm:px-8 sm:py-8" aria-labelledby="statement-heading">
+  <header class="text-center">
+    <p class="text-sm font-medium text-neutral-500"><%= current_workspace.name %></p>
+    <h2 id="statement-heading" class="mt-1 text-lg font-semibold tracking-tight text-neutral-950"><%= title %></h2>
+    <p class="mt-0.5 text-sm text-neutral-500"><%= subtitle %></p>
+  </header>
+
+  <table class="mt-6 w-full text-sm">
+    <thead>
+      <tr class="border-b border-neutral-900 text-xs text-neutral-500">
+        <th scope="col" class="pb-2 text-left font-medium"><span class="sr-only">Line</span></th>
+        <% statement.columns.each_with_index do |column, index| %>
+          <th scope="col" class="w-28 pb-2 pl-3 text-right font-medium sm:w-40 <%= "hidden sm:table-cell" unless index.zero? %>">
+            <%= column.label %>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% statement.lines.each_with_index do |line, line_index| %>
+        <tr>
+          <th scope="row" class="py-1.5 text-left align-bottom <%= statement_row_class(line) %> <%= statement_label_indent(line) %> <%= statement_top_space(line, line_index) %>">
+            <% if line.code %>
+              <span class="mr-2 hidden font-mono text-xs font-normal text-neutral-400 sm:inline"><%= line.code %></span>
+            <% end %>
+            <%= line.label %>
+          </th>
+          <% statement.columns.each_with_index do |_column, index| %>
+            <td class="py-1.5 pl-3 text-right align-bottom tabular-nums <%= statement_row_class(line) %> <%= statement_top_space(line, line_index) %> <%= "hidden sm:table-cell" unless index.zero? %>">
+              <% if line.amounts %>
+                <% amount = line.amounts[index] %>
+                <span class="inline-block min-w-full pb-0.5 <%= statement_figure_rule(line) %> <%= "text-neutral-400" if line.kind == :account && amount.zero? %>">
+                  <%= line.kind == :account && amount.zero? ? "–" : statement_figure(amount) %>
+                </span>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <p class="mt-6 text-xs text-neutral-500">
+    Amounts in <%= current_workspace.currency_code %>. Figures in parentheses are negative.<% if local_assigns[:footnote] %> <%= footnote %><% end %>
+  </p>
+</article>

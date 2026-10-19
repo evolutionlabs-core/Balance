@@ -12,7 +12,10 @@ module ApplicationHelper
         { path: projects_path, svg: "icons/services.svg", text: "Projects" },
         { path: services_path, svg: "icons/project.svg", text: "Services" },
         { path: journal_entries_path, svg: "icons/list.svg", text: "Journal entries" },
-        { path: balance_sheet_path, svg: "icons/gauge.svg", text: "Reports" },
+        { path: balance_sheet_path, svg: "icons/gauge.svg", text: "Reports", children: [
+          { path: balance_sheet_path, text: "Balance sheet" },
+          { path: income_statement_path, text: "Income statement" }
+        ] },
         { path: accounts_path, svg: "icons/wallet.svg", text: "Accounts" }
       ].compact }
     ]
@@ -20,7 +23,6 @@ module ApplicationHelper
 
   def active_nav?(path)
     return current_page?(root_path) || current_page?(overview_path) if path == overview_path
-    return request.path.start_with?("/reports/") if path == balance_sheet_path
 
     current_page?(path) || request.path.start_with?("#{path}/")
   end

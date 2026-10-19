@@ -38,12 +38,6 @@ class LedgerSummary
 
   TrialBalanceLine = Struct.new(:account, :debit_kobo, :credit_kobo, keyword_init: true)
 
-  BalanceSheet = Struct.new(:assets_kobo, :liabilities_kobo, :equity_kobo, keyword_init: true) do
-    def balanced?
-      assets_kobo == liabilities_kobo + equity_kobo
-    end
-  end
-
   def initialize(workspace)
     @workspace = workspace
   end
@@ -85,15 +79,20 @@ class LedgerSummary
   end
 
   def performance_series(days: 30)
-    daily_series(days: days).then do |series|
-      [ { name: "Profit / loss", data: series.to_h { |day| [ day[:date], day[:net_kobo] / 100.0 ] } } ]
+    running = 0
+    data = daily_series(days: days).to_h do |day|
+      running += day[:net_kobo]
+      [ day[:date], running / 100.0 ]
     end
+
+    [ { name: "Profit / loss", data: data } ]
   end
 
   def income_expense_series(days: 30)
-    series = daily_series(days: days)
+    buckets = daily_series(days: days).group_by { |day| days > 30 ? day[:date].beginning_of_week : day[:date] }
+
     [ [ "Income", :income_kobo ], [ "Expenses", :expense_kobo ] ].map do |name, key|
-      { name: name, data: series.to_h { |day| [ day[:date], day[key] / 100.0 ] } }
+      { name: name, data: buckets.transform_values { |grouped| grouped.sum { |day| day[key] } / 100.0 } }
     end
   end
 
@@ -138,17 +137,6 @@ class LedgerSummary
     end
   end
 
-  def balance_sheet(as_of: Date.current)
-    totals = base_type_totals(as_of: as_of)
-    lifetime = profit_and_loss(..as_of)
-
-    assets_kobo = totals["asset"].to_i
-    liabilities_kobo = -totals["liability"].to_i
-    equity_kobo = -totals["equity"].to_i + lifetime.profit_kobo
-
-    BalanceSheet.new(assets_kobo: assets_kobo, liabilities_kobo: liabilities_kobo, equity_kobo: equity_kobo)
-  end
-
   def profit_and_loss(date_range)
     totals = journal_entry_lines.joins(:account)
       .where(journal_entries: { effective_date: date_range })
@@ -174,13 +162,5 @@ class LedgerSummary
 
   def accounts
     Account.where(ledger: workspace.ledgers)
-  end
-
-  def base_type_totals(as_of:)
-    journal_entry_lines.joins(:account)
-      .where(journal_entries: { effective_date: ..as_of })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit) - SUM(journal_entry_lines.credit)"))
-      .to_h
   end
 end

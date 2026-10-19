@@ -1,68 +1,43 @@
 <section class="border-t border-neutral-200 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-labelledby="position-heading">
   <h2 id="position-heading" class="text-base font-semibold">Financial position</h2>
-  <p class="mt-1 text-sm text-neutral-500">Balances as of <%= Date.current.strftime("%b %-d, %Y") %></p>
+  <p class="mt-1 text-sm text-neutral-500">As of <%= Date.current.strftime("%b %-d, %Y") %></p>
 
-  <% if balance_sheet.nil? %>
+  <% if position.nil? %>
     <p class="mt-4 rounded-md border border-dashed border-neutral-200 p-4 text-sm text-neutral-500">
-      Account detail appears here once your chart of accounts is provisioned.
+      Your financial position appears here once your chart of accounts is provisioned.
     </p>
   <% else %>
-    <% composition = [ [ "Assets", "#0f7082", balance_sheet[:total_assets] ],
-                       [ "Liabilities", "#c7d2d4", balance_sheet[:total_liabilities] ],
-                       [ "Equity", "#7ba8ae", balance_sheet[:total_equity] ] ] %>
-
-    <% if composition.any? { |_label, _color, value| !value.zero? } %>
-      <div class="mt-4" role="img" aria-label="Assets, liabilities, and equity in naira. Totals are listed below the chart.">
-        <%= pie_chart composition.to_h { |label, _color, value| [ label, value ] }, height: "220px",
-            colors: composition.map { |_label, color, _value| color },
-            prefix: "₦", thousands: ",", legend: false %>
-      </div>
-
-      <dl class="mt-4 space-y-2">
-        <% composition.each do |label, color, value| %>
-          <div class="flex items-center justify-between gap-3 text-sm">
-            <dt class="flex min-w-0 items-center gap-2">
-              <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: <%= color %>"></span>
-              <span class="text-neutral-700"><%= label %></span>
-            </dt>
-            <dd class="shrink-0 font-semibold tabular-nums text-neutral-950"><%= naira(value) %></dd>
+    <dl class="mt-4 divide-y divide-neutral-100 text-sm">
+      <% position.total(:outline).each do |section| %>
+        <div class="py-3 first:pt-0">
+          <div class="flex items-baseline justify-between gap-3">
+            <dt class="font-medium text-neutral-950"><%= section.label %></dt>
+            <dd class="font-semibold tabular-nums text-neutral-950"><%= statement_figure(section.amounts.first) %></dd>
           </div>
-        <% end %>
-      </dl>
-    <% else %>
-      <p class="mt-4 rounded-md border border-dashed border-neutral-200 p-4 text-sm text-neutral-500">
-        Balances appear here once you record entries.
-      </p>
-    <% end %>
-
-    <% earnings_row = { code: "", name: "Current earnings (unclosed)", normal_balance: "credit", balance: -balance_sheet[:current_earnings] } %>
-    <% [ [ "Assets", "What you own", balance_sheet[:assets], balance_sheet[:total_assets] ],
-         [ "Liabilities", "What you owe", balance_sheet[:liabilities], balance_sheet[:total_liabilities] ],
-         [ "Equity", "What remains after liabilities", balance_sheet[:equity] + [ earnings_row ], balance_sheet[:total_equity]] ].each do |label, explanation, rows, total| %>
-      <details class="group border-b border-neutral-100 py-3 first:pt-0 last:border-b-0">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
-          <span class="flex min-w-0 items-baseline gap-2 text-sm font-medium">
-            <%= label %>
-            <span class="truncate text-xs font-normal text-neutral-500"><%= explanation %></span>
-          </span>
-          <span class="flex shrink-0 items-center gap-2">
-            <span class="text-base font-semibold tracking-tight tabular-nums"><%= naira(total) %></span>
-            <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 text-neutral-400 transition-transform group-open:rotate-90" %>
-          </span>
-        </summary>
-
-        <dl class="mt-2 space-y-1.5 pl-1">
-          <% rows.each do |row| %>
-            <div class="flex items-center justify-between gap-3 text-sm">
-              <dt class="flex min-w-0 items-baseline gap-2">
-                <span class="font-mono text-xs text-neutral-400"><%= row[:code] %></span>
-                <span class="truncate text-neutral-700"><%= row[:name] %></span>
-              </dt>
-              <dd class="shrink-0 font-medium tabular-nums text-neutral-900"><%= statement_amount(row[:balance], row[:normal_balance]) %></dd>
+          <% section.groups.each do |group| %>
+            <div class="mt-1.5 flex items-baseline justify-between gap-3 pl-3 text-neutral-600">
+              <dt class="truncate"><%= group.label %></dt>
+              <dd class="tabular-nums"><%= statement_figure(group.amounts.first) %></dd>
             </div>
           <% end %>
-        </dl>
-      </details>
+        </div>
+      <% end %>
+    </dl>
+    <p class="mt-2 text-xs text-neutral-500">Amounts in <%= current_workspace.currency_code %>.</p>
+
+    <% if receivables && payables %>
+      <div class="mt-6 grid grid-cols-2 gap-3">
+        <% [ [ "Owed to you", receivables, aged_receivables_path ], [ "You owe", payables, aged_payables_path ] ].each do |label, aging, path| %>
+          <% overdue = aging.total_kobo - aging.bucket_totals[:current] %>
+          <%= link_to path, class: "block rounded-lg border border-neutral-200 p-3 hover:border-neutral-300 hover:bg-neutral-50" do %>
+            <p class="text-xs font-medium text-neutral-500"><%= label %></p>
+            <p class="mt-1 text-base font-semibold tabular-nums text-neutral-950"><%= naira(aging.total_kobo) %></p>
+            <p class="mt-0.5 text-xs <%= overdue.positive? ? "text-red-700" : "text-neutral-500" %>">
+              <%= overdue.positive? ? "#{naira(overdue)} overdue" : "Nothing overdue" %>
+            </p>
+          <% end %>
+        <% end %>
+      </div>
     <% end %>
   <% end %>
 

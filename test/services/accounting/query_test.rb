@@ -38,13 +38,13 @@ class Accounting::QueryTest < ActiveSupport::TestCase
     post_entry({ @cash => 90_000 }, credit: @sales)
     post_entry({ @payroll => 40_000 }, credit: @cash)
 
-    response = Accounting::Query.call(ledger_id: @ledger.id, query_type: "balance_sheet")
+    statement = Accounting::Query.call(ledger_id: @ledger.id, query_type: "balance_sheet")[:data]
 
-    assert_equal 50_000, response[:data][:total_assets]
-    assert_equal 0, response[:data][:total_liabilities]
-    assert_equal 50_000, response[:data][:current_earnings]
-    assert_equal 50_000, response[:data][:total_equity]
-    assert response[:data][:balance_check]
+    assert_equal [ 50_000 ], statement.total(:assets)
+    assert_equal [ 0 ], statement.total(:liabilities)
+    assert_equal [ 50_000 ], statement.total(:current_year_earnings)
+    assert_equal [ 50_000 ], statement.total(:equity)
+    assert_equal [ true ], statement.total(:balanced)
   end
 
   test "income statement uses bounded range, not cumulative" do
@@ -60,8 +60,8 @@ class Accounting::QueryTest < ActiveSupport::TestCase
       }
     )
 
-    assert_equal 20_000, response[:data][:total_income]
-    assert_equal 20_000, response[:data][:net_income]
+    assert_equal [ 20_000 ], response[:data].total(:income)
+    assert_equal [ 20_000 ], response[:data].total(:net)
   end
 
   test "personal spending includes owner_draws" do
@@ -146,8 +146,8 @@ class Accounting::QueryTest < ActiveSupport::TestCase
     assert response[:data][:accounts].none? { |account| account[:balance].nil? }
 
     balance_sheet = Accounting::Query.call(ledger_id: empty_ledger.id, query_type: "balance_sheet")
-    assert balance_sheet[:data][:balance_check]
-    assert_equal 0, balance_sheet[:data][:total_assets]
+    assert_equal [ true ], balance_sheet[:data].total(:balanced)
+    assert_equal [ 0 ], balance_sheet[:data].total(:assets)
   end
 
   test "normalizes to integer kobo" do

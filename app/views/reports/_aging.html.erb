@@ -5,8 +5,7 @@
 
 <%= render "shared/page_header",
     title: title,
-    description: "#{description} As of #{Date.current.strftime("%B %-d, %Y")}.",
-    action: render("tabs", active: active) %>
+    description: "#{description} As of #{Date.current.strftime("%B %-d, %Y")}." %>
 
 <% if aging.nil? %>
   <%= render "shared/empty_state",

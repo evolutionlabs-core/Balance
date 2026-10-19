@@ -13,12 +13,20 @@ module Accounting
           end_date: options[:end_date] || as_of_date
         )
       when "balance_sheet"
-        ReportComposer.balance_sheet(ledger_id: ledger_id, as_of_date: as_of_date)
+        statement_result(
+          FinancialStatements.balance_sheet(
+            ledger: Ledger.find(ledger_id),
+            dates: options[:dates] || [ [ as_of_date.strftime("%b %-d, %Y"), as_of_date ] ]
+          )
+        )
       when "income_statement"
-        ReportComposer.income_statement(
-          ledger_id: ledger_id,
-          start_date: options[:start_date] || as_of_date.beginning_of_month,
-          end_date: options[:end_date] || as_of_date
+        start_date = options[:start_date] || as_of_date.beginning_of_month
+        end_date = options[:end_date] || as_of_date
+        statement_result(
+          FinancialStatements.income_statement(
+            ledger: Ledger.find(ledger_id),
+            periods: options[:periods] || [ [ "#{start_date.strftime("%b %-d")} – #{end_date.strftime("%b %-d, %Y")}", start_date, end_date ] ]
+          )
         )
       when "net_worth"
         ReportComposer.net_worth(ledger_id: ledger_id, as_of_date: as_of_date)
@@ -43,5 +51,10 @@ module Accounting
 
       ResponseShaper.call(result)
     end
+
+    def self.statement_result(statement)
+      Result.new(data: statement, metadata: { columns: statement.columns.map(&:label) }, errors: [])
+    end
+    private_class_method :statement_result
   end
 end

@@ -1,59 +1,6 @@
 module Accounting
   module Query
     class ReportComposer
-      def self.balance_sheet(ledger_id:, as_of_date: Date.current)
-        accounts = aggregates(ledger_id: ledger_id, as_of_date: as_of_date)
-
-        assets = by_base_type(accounts, "asset")
-        liabilities = by_base_type(accounts, "liability")
-        equity = by_base_type(accounts, "equity")
-
-        total_assets = signed_total(assets)
-        total_liabilities = -signed_total(liabilities)
-        posted_equity = -signed_total(equity)
-        current_earnings = -signed_total(by_base_type(accounts, "income")) - signed_total(by_base_type(accounts, "expense"))
-        total_equity = posted_equity + current_earnings
-
-        Result.new(
-          data: {
-            as_of_date: as_of_date,
-            assets: section(assets),
-            total_assets: total_assets,
-            liabilities: section(liabilities),
-            total_liabilities: total_liabilities,
-            equity: section(equity),
-            posted_equity: posted_equity,
-            current_earnings: current_earnings,
-            total_equity: total_equity,
-            balance_check: total_assets == total_liabilities + total_equity
-          },
-          metadata: { as_of_date: as_of_date },
-          errors: []
-        )
-      end
-
-      def self.income_statement(ledger_id:, start_date:, end_date:)
-        accounts = aggregates(ledger_id: ledger_id, start_date: start_date, end_date: end_date)
-
-        income = by_base_type(accounts, "income")
-        expenses = by_base_type(accounts, "expense")
-        total_income = -signed_total(income)
-        total_expenses = signed_total(expenses)
-
-        Result.new(
-          data: {
-            period: { start_date: start_date, end_date: end_date },
-            income: section(income),
-            total_income: total_income,
-            expenses: section(expenses),
-            total_expenses: total_expenses,
-            net_income: total_income - total_expenses
-          },
-          metadata: { start_date: start_date, end_date: end_date },
-          errors: []
-        )
-      end
-
       def self.net_worth(ledger_id:, as_of_date: Date.current)
         accounts = aggregates(ledger_id: ledger_id, as_of_date: as_of_date)
 

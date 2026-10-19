@@ -21,9 +21,10 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /#{Regexp.escape("₦500.00")}/
     assert_select "body", /#{Regexp.escape("₦200.00")}/
     assert_select "body", /#{Regexp.escape("₦300.00")}/
-    assert_select "[role=img][aria-label*='Assets, liabilities, and equity']", count: 1
-    assert_select "#position-heading + p", text: /Balances as of/
-    assert_select "details summary", text: /Assets/, count: 1
+    assert_select "#position-heading + p", text: /As of/
+    assert_select "section[aria-labelledby=position-heading] dt", text: "Assets"
+    assert_select "section[aria-labelledby=position-heading] dt", text: "Net worth"
+    assert_select "section[aria-labelledby=position-heading] dd", text: "300.00", minimum: 2
   end
 
   test "shows charts without a separate empty state when there are no journal entries" do
@@ -32,5 +33,23 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: "No income or expenses recorded in this period.", count: 0
     assert_select "section[aria-labelledby=performance-heading] [role=img]", count: 2
     assert_select "#recent_feed", count: 0
+  end
+
+  test "shows a net loss as a red amount without a minus sign" do
+    ledger = @workspace.provision_ledger!
+    groceries = ledger.accounts.find_by!(name: "Groceries")
+    post_journal_entry!(@workspace, debit_account: groceries, credit_account: ledger.accounts.find_by!(name: "Cash"), amount_kobo: 34_00)
+
+    get overview_path
+
+    assert_select "p", text: "Net loss"
+    assert_select "p.text-red-700", text: "₦34.00"
+    assert_select "body", text: /-₦34.00/, count: 0
+  end
+
+  test "the reports section starts closed away from the reports" do
+    get overview_path
+
+    assert_select "nav[aria-label=Primary] details:not([open]) summary", text: "Reports"
   end
 end

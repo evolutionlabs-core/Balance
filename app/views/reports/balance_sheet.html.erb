@@ -5,26 +5,22 @@
 
 <%= render "shared/page_header",
     title: "Balance sheet",
-    description: "Everything you own, owe, and keep, as of #{Date.current.strftime("%B %-d, %Y")}.",
-    action: render("tabs", active: :balance_sheet) %>
+    description: "What you own, what you owe, and what is left, at a point in time." %>
 
-<% unless @report %>
+<% if @statement.nil? %>
   <%= render "shared/empty_state",
       icon: "icons/gauge.svg",
       title: "No accounts yet",
       description: "Your balance sheet appears here once your chart of accounts is provisioned." %>
 <% else %>
-  <div class="mt-6 space-y-8">
-    <% earnings_row = { code: "", name: "Current earnings (unclosed)", normal_balance: "credit", balance: -@report[:current_earnings] } %>
+  <%= render "statement", statement: @statement, title: "Balance Sheet",
+        subtitle: "As of #{@as_of.strftime("%B %-d, %Y")}",
+        footnote: "Current year earnings run from January 1; profit from earlier years is shown in retained earnings until the books are closed." %>
 
-    <%= render "section", title: "Assets", rows: @report[:assets], total: @report[:total_assets] %>
-    <%= render "section", title: "Liabilities", rows: @report[:liabilities], total: @report[:total_liabilities] %>
-    <%= render "section", title: "Equity", rows: @report[:equity] + [ earnings_row ], total: @report[:total_equity],
-        note: "Earnings through #{Date.current.strftime("%b %-d")} are folded in until books close" %>
-
-    <p class="flex items-center gap-2 text-sm <%= @report[:balance_check] ? "text-green-700" : "text-red-700" %>">
-      <%= inline_svg_tag(@report[:balance_check] ? "icons/check-circle.svg" : "icons/minus-circle.svg", class: "h-4 w-4 flex-none") %>
-      <%= @report[:balance_check] ? "Balanced — assets equal liabilities plus equity." : "Out of balance — assets do not equal liabilities plus equity." %>
+  <% unless @statement.total(:balanced).all? %>
+    <p class="mt-4 flex items-center gap-2 text-sm text-red-700">
+      <%= inline_svg_tag "icons/minus-circle.svg", class: "h-4 w-4 flex-none" %>
+      Out of balance: total assets do not equal total liabilities and <%= current_workspace.personal? ? "net worth" : "equity" %>.
     </p>
-  </div>
+  <% end %>
 <% end %>

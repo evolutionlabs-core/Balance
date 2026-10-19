@@ -1,21 +1,17 @@
 class ReportsController < ApplicationController
   def balance_sheet
+    @as_of = [ parse_date(params[:as_of]) || Date.current, Date.current ].min
+    @comparison, dates = ReportPeriod.balance_sheet(@as_of, params[:compare])
     return unless ledger
 
-    @report = Accounting::Query.call(ledger_id: ledger.id, query_type: "balance_sheet")[:data]
+    @statement = Accounting::Query.call(ledger_id: ledger.id, query_type: "balance_sheet", options: { dates: dates })[:data]
   end
 
   def income_statement
-    @month = parse_date(params[:month]) || Date.current
-    @start_date = @month.beginning_of_month
-    @end_date = [ @month.end_of_month, Date.current ].min
+    @period, periods = ReportPeriod.income_statement(params[:period])
     return unless ledger
 
-    @report = Accounting::Query.call(
-      ledger_id: ledger.id,
-      query_type: "income_statement",
-      options: { start_date: @start_date, end_date: @end_date }
-    )[:data]
+    @statement = Accounting::Query.call(ledger_id: ledger.id, query_type: "income_statement", options: { periods: periods })[:data]
   end
 
   def aged_receivables

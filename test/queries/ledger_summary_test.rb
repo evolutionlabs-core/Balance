@@ -27,6 +27,11 @@ class LedgerSummaryTest < ActiveSupport::TestCase
     assert_equal 0, income_series[:data][Date.yesterday]
     assert_equal 500.25, income_series[:data].values.sum
     assert_equal(-200.25, summary.performance_series(days: 7).first[:data][Date.current])
+    assert_equal 0, summary.performance_series(days: 7).first[:data][Date.yesterday]
+
+    weekly_income, = summary.income_expense_series(days: 90)
+    assert_equal 900 + 500.25, weekly_income[:data].values.sum
+    assert weekly_income[:data].keys.all? { |date| date == date.beginning_of_week }
   end
 
   test "summarizes balances from journal entry lines across all posted entries" do
