@@ -25,8 +25,8 @@ module JournalEntries
     def record!
       return false unless valid?
 
-      receipt = Accounting.post(
-        Accounting::Adapters::Entry.call(
+      receipt = AccountingEngine.post(
+        AccountingEngine::Builders::Entry.call(
           workspace: workspace,
           attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line) },
           source_id: nil,

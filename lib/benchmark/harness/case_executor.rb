@@ -58,8 +58,8 @@ module Llm
           cash = @ledger.accounts.find_by!(key: "cash")
           expense = @ledger.accounts.find_by!(key: "other_expense")
 
-          Accounting.post(
-            Accounting::Adapters::Entry.call(
+          AccountingEngine.post(
+            AccountingEngine::Builders::Entry.call(
               workspace: @workspace,
               attributes: {
                 effective_date: Date.current,

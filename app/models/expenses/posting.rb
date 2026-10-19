@@ -18,13 +18,13 @@ module Expenses
 
     private
       def post_to_engine
-        command = Accounting::Adapters::Expense.call(
+        command = AccountingEngine::Builders::Expense.call(
           workspace: workspace,
           attributes: posting_attributes,
           source_id: id,
           description: description
         )
-        Accounting.post(command)
+        AccountingEngine.post(command)
       rescue ActiveRecord::RecordNotFound => error
         receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
@@ -49,7 +49,7 @@ module Expenses
       end
 
       def receipt(errors)
-        Accounting::Receipt.rejected(errors)
+        AccountingEngine::Receipt.rejected(errors)
       end
   end
 end

@@ -121,7 +121,7 @@ module Invoices
       end
 
       def post_issue_entry
-        command = Accounting::Adapters::Invoice.call(
+        command = AccountingEngine::Builders::Invoice.call(
           workspace: workspace,
           attributes: {
             effective_date: issue_date,
@@ -131,7 +131,7 @@ module Invoices
           source_id: id,
           description: "Invoice #{invoice_number}"
         )
-        Accounting.post(command)
+        AccountingEngine.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
@@ -139,7 +139,7 @@ module Invoices
       end
 
       def post_application(application, payment_account, received_on)
-        command = Accounting::Adapters::InvoicePayment.call(
+        command = AccountingEngine::Builders::InvoicePayment.call(
           workspace: workspace,
           attributes: {
             received_on: received_on,
@@ -150,7 +150,7 @@ module Invoices
           source_id: application.id,
           description: "Payment received for invoice #{invoice_number}"
         )
-        Accounting.post(command)
+        AccountingEngine.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
@@ -158,7 +158,7 @@ module Invoices
       end
 
       def post_void_entry
-        command = Accounting::Adapters::Reversal.call(
+        command = AccountingEngine::Builders::Reversal.call(
           workspace: workspace,
           attributes: {
             source_type: "Invoice",
@@ -169,7 +169,7 @@ module Invoices
           source_id: id,
           description: "Invoice #{invoice_number} voided"
         )
-        Accounting.post(command)
+        AccountingEngine.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
@@ -194,7 +194,7 @@ module Invoices
       end
 
       def reject_receipt(messages)
-        Accounting::Receipt.rejected(messages)
+        AccountingEngine::Receipt.rejected(messages)
       end
 
       # A rollback restores the database but not the in-memory aasm state; put

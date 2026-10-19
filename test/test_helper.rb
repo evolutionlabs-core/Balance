@@ -20,7 +20,7 @@ module ActiveSupport
 
     def post_journal_entry!(workspace, debit_account:, credit_account:, amount_kobo:, effective_date: Date.current, description: nil)
       ledger = workspace.ledgers.first || workspace.provision_ledger!
-      command = Accounting::Command.new(
+      command = AccountingEngine::Command.new(
         ledger: ledger,
         effective_date: effective_date,
         source_type: nil,
@@ -28,12 +28,12 @@ module ActiveSupport
         action: "create",
         description: description,
         lines: [
-          Accounting::Command::Line.new(account: debit_account, debit: amount_kobo, credit: 0),
-          Accounting::Command::Line.new(account: credit_account, debit: 0, credit: amount_kobo)
+          AccountingEngine::Command::Line.new(account: debit_account, debit: amount_kobo, credit: 0),
+          AccountingEngine::Command::Line.new(account: credit_account, debit: 0, credit: amount_kobo)
         ]
       )
 
-      receipt = Accounting.post(command)
+      receipt = AccountingEngine.post(command)
       raise "Journal entry rejected: #{receipt.errors.map(&:to_s).join(', ')}" unless receipt.success?
 
       receipt.entry

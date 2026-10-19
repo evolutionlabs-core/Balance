@@ -20,8 +20,8 @@ module Workspaces
     end
 
     def post_opening_balance!(amount_kobo)
-      receipt = Accounting.post(
-        Accounting::Adapters::OpeningBalance.call(
+      receipt = AccountingEngine.post(
+        AccountingEngine::Builders::OpeningBalance.call(
           workspace: self,
           attributes: { opening_balance_kobo: amount_kobo },
           source_id: id

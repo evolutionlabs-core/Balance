@@ -62,11 +62,11 @@ class Llm::EntryProposal
   def reversal? = data["reverses_journal_entry_id"].present?
 
   def post!(source_id:)
-    Accounting.post(reversal? ? reversal_command(source_id) : entry_command(source_id))
+    AccountingEngine.post(reversal? ? reversal_command(source_id) : entry_command(source_id))
   rescue ActiveRecord::RecordNotFound => error
-    Accounting::Receipt.rejected([ error.message ])
+    AccountingEngine::Receipt.rejected([ error.message ])
   rescue ActiveRecord::RecordNotUnique
-    Accounting::Receipt.rejected([ already_recorded_message ])
+    AccountingEngine::Receipt.rejected([ already_recorded_message ])
   end
 
   private
@@ -81,7 +81,7 @@ class Llm::EntryProposal
         account = line["account_id"] && ledger.accounts.find_by(id: line["account_id"].to_i)
         messages << "Line #{index + 1}: choose an account in this workspace" if account.nil?
         if account&.control_counterparty && !reversal?
-          messages << "Line #{index + 1}: #{account.name} is a control account; record it through #{Accounting::Validation::CounterpartyCheck::SUBLEDGERS.fetch(account.control_counterparty)}"
+          messages << "Line #{index + 1}: #{account.name} is a control account; record it through #{AccountingEngine::Validation::CounterpartyCheck::SUBLEDGERS.fetch(account.control_counterparty)}"
         end
         messages << "Line #{index + 1}: amount must be positive" unless line["amount_kobo"].to_i.positive?
       end
@@ -100,7 +100,7 @@ class Llm::EntryProposal
     end
 
     def entry_command(source_id)
-      Accounting::Adapters::Entry.call(
+      AccountingEngine::Builders::Entry.call(
         workspace: @workspace,
         attributes: { effective_date: parsed_date, lines: command_lines },
         source_id: source_id,
@@ -111,7 +111,7 @@ class Llm::EntryProposal
     # A reversal posts the mirror of the original entry; the proposal's lines
     # only display it.
     def reversal_command(source_id)
-      Accounting::Adapters::Reversal.call(
+      AccountingEngine::Builders::Reversal.call(
         workspace: @workspace,
         attributes: { source_type: "Entry", effective_date: parsed_date, entry: original_entry },
         source_id: source_id,
