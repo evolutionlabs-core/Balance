@@ -39,7 +39,7 @@ module AccountingEngine::Validation
         end
 
         def error(message)
-          Error.new(:counterparty, message)
+          AccountingEngine::Error.new(:counterparty, message)
         end
     end
   end

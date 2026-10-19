@@ -80,15 +80,14 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
     assert_equal 250_000, entry.journal_entry_lines.sum(&:credit)
   end
 
-  test "a duplicate posting is rejected instead of crashing" do
+  test "posting a confirmed proposal again returns its entry instead of a second one" do
     proposal = @chat.proposals.create!(workspace: @workspace, proposal_type: "entry", version: 1, data: entry_data)
     assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: @workspace, data: entry_data))
 
-    duplicate = Llm::EntryProposal.new(workspace: @workspace, data: entry_data)
-    receipt = duplicate.post!(source_id: proposal.id)
+    receipt = Llm::EntryProposal.new(workspace: @workspace, data: entry_data).post!(source_id: proposal.id)
 
-    assert_equal false, receipt.success?
-    assert_equal [ "This entry has already been recorded." ], receipt.errors
+    assert receipt.replayed?
+    assert_equal proposal.reload.journal_entry, receipt.entry
   end
 
   test "records a reversal with mirrored lines through the engine" do

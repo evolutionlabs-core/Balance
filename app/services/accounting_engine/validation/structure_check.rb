@@ -22,7 +22,7 @@ module AccountingEngine::Validation
         end
 
         def error(check, message)
-          Error.new(check, message)
+          AccountingEngine::Error.new(check, message)
         end
     end
   end

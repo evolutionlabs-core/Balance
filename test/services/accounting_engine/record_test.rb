@@ -19,7 +19,7 @@ class AccountingEngine::RecordTest < ActiveSupport::TestCase
     receipt = record(lines: [ { account_id: -1, debit: 500, credit: 0 }, { account_id: @cash.id, debit: 0, credit: 500 } ])
 
     refute receipt.success?
-    assert_equal [ "Account -1 is not in the General ledger." ], receipt.errors
+    assert_equal [ "Account -1 is not in the General ledger." ], receipt.errors.map(&:to_s)
   end
 
   private

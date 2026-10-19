@@ -5,7 +5,7 @@ module AccountingEngine
         if command.ledger.active?
           []
         else
-          [ Error.new(:ledger, "Ledger #{command.ledger.name} is #{command.ledger.status}") ]
+          [ AccountingEngine::Error.new(:ledger, "Ledger #{command.ledger.name} is #{command.ledger.status}") ]
         end
       end
     end

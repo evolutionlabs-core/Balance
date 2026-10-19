@@ -29,7 +29,7 @@ module AccountingEngine::Validation
         end
 
         def error(message)
-          Error.new(:reversal, message)
+          AccountingEngine::Error.new(:reversal, message)
         end
     end
   end

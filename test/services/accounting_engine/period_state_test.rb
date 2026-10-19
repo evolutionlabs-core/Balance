@@ -16,7 +16,7 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
     errors = AccountingEngine::PeriodState.call(command).errors
 
     assert errors.one?
-    assert_equal :period, errors.first.check
+    assert_equal :period, errors.first.code
   end
 
   test "allows a posting dated after the closed-through boundary" do
@@ -42,7 +42,7 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
     errors = AccountingEngine::PeriodState.call(command).errors
 
     assert_equal 1, errors.size
-    assert_equal :account, errors.first.check
+    assert_equal :account, errors.first.code
     assert_match /Line 2: account Cash is inactive/, errors.first.to_s
   end
 
@@ -53,7 +53,7 @@ class AccountingEngine::PeriodStateTest < ActiveSupport::TestCase
 
     errors = AccountingEngine::PeriodState.call(command).errors
 
-    assert_equal [ :ledger, :account, :period ], errors.map(&:check)
+    assert_equal [ :ledger, :account, :period ], errors.map(&:code)
   end
 
   private

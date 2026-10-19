@@ -8,34 +8,55 @@ class AccountingEngine::Posting
   end
 
   def call
-    errors = []
-    entry = nil
-    warnings = []
+    structural = AccountingEngine::Validation::StructureCheck.call(command)
+    return AccountingEngine::Receipt.rejected(structural) if structural.any?
+
+    receipt = nil
 
     JournalEntry.transaction do
-      validation = AccountingEngine::Validation.call(command)
-
-      if validation.ok?
-        ruled = AccountingEngine::Rules.call(command)
-        warnings = ruled.metadata.fetch("warnings", [])
-        errors = AccountingEngine::PeriodState.call(ruled).errors
-
-        if errors.empty?
-          entry = AccountingEngine::Writer.call(ruled).entry
-        else
-          raise ActiveRecord::Rollback
-        end
-      else
-        errors = validation.errors
-        raise ActiveRecord::Rollback
-      end
+      command.ledger.lock!
+      receipt = recorded_entry ? replay(recorded_entry) : post
+      raise ActiveRecord::Rollback unless receipt.success?
     end
 
-    AccountingEngine::Receipt.new(entry, errors.freeze, warnings.freeze)
+    receipt
   rescue AccountingEngine::Errors::BusinessRuleError => error
-    AccountingEngine::Receipt.new(nil, [ error.message ].freeze, error.warnings.freeze)
+    AccountingEngine::Receipt.rejected([ AccountingEngine::Error.new(:rule, error.message) ], warnings: error.warnings)
   end
 
   private
     attr_reader :command
+
+    def post
+      errors = AccountingEngine::Validation.call(command).errors
+      return AccountingEngine::Receipt.rejected(errors) if errors.any?
+
+      ruled = AccountingEngine::Rules.call(command)
+      warnings = ruled.metadata.fetch("warnings", [])
+      errors = AccountingEngine::PeriodState.call(ruled).errors
+      return AccountingEngine::Receipt.rejected(errors, warnings: warnings) if errors.any?
+
+      AccountingEngine::Receipt.posted(AccountingEngine::Writer.call(ruled).entry, warnings: warnings)
+    end
+
+    def recorded_entry
+      return unless command.source_type && command.source_id && command.action
+
+      @recorded_entry ||= command.ledger.journal_entries.includes(:journal_entry_lines)
+        .find_by(source_type: command.source_type, source_id: command.source_id, action: command.action)
+    end
+
+    def replay(entry)
+      if entry.effective_date == command.effective_date && signature(entry.journal_entry_lines) == signature(command.lines)
+        AccountingEngine::Receipt.replayed(entry)
+      else
+        AccountingEngine::Receipt.rejected([
+          AccountingEngine::Error.new(:duplicate_source, "This #{command.source_type.titleize.downcase} #{command.action} is already recorded as entry ##{entry.number} with different lines")
+        ])
+      end
+    end
+
+    def signature(lines)
+      lines.map { |line| [ line.account.id, line.debit, line.credit, line.customer&.id, line.vendor&.id ] }.sort_by(&:to_s)
+    end
 end

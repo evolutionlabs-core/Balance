@@ -18,7 +18,7 @@ module AccountingEngine::Validation
     class << self
       private
         def error(check, message)
-          Error.new(check, message)
+          AccountingEngine::Error.new(check, message)
         end
     end
   end

@@ -7,7 +7,7 @@ module AccountingEngine
         [].tap do |errors|
           command.lines.each_with_index do |line, index|
             account = line.account
-            errors << Error.new(:account, "Line #{index + 1}: account #{account.name} is inactive") if inactive_ids.include?(account.id)
+            errors << AccountingEngine::Error.new(:account, "Line #{index + 1}: account #{account.name} is inactive") if inactive_ids.include?(account.id)
           end
         end
       end

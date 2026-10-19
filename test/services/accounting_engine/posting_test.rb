@@ -212,8 +212,7 @@ class AccountingEngine::PostingTest < ActiveSupport::TestCase
     receipt = AccountingEngine::Posting.call(command(debit: 1000, credit: 1000))
 
     refute receipt.success?
-    refute receipt.success?
-    assert_equal [ "blocked by policy" ], receipt.errors
+    assert_equal [ "blocked by policy" ], receipt.errors.map(&:to_s)
     assert_equal 0, @ledger.journal_entries.count
     assert_equal 0, JournalEntryLine.count
   end
@@ -308,6 +307,32 @@ class AccountingEngine::PostingTest < ActiveSupport::TestCase
 
     refute receipt.success?
     assert_includes receipt.errors.join, "a customer can only be named on a receivables account"
+  end
+
+  test "posting the same source twice returns the first entry as a replay" do
+    first = AccountingEngine::Posting.call(command(debit: 900, credit: 900, source_type: "Invoice", source_id: 3, action: "issue"))
+    again = AccountingEngine::Posting.call(command(debit: 900, credit: 900, source_type: "Invoice", source_id: 3, action: "issue"))
+
+    assert again.success?
+    assert again.replayed?
+    assert_equal first.entry, again.entry
+    assert_equal 1, @ledger.journal_entries.count
+  end
+
+  test "posting the same source with different lines is rejected by name" do
+    AccountingEngine::Posting.call(command(debit: 900, credit: 900, source_type: "Invoice", source_id: 3, action: "issue"))
+    changed = AccountingEngine::Posting.call(command(debit: 500, credit: 500, source_type: "Invoice", source_id: 3, action: "issue"))
+
+    refute changed.success?
+    assert_equal :duplicate_source, changed.errors.sole.code
+    assert_equal "This invoice issue is already recorded as entry #1 with different lines", changed.errors.sole.message
+  end
+
+  test "every rejection is an AccountingEngine::Error" do
+    receipt = AccountingEngine::Posting.call(command(debit: 100, credit: 90))
+
+    assert receipt.errors.all? { |error| error.is_a?(AccountingEngine::Error) }
+    assert_equal [ :match ], receipt.errors.map(&:code)
   end
 
   private

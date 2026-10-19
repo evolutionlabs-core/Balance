@@ -71,7 +71,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
 
     assert_equal false, @invoice.issue!
 
-    assert_includes @invoice.errors.full_messages, "This invoice has already been recorded."
+    assert_includes @invoice.errors.full_messages, "This invoice issue is already recorded as entry #1 with different lines"
   end
 
   test "records an application and settles the invoice at full application" do

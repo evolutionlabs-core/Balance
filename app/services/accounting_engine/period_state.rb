@@ -1,13 +1,5 @@
 module AccountingEngine::PeriodState
   def self.call(command)
-    command.ledger.lock!
-
-    errors = (
-      LedgerStatus.call(command) +
-      AccountStatus.call(command) +
-      PeriodStatus.call(command)
-    ).freeze
-
-    Result.new(errors)
+    Result.new((LedgerStatus.call(command) + AccountStatus.call(command) + PeriodStatus.call(command)).freeze)
   end
 end

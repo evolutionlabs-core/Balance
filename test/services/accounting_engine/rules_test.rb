@@ -22,8 +22,7 @@ class AccountingEngine::RulesTest < ActiveSupport::TestCase
     receipt = post
 
     refute receipt.success?
-    refute receipt.success?
-    assert_equal [ "blocked by policy" ], receipt.errors
+    assert_equal [ "blocked by policy" ], receipt.errors.map(&:to_s)
     assert_equal 0, @ledger.journal_entries.count
   end
 
