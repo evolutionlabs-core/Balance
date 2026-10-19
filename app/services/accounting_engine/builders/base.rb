@@ -1,16 +1,15 @@
 module AccountingEngine
   module Builders
     class Base
-      def self.call(workspace:, attributes:, source_id:, description: nil, metadata: {})
-        new(workspace: workspace, attributes: attributes, source_id: source_id, description: description, metadata: metadata).call
+      def self.call(workspace:, attributes:, source_id:, description: nil)
+        new(workspace: workspace, attributes: attributes, source_id: source_id, description: description).call
       end
 
-      def initialize(workspace:, attributes:, source_id:, description: nil, metadata: {})
+      def initialize(workspace:, attributes:, source_id:, description: nil)
         @workspace = workspace
         @attributes = attributes
         @source_id = source_id
         @description = description
-        @metadata = metadata
       end
 
       def call
@@ -21,7 +20,6 @@ module AccountingEngine
           source_id: source_id,
           action: action,
           description: description,
-          metadata: metadata,
           lines: lines,
           reverses_entry: reverses_entry,
           posted_by: Current.user
@@ -29,7 +27,7 @@ module AccountingEngine
       end
 
       private
-        attr_reader :workspace, :attributes, :source_id, :description, :metadata
+        attr_reader :workspace, :attributes, :source_id, :description
 
         def source_type
           self.class.name.demodulize

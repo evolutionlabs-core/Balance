@@ -458,22 +458,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
     t.index ["workspace_id"], name: "index_proposals_on_workspace_id"
   end
 
-  create_table "rules", force: :cascade do |t|
-    t.string "action"
-    t.boolean "active", default: true, null: false
-    t.jsonb "conditions", default: [], null: false
-    t.datetime "created_at", null: false
-    t.bigint "ledger_id"
-    t.text "message", null: false
-    t.string "name", null: false
-    t.string "severity", null: false
-    t.string "source_type"
-    t.datetime "updated_at", null: false
-    t.index ["active", "ledger_id", "source_type", "action"], name: "idx_rules_fetch"
-    t.index ["ledger_id"], name: "index_rules_on_ledger_id"
-    t.check_constraint "severity::text = ANY (ARRAY['block'::character varying::text, 'warn'::character varying::text])", name: "chk_rules_severity"
-  end
-
   create_table "services", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -596,7 +580,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"
   add_foreign_key "proposals", "workspaces"
-  add_foreign_key "rules", "ledgers"
   add_foreign_key "services", "accounts", column: "income_account_id"
   add_foreign_key "services", "workspaces"
   add_foreign_key "sessions", "users"

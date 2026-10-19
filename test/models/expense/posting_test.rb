@@ -17,14 +17,14 @@ class Expense::PostingTest < ActiveSupport::TestCase
   end
 
   test "posts nothing and stays a draft when the engine rejects" do
-    Rule.create!(name: "block rule", severity: "block", message: "blocked by policy")
+    @workspace.ledger.update!(status: "archived")
     expense = build_expense
 
     assert_equal false, expense.record_entry!
 
     refute expense.reload.posted?
     assert_empty JournalEntry.where(source_type: "Expense")
-    assert_includes expense.errors.full_messages, "blocked by policy"
+    assert_includes expense.errors.full_messages, "Ledger General is archived"
   end
 
   test "an invalid expense records nothing and carries the model errors" do

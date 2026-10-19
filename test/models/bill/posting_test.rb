@@ -27,16 +27,6 @@ class Bill::PostingTest < ActiveSupport::TestCase
     assert_equal 70_000, @bill.balance_due_kobo
   end
 
-  test "a business rule rejection keeps the bill a draft" do
-    Rule.create!(name: "block bills", severity: "block", message: "bills paused by policy")
-
-    assert_equal false, @bill.issue!
-
-    assert_includes @bill.errors.full_messages, "bills paused by policy"
-    assert @bill.reload.draft?
-    assert_empty JournalEntry.where(source_type: "Bill")
-  end
-
   test "a closed period rejects entering the bill" do
     @ledger.close_books!(through: Date.current, actor: users(:three))
 

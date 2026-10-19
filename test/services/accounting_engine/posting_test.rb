@@ -201,22 +201,6 @@ class AccountingEngine::PostingTest < ActiveSupport::TestCase
     assert_includes receipt.errors.join, "not persisted"
   end
 
-  test "returns a rejecting receipt instead of raising when a rule blocks" do
-    Rule.create!(
-      name: "block rule",
-      severity: "block",
-      message: "blocked by policy",
-      conditions: []
-    )
-
-    receipt = AccountingEngine::Posting.call(command(debit: 1000, credit: 1000))
-
-    refute receipt.success?
-    assert_equal [ "blocked by policy" ], receipt.errors.map(&:to_s)
-    assert_equal 0, @ledger.journal_entries.count
-    assert_equal 0, JournalEntryLine.count
-  end
-
   test "numbers entries sequentially within the ledger" do
     first = AccountingEngine::Posting.call(command(debit: 100, credit: 100)).entry
     second = AccountingEngine::Posting.call(command(debit: 200, credit: 200)).entry

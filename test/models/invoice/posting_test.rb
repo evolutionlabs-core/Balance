@@ -27,16 +27,6 @@ class Invoice::PostingTest < ActiveSupport::TestCase
     assert_equal 30_000, entry.journal_entry_lines.sum(&:credit)
   end
 
-  test "rejection rolls the invoice back to draft" do
-    Rule.create!(name: "block invoices", severity: "block", message: "invoicing paused by policy")
-
-    assert_equal false, @invoice.issue!
-
-    assert_includes @invoice.errors.full_messages, "invoicing paused by policy"
-    assert @invoice.reload.draft?
-    assert_empty JournalEntry.where(source_type: "Invoice")
-  end
-
   test "a closed ledger period rejects sending" do
     @ledger.close_books!(through: Date.current, actor: owner)
 

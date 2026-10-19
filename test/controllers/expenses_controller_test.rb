@@ -50,8 +50,8 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
-  test "creates nothing and surfaces the message when a block rule rejects the command" do
-    Rule.create!(name: "block rule", severity: "block", message: "blocked by policy")
+  test "creates nothing and surfaces the message when the engine rejects the posting" do
+    @workspace.ledger.update!(status: "archived")
 
     assert_no_difference -> { Expense.count } do
       assert_no_difference -> { JournalEntry.count } do
@@ -60,7 +60,7 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_match "blocked by policy", response.body
+    assert_match "Ledger General is archived", response.body
   end
 
   test "renders the show page for an expense posted through the engine" do

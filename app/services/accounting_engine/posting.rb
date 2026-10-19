@@ -20,23 +20,16 @@ class AccountingEngine::Posting
     end
 
     receipt
-  rescue AccountingEngine::Errors::BusinessRuleError => error
-    AccountingEngine::Receipt.rejected([ AccountingEngine::Error.new(:rule, error.message) ], warnings: error.warnings)
   end
 
   private
     attr_reader :command
 
     def post
-      errors = AccountingEngine::Validation.call(command).errors
+      errors = AccountingEngine::Validation.call(command).errors + AccountingEngine::PeriodState.call(command).errors
       return AccountingEngine::Receipt.rejected(errors) if errors.any?
 
-      ruled = AccountingEngine::Rules.call(command)
-      warnings = ruled.metadata.fetch("warnings", [])
-      errors = AccountingEngine::PeriodState.call(ruled).errors
-      return AccountingEngine::Receipt.rejected(errors, warnings: warnings) if errors.any?
-
-      AccountingEngine::Receipt.posted(AccountingEngine::Writer.call(ruled).entry, warnings: warnings)
+      AccountingEngine::Receipt.posted(AccountingEngine::Writer.call(command).entry)
     end
 
     def recorded_entry

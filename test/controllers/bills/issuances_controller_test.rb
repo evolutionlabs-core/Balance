@@ -29,12 +29,12 @@ class Bills::IssuancesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "an engine rejection re-renders the form" do
-    Rule.create!(name: "block bills", severity: "block", message: "bills paused by policy")
+    @workspace.ledger.update!(status: "archived")
 
     post bill_issuance_path(@bill)
 
     assert_response :unprocessable_content
-    assert_match "bills paused by policy", response.body
+    assert_match "Ledger General is archived", response.body
     assert @bill.reload.draft?
   end
 
