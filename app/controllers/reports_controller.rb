@@ -18,6 +18,18 @@ class ReportsController < ApplicationController
     )[:data]
   end
 
+  def aged_receivables
+    @aging = AgedBalances.new(current_workspace, side: :receivables) if ledger
+  end
+
+  def aged_payables
+    if current_workspace.business?
+      @aging = AgedBalances.new(current_workspace, side: :payables) if ledger
+    else
+      redirect_to aged_receivables_path, alert: "Payables are only available in business workspaces."
+    end
+  end
+
   private
     def ledger
       @ledger ||= current_workspace.ledgers.first

@@ -1,0 +1,4 @@
+<%= render "aging", title: "Aged receivables", active: :aged_receivables, aging: @aging,
+    description: "What customers owe you on sent invoices, by how long it is past due.",
+    counterparty: "Customer", control_account: "Accounts Receivable", documents: "sent invoices",
+    empty: "No customer owes you anything right now." %>

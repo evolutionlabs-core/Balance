@@ -28,6 +28,8 @@ Rails.application.routes.draw do
   resource :overview, only: %i[show]
   get "reports/balance_sheet", to: "reports#balance_sheet", as: :balance_sheet
   get "reports/income_statement", to: "reports#income_statement", as: :income_statement
+  get "reports/aged_receivables", to: "reports#aged_receivables", as: :aged_receivables
+  get "reports/aged_payables", to: "reports#aged_payables", as: :aged_payables
   resources :expenses, only: %i[index new create show]
 
   resource :expense_report, only: %i[show]

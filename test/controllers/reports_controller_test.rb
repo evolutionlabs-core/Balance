@@ -59,4 +59,41 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", text: "No accounts yet"
   end
+
+  test "aged receivables shows the tie-out to the control account" do
+    get aged_receivables_path
+
+    assert_response :success
+    assert_select "h1", /Aged receivables/
+    assert_select "#tie-out", /Ties out: Accounts Receivable holds/
+  end
+
+  test "aged payables is only for business workspaces" do
+    get aged_payables_path
+
+    assert_redirected_to aged_receivables_path
+  end
+end
+
+class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @workspace = workspaces(:chidi_supplies)
+    @ledger = @workspace.provision_ledger!
+    sign_in_as(users(:three))
+  end
+
+  test "aged payables lists open bills by vendor" do
+    rent = @ledger.accounts.find_by!(key: "rent")
+    vendor = @workspace.vendors.create!(name: "Lagos Landlords")
+    bill = @workspace.bills.create!(user: users(:three), vendor: vendor, bill_date: Date.current,
+      bill_lines_attributes: [ { account_id: rent.id, description: "Office rent", amount: "750.00" } ])
+    assert bill.issue!
+
+    get aged_payables_path
+
+    assert_response :success
+    assert_select "tbody th", text: "Lagos Landlords"
+    assert_select "#tie-out", /Ties out: Accounts Payable holds ₦750.00/
+    assert_select "nav[aria-label=Reports] a", text: "Payables"
+  end
 end
