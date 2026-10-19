@@ -54,7 +54,7 @@ class ConfirmProposal < RubyLLM::Tool
       message: "Entry recorded.",
       proposal_id: proposal.id,
       status: proposal.status,
-      ledger_entry_id: proposal.ledger_entry_id,
+      journal_entry_id: proposal.journal_entry_id,
       description: proposal.description,
       effective_date: proposal.effective_date,
       already_recorded: already_recorded

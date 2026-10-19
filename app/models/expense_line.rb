@@ -1,6 +1,6 @@
 class ExpenseLine < ApplicationRecord
   belongs_to :expense, inverse_of: :expense_lines
-  belongs_to :account, class_name: "LedgerAccount"
+  belongs_to :account, class_name: "Account"
 
   validates :description, presence: true
   validates :amount_kobo, numericality: { only_integer: true, greater_than: 0 }, unless: :invalid_amount_input?

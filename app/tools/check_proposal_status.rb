@@ -1,5 +1,5 @@
 class CheckProposalStatus < RubyLLM::Tool
-  description "Report the status of the most recent entry proposals in this workspace so you can say whether a proposed entry has been recorded. A confirmed proposal is a recorded ledger entry; a proposed one is still waiting for approval."
+  description "Report the status of the most recent entry proposals in this workspace so you can say whether a proposed entry has been recorded. A confirmed proposal is a recorded journal entry; a proposed one is still waiting for approval."
 
   def initialize(workspace)
     @workspace = workspace
@@ -7,13 +7,13 @@ class CheckProposalStatus < RubyLLM::Tool
 
   def execute
     proposals = @workspace.proposals
-      .includes(:ledger_entry)
+      .includes(:journal_entry)
       .where(proposal_type: "entry")
       .order(created_at: :desc, id: :desc)
       .limit(10)
 
     proposals.map do |proposal|
-      entry = proposal.ledger_entry
+      entry = proposal.journal_entry
       {
         id: proposal.id,
         description: proposal.data&.dig("description"),

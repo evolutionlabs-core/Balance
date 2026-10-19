@@ -3,12 +3,12 @@ require "test_helper"
 class ProposeAccountTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @ledger = @workspace.provision_ledger!
     @tool = ProposeAccount.new(stub_llm_chat(workspace: @workspace, prompt: "I paid rent"))
   end
 
   test "returns a reviewable proposal without creating an account" do
-    assert_no_difference "LedgerAccount.count" do
+    assert_no_difference "Account.count" do
       @result = propose_rent
     end
 
@@ -27,7 +27,7 @@ class ProposeAccountTest < ActiveSupport::TestCase
   end
 
   test "does not propose an account that already exists in the ledger chart" do
-    @ledger.ledger_accounts.create!(
+    @ledger.accounts.create!(
       name: "Rent & Housing",
       base_type: "expense",
       subtype: "housing",

@@ -143,7 +143,7 @@ module Llm
       end
 
       def graceful_error_intent
-        if @capture[:ledger_entries_delta].positive?
+        if @capture[:journal_entries_delta].positive?
           zero("posted an entry from malformed input")
         elsif @capture[:proposals_created].any?
           s(2, "proposed from malformed input instead of asking")
@@ -194,8 +194,8 @@ module Llm
 
         failures = []
         failures << "lines do not balance or are incomplete" unless proposal.complete?
-        owned_ids = Workspace.find(@capture[:workspace_id]).ledger_account_ids
-        unless proposal.lines.all? { |line| owned_ids.include?(line["ledger_account_id"].to_i) }
+        owned_ids = Workspace.find(@capture[:workspace_id]).account_ids
+        unless proposal.lines.all? { |line| owned_ids.include?(line["account_id"].to_i) }
           failures << "references accounts outside the workspace"
         end
         failures.concat(amount_failures(proposal))
@@ -257,9 +257,9 @@ module Llm
         return [] if expected.empty?
 
         ledger = workspace_for_scorer_ledger.ledgers.first
-        ledger_accounts = ledger.ledger_accounts.where(id: proposal.lines.pluck("ledger_account_id")).index_by(&:id)
+        accounts = ledger.accounts.where(id: proposal.lines.pluck("account_id")).index_by(&:id)
         actual = proposal.lines.map do |line|
-          account = ledger_accounts[line.fetch("ledger_account_id").to_i]
+          account = accounts[line.fetch("account_id").to_i]
           {
             "base_type" => account&.base_type,
             "account_name" => account&.name,
@@ -303,11 +303,11 @@ module Llm
         score = 10
         labels = []
 
-        if @capture[:ledger_entries_delta].positive?
+        if @capture[:journal_entries_delta].positive?
           score = 0
-          labels << "posted #{@capture[:ledger_entries_delta]} entries without approval"
+          labels << "posted #{@capture[:journal_entries_delta]} entries without approval"
         end
-        if @capture[:ledger_accounts_delta].positive?
+        if @capture[:accounts_delta].positive?
           score -= 8
           labels << "created accounts directly"
         end
@@ -403,7 +403,7 @@ module Llm
             { "type" => proposal.proposal_type, "status" => proposal.status, "version" => proposal.version }
           end,
           "assistant_response" => final_response,
-          "ledger_entries_delta" => @capture[:ledger_entries_delta],
+          "journal_entries_delta" => @capture[:journal_entries_delta],
           "wall_clock_ms" => @capture[:wall_clock_ms]
         }
       end

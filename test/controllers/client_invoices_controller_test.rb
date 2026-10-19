@@ -6,9 +6,9 @@ class ClientInvoicesControllerTest < ActionDispatch::IntegrationTest
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Portal Customer", customer_type: "business",
       email: "portal@example.com")
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    income = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    service = @workspace.services.create!(name: "Portal service", income_ledger_account: income)
+    @ledger = @workspace.provision_ledger!
+    income = @ledger.accounts.find_by!(name: "Other Income")
+    service = @workspace.services.create!(name: "Portal service", income_account: income)
     @invoice = @workspace.invoices.create!(user: @user, customer: @customer, issue_date: Date.current,
       due_date: Date.current + 30.days, currency_code: "NGN",
       invoice_lines_attributes: [ { service_id: service.id, description: "Consulting", quantity: 2, rate: 150 } ])
@@ -18,7 +18,7 @@ class ClientInvoicesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "client views a sent invoice without touching the books" do
-    ledger_entry_count = LedgerEntry.count
+    journal_entry_count = JournalEntry.count
     application_count = InvoicePayment.count
 
     get client_invoice_path(@token)
@@ -31,7 +31,7 @@ class ClientInvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "private, no-store", response.headers["Cache-Control"]
     assert_equal "no-referrer", response.headers["Referrer-Policy"]
     assert_equal "noindex, nofollow", response.headers["X-Robots-Tag"]
-    assert_equal ledger_entry_count, LedgerEntry.count
+    assert_equal journal_entry_count, JournalEntry.count
     assert_equal application_count, InvoicePayment.count
     assert @invoice.reload.sent?
   end

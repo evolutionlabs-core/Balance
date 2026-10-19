@@ -2,9 +2,9 @@ class Expense < ApplicationRecord
   include Expenses::Posting
 
   belongs_to :workspace
-  belongs_to :payment_account, class_name: "LedgerAccount"
+  belongs_to :payment_account, class_name: "Account"
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense
-  has_one :ledger_entry, -> { where(source_type: "Expense") }, foreign_key: "source_id", inverse_of: false
+  has_one :journal_entry, -> { where(source_type: "Expense") }, foreign_key: "source_id", inverse_of: false
 
   accepts_nested_attributes_for :expense_lines, allow_destroy: true, reject_if: :all_blank
 

@@ -12,7 +12,7 @@ module Workspaces
             onboarding_completed_at: Time.current
           )
           workspace.memberships.create!(user: user, role: :owner)
-          workspace.provision_ledger!(template: workspace.ledger_template)
+          workspace.provision_ledger!
           workspace.post_opening_balance!(opening_balance_kobo) if opening_balance_kobo.positive?
           workspace
         end
@@ -20,15 +20,15 @@ module Workspaces
     end
 
     def post_opening_balance!(amount_kobo)
-      receipt = Engine.post(
-        Engine::Adapters::OpeningBalance.call(
+      receipt = Accounting.post(
+        Accounting::Adapters::OpeningBalance.call(
           workspace: self,
           attributes: { opening_balance_kobo: amount_kobo },
           source_id: id
         )
       )
 
-      return if receipt.success? && receipt.verdict == :allow
+      return if receipt.success?
 
       errors.add(:base, receipt.errors.map(&:to_s).to_sentence)
       raise ActiveRecord::RecordInvalid, self

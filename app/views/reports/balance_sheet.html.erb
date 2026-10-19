@@ -19,7 +19,7 @@
 
     <%= render "section", title: "Assets", rows: @report[:assets], total: @report[:total_assets] %>
     <%= render "section", title: "Liabilities", rows: @report[:liabilities], total: @report[:total_liabilities] %>
-    <%= render "section", title : "Equity", rows: @report[:equity] + [ earnings_row ], total: @report[:total_equity],
+    <%= render "section", title: "Equity", rows: @report[:equity] + [ earnings_row ], total: @report[:total_equity],
         note: "Earnings through #{Date.current.strftime("%b %-d")} are folded in until books close" %>
 
     <p class="flex items-center gap-2 text-sm <%= @report[:balance_check] ? "text-green-700" : "text-red-700" %>">

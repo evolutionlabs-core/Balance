@@ -6,9 +6,9 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
     @user = users(:one)
     sign_in_as(@user)
 
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @groceries = @ledger.accounts.find_by!(name: "Groceries")
     @chat = Llm::Chat.create!(
       workspace: @workspace,
       llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
@@ -22,8 +22,8 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
         "description" => "Gift to girlfriend",
         "effective_date" => Date.current.to_s,
         "lines" => [
-          { "ledger_account_id" => @groceries.id, "side" => "debit", "amount_kobo" => 200_000 },
-          { "ledger_account_id" => @cash.id, "side" => "credit", "amount_kobo" => 200_000 }
+          { "account_id" => @groceries.id, "side" => "debit", "amount_kobo" => 200_000 },
+          { "account_id" => @cash.id, "side" => "credit", "amount_kobo" => 200_000 }
         ]
       }
     )
@@ -37,21 +37,21 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "confirm posts the entry when two lines are submitted" do
-    assert_difference "LedgerEntry.count", 1 do
+    assert_difference "JournalEntry.count", 1 do
       patch chat_proposal_confirmation_path(@chat, @proposal), params: { proposal: form_params }
     end
 
     assert_redirected_to chat_path(@chat)
     assert_equal "confirmed", @proposal.reload.status
-    assert_not_nil @proposal.ledger_entry
-    assert_equal 2, @proposal.ledger_entry.ledger_lines.size
+    assert_not_nil @proposal.journal_entry
+    assert_equal 2, @proposal.journal_entry.journal_entry_lines.size
   end
 
   test "confirm with a single line reports an error and posts nothing" do
     params = form_params
     params[:lines].delete("1")
 
-    assert_no_difference "LedgerEntry.count" do
+    assert_no_difference "JournalEntry.count" do
       patch chat_proposal_confirmation_path(@chat, @proposal),
             params: { proposal: params },
             headers: { Accept: "text/vnd.turbo-stream.html" }
@@ -80,21 +80,21 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
   test "confirming a reversal ignores crafted form changes" do
     reversal = reversal_proposal
 
-    assert_difference "LedgerEntry.count", 1 do
+    assert_difference "JournalEntry.count", 1 do
       patch chat_proposal_confirmation_path(@chat, reversal), params: { proposal: form_params }
     end
 
-    recorded = reversal.reload.ledger_entry
-    assert_equal @source_entry.id, reversal.data.fetch("reverses_ledger_entry_id")
+    recorded = reversal.reload.journal_entry
+    assert_equal @source_entry.id, reversal.data.fetch("reverses_journal_entry_id")
     assert_equal "Reversal of entry #{@source_entry.id}: Lunch", recorded.description
-    assert_equal 5_000, recorded.ledger_lines.find_by!(debit: 5_000).debit
-    assert_equal 5_000, recorded.ledger_lines.find_by!(credit: 5_000).credit
+    assert_equal 5_000, recorded.journal_entry_lines.find_by!(debit: 5_000).debit
+    assert_equal 5_000, recorded.journal_entry_lines.find_by!(credit: 5_000).credit
   end
 
   test "confirming a selected entry creates a reversal proposal but requires a second approval to post" do
     confirmation = source_confirmation
 
-    assert_no_difference "LedgerEntry.count" do
+    assert_no_difference "JournalEntry.count" do
       assert_difference "Proposal.count", 1 do
         patch chat_proposal_confirmation_path(@chat, confirmation),
           headers: { Accept: "text/vnd.turbo-stream.html" }
@@ -108,17 +108,17 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match "proposal\[lines\]", response.body
     reversal = @chat.proposals.find(confirmation.reload.data.fetch("reversal_proposal_id"))
     assert reversal.reversal_proposal?
-    assert_equal @source_entry.id, reversal.data.fetch("reverses_ledger_entry_id")
+    assert_equal @source_entry.id, reversal.data.fetch("reverses_journal_entry_id")
     assert_equal "superseded", @proposal.reload.status
 
-    assert_no_difference [ "Proposal.count", "LedgerEntry.count" ] do
+    assert_no_difference [ "Proposal.count", "JournalEntry.count" ] do
       patch chat_proposal_confirmation_path(@chat, confirmation)
     end
 
-    assert_difference "LedgerEntry.count", 1 do
+    assert_difference "JournalEntry.count", 1 do
       patch chat_proposal_confirmation_path(@chat, reversal)
     end
-    assert @source_entry.id, reversal.reload.data.fetch("reverses_ledger_entry_id")
+    assert @source_entry.id, reversal.reload.data.fetch("reverses_journal_entry_id")
   end
 
   test "selection confirmation fields cannot be edited" do
@@ -139,7 +139,7 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
     confirmation = source_confirmation
     patch chat_proposal_dismissal_path(@chat, confirmation)
 
-    assert_no_difference [ "Proposal.count", "LedgerEntry.count" ] do
+    assert_no_difference [ "Proposal.count", "JournalEntry.count" ] do
       patch chat_proposal_confirmation_path(@chat, confirmation)
     end
     assert_equal "dismissed", confirmation.reload.status
@@ -168,7 +168,7 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
       }
     )
 
-    assert_difference "LedgerAccount.count", 1 do
+    assert_difference "Account.count", 1 do
       assert_enqueued_with(job: LlmChatResponseJob, args: ->(args) { args.first == @chat.id && args.second.is_a?(Integer) }) do
         patch chat_proposal_confirmation_path(@chat, proposal), headers: { Accept: "text/vnd.turbo-stream.html" }
       end
@@ -223,7 +223,7 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
       }
     )
 
-    assert_no_difference "LedgerAccount.count" do
+    assert_no_difference "Account.count" do
       patch chat_proposal_dismissal_path(@chat, proposal)
     end
 
@@ -251,10 +251,10 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
           "description" => "Reversal of entry #{@source_entry.id}: Lunch",
           "effective_date" => Date.current.to_s,
           "amount_source" => "existing_posted_entry",
-          "reverses_ledger_entry_id" => @source_entry.id,
+          "reverses_journal_entry_id" => @source_entry.id,
           "lines" => [
-            { "ledger_account_id" => @cash.id, "side" => "debit", "amount_kobo" => 5_000 },
-            { "ledger_account_id" => @groceries.id, "side" => "credit", "amount_kobo" => 5_000 }
+            { "account_id" => @cash.id, "side" => "debit", "amount_kobo" => 5_000 },
+            { "account_id" => @groceries.id, "side" => "credit", "amount_kobo" => 5_000 }
           ]
         }
       )
@@ -265,8 +265,8 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
         "description" => description,
         "effective_date" => Date.current.to_s,
         "lines" => [
-          { "ledger_account_id" => @groceries.id, "side" => "debit", "amount_kobo" => amount_kobo },
-          { "ledger_account_id" => @cash.id, "side" => "credit", "amount_kobo" => amount_kobo }
+          { "account_id" => @groceries.id, "side" => "debit", "amount_kobo" => amount_kobo },
+          { "account_id" => @cash.id, "side" => "credit", "amount_kobo" => amount_kobo }
         ]
       }
       proposal = @chat.proposals.create!(
@@ -276,7 +276,7 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
         data: data
       )
       assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: @workspace, data: proposal.data))
-      proposal.reload.ledger_entry
+      proposal.reload.journal_entry
     end
 
     def form_params
@@ -284,8 +284,8 @@ class Llm::ProposalsControllerTest < ActionDispatch::IntegrationTest
         description: "Gift to girlfriend - N2,000 cash spent today",
         effective_date: Date.current.to_s,
         lines: {
-          "0" => { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2000.00" },
-          "1" => { ledger_account_id: @cash.id, side: "credit", amount_naira: "2000.00" }
+          "0" => { account_id: @groceries.id, side: "debit", amount_naira: "2000.00" },
+          "1" => { account_id: @cash.id, side: "credit", amount_naira: "2000.00" }
         }
       }
     end

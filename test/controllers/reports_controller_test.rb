@@ -4,13 +4,13 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @salary = @ledger.ledger_accounts.find_by!(name: "Salary")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @salary = @ledger.accounts.find_by!(name: "Salary")
   end
 
   test "balance sheet lists every account with its amount and balances" do
-    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary, amount_kobo: 500_000)
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 500_000)
 
     get balance_sheet_path
 
@@ -24,9 +24,9 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "income statement shows only the selected month" do
-    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary,
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary,
       amount_kobo: 300_000, effective_date: Date.current)
-    post_ledger_entry!(@workspace, debit_ledger_account: @cash, credit_ledger_account: @salary,
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary,
       amount_kobo: 900_000, effective_date: Date.current.prev_month)
 
     get income_statement_path

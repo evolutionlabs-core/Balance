@@ -3,9 +3,9 @@ require "test_helper"
 class ExpenseTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @bank = ledger_account("Checking Account")
-    @fuel = ledger_account("Groceries")
+    @ledger = @workspace.provision_ledger!
+    @bank = account("Checking Account")
+    @fuel = account("Groceries")
   end
 
   test "stores the computed total" do
@@ -17,7 +17,7 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "supports split category lines" do
-    uniforms = ledger_account("Housing")
+    uniforms = account("Housing")
     expense = build_expense
     expense.expense_lines.build(account: uniforms, description: "Uniform", amount_kobo: 1_000_000, position: 1)
 
@@ -27,7 +27,7 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "rejects an ineligible payment account" do
-    loan = ledger_account("Auto Loan")
+    loan = account("Auto Loan")
     expense = build_expense(payment_account: loan)
 
     assert_not expense.valid?
@@ -35,7 +35,7 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "accepts a credit-card payment account" do
-    credit_card = ledger_account("Credit Card")
+    credit_card = account("Credit Card")
 
     assert build_expense(payment_account: credit_card).valid?
   end
@@ -49,7 +49,7 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   test "rejects an ineligible category account" do
-    income = ledger_account("Salary")
+    income = account("Salary")
     expense = build_expense(category: income)
 
     assert_not expense.valid?
@@ -80,8 +80,8 @@ class ExpenseTest < ActiveSupport::TestCase
   end
 
   private
-    def ledger_account(name)
-      @ledger.ledger_accounts.find_by!(name: name)
+    def account(name)
+      @ledger.accounts.find_by!(name: name)
     end
 
     def build_expense(payment_account: @bank, category: @fuel, memo: nil, payment_date: Date.current)

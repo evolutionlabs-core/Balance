@@ -4,10 +4,10 @@ class Invoices::VoidsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @income = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @service = @workspace.services.create!(name: "Consulting", income_ledger_account: @income)
+    @ledger = @workspace.provision_ledger!
+    @income = @ledger.accounts.find_by!(name: "Other Income")
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @service = @workspace.services.create!(name: "Consulting", income_account: @income)
     @customer = @workspace.customers.create!(name: "Acme", customer_type: "business", email: "acme@example.com")
     @invoice = @workspace.invoices.create!(
       user: users(:one), customer: @customer, issue_date: Date.current,
@@ -15,8 +15,8 @@ class Invoices::VoidsControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "voiding a draft records no ledger entries" do
-    assert_no_difference "LedgerEntry.count" do
+  test "voiding a draft records no journal entries" do
+    assert_no_difference "JournalEntry.count" do
       post invoice_void_path(@invoice)
     end
 
@@ -27,23 +27,23 @@ class Invoices::VoidsControllerTest < ActionDispatch::IntegrationTest
   test "voiding a sent invoice posts the compensating entry" do
     @invoice.issue!
 
-    assert_difference -> { LedgerEntry.count } => 1 do
+    assert_difference -> { JournalEntry.count } => 1 do
       post invoice_void_path(@invoice)
     end
 
     assert_redirected_to invoice_path(@invoice)
     assert @invoice.reload.voided?
-    ar = @ledger.ledger_accounts.find_by!(subtype: "accounts_receivable")
+    ar = @ledger.accounts.find_by!(subtype: "accounts_receivable")
 
-    assert_equal 0, ar.ledger_lines.sum(&:debit) - ar.ledger_lines.sum(&:credit)
+    assert_equal 0, ar.journal_entry_lines.sum(&:debit) - ar.journal_entry_lines.sum(&:credit)
   end
 
   test "voiding a sent invoice with an applied payment is refused" do
     @invoice.issue!
-    check = @invoice.record_payment!(payment_ledger_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
+    check = @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
 
 
-    assert_no_difference "LedgerEntry.count" do
+    assert_no_difference "JournalEntry.count" do
       post invoice_void_path(@invoice)
     end
 

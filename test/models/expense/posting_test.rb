@@ -3,9 +3,9 @@ require "test_helper"
 class Expense::PostingTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @bank = @ledger.ledger_accounts.find_by!(name: "Checking Account")
-    @groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    @ledger = @workspace.provision_ledger!
+    @bank = @ledger.accounts.find_by!(name: "Checking Account")
+    @groceries = @ledger.accounts.find_by!(name: "Groceries")
   end
 
   test "records the expense through the engine and marks it posted" do
@@ -13,7 +13,7 @@ class Expense::PostingTest < ActiveSupport::TestCase
 
     assert expense.record_entry!
     assert expense.reload.posted?
-    assert_not_nil expense.ledger_entry
+    assert_not_nil expense.journal_entry
   end
 
   test "posts nothing and stays a draft when the engine rejects" do
@@ -23,18 +23,8 @@ class Expense::PostingTest < ActiveSupport::TestCase
     assert_equal false, expense.record_entry!
 
     refute expense.reload.posted?
-    assert_empty LedgerEntry.where(source_type: "Expense")
+    assert_empty JournalEntry.where(source_type: "Expense")
     assert_includes expense.errors.full_messages, "blocked by policy"
-  end
-
-  test "surfaces the approval message when the engine pauses" do
-    Rule.create!(name: "approval rule", severity: "require_approval", message: "too large")
-    expense = build_expense
-
-    assert_equal false, expense.record_entry!
-
-    assert_includes expense.errors.full_messages, "This expense requires approval before it can be recorded."
-    refute expense.reload.posted?
   end
 
   test "an invalid expense records nothing and carries the model errors" do
@@ -43,7 +33,7 @@ class Expense::PostingTest < ActiveSupport::TestCase
 
     assert_equal false, expense.record_entry!
     assert expense.errors.any?
-    assert_empty LedgerEntry.where(source_type: "Expense")
+    assert_empty JournalEntry.where(source_type: "Expense")
   end
 
   private

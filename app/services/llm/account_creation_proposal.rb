@@ -1,5 +1,5 @@
 class Llm::AccountCreationProposal
-  BASE_TYPES = LedgerSubtypes::SUBTYPES.keys.freeze
+  BASE_TYPES = AccountSubtypes::SUBTYPES.keys.freeze
 
   attr_reader :data, :errors
 
@@ -26,7 +26,7 @@ class Llm::AccountCreationProposal
   def create_accounts!
     raise ActiveRecord::RecordInvalid, rejected_record if invalid?
 
-    LedgerAccount.transaction do
+    Account.transaction do
       data["accounts"].map { |account| create_account!(account) }
     end
   end
@@ -34,7 +34,7 @@ class Llm::AccountCreationProposal
   private
 
   def create_account!(account)
-    ledger.ledger_accounts.create!(
+    ledger.accounts.create!(
       name: account["name"],
       base_type: account["base_type"],
       subtype: account["subtype"],
@@ -45,12 +45,12 @@ class Llm::AccountCreationProposal
 
   def next_code
     code = 9900
-    code += 10 while ledger.ledger_accounts.exists?(code: code.to_s)
+    code += 10 while ledger.accounts.exists?(code: code.to_s)
     code.to_s
   end
 
   def rejected_record
-    LedgerAccount.new.tap do |record|
+    Account.new.tap do |record|
       errors.each { |message| record.errors.add(:base, message) }
     end
   end
@@ -61,7 +61,7 @@ class Llm::AccountCreationProposal
     messages << "Propose at least one account" if data["accounts"].blank?
     names = data["accounts"].filter_map { |account| account["name"].presence&.downcase }
     messages << "Each proposed account must have a unique name" if names.uniq.size != names.size
-    existing_names = ledger.ledger_accounts.where("LOWER(name) IN (?)", names).pluck(:name)
+    existing_names = ledger.accounts.where("LOWER(name) IN (?)", names).pluck(:name)
     messages << "These accounts already exist: #{existing_names.join(", ")}" if existing_names.any?
     data["accounts"].each do |account|
       name = account["name"].presence
@@ -69,12 +69,12 @@ class Llm::AccountCreationProposal
       next if name.blank?
 
       messages << "Account #{name.inspect} must have a valid base type" unless BASE_TYPES.include?(account["base_type"])
-      messages << "Account #{name.inspect} must have a valid subtype" unless LedgerSubtypes.valid?(account["subtype"].to_s)
+      messages << "Account #{name.inspect} must have a valid subtype" unless AccountSubtypes.valid?(account["base_type"], account["subtype"])
     end
     messages.uniq
   end
 
   def ledger
-    @ledger ||= @workspace.ledgers.first || @workspace.provision_ledger!(template: @workspace.ledger_template)
+    @ledger ||= @workspace.ledger
   end
 end

@@ -20,14 +20,14 @@ module Invoices
         update!(issue_date: issue_date.presence || Date.current)
         send_to_client!
 
-        apply_receipt(post_issue_entry, pause_message: "This invoice requires approval before it can be sent.")
+        apply_receipt(post_issue_entry)
       end
 
       restore_status unless posted
       posted.present?
     end
 
-    def record_payment!(payment_ledger_account_id:, received_on:, amount_kobo:)
+    def record_payment!(payment_account_id:, received_on:, amount_kobo:)
       recorded = Invoice.transaction do
         lock!
         payments.reset
@@ -36,8 +36,8 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        payment_ledger_account = workspace.payment_accounts.find_by(id: payment_ledger_account_id)
-        unless payment_ledger_account
+        payment_account = workspace.payment_accounts.find_by(id: payment_account_id)
+        unless payment_account
           errors.add(:base, "Payment account must be a cash or credit-card account in this workspace")
           raise ActiveRecord::Rollback
         end
@@ -48,10 +48,10 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        receipt = post_application(application, payment_ledger_account, received_on)
-        apply_receipt(receipt, pause_message: "This payment requires approval before it can be recorded.")
+        receipt = post_application(application, payment_account, received_on)
+        apply_receipt(receipt)
 
-        application.update!(ledger_entry_id: receipt.entry.id)
+        application.update!(journal_entry_id: receipt.entry.id)
 
         payments.reset
         pay! if may_pay?
@@ -72,7 +72,7 @@ module Invoices
         end
 
         if sent?
-          apply_receipt(post_void_entry, pause_message: "This invoice requires approval before it can be voided.")
+          apply_receipt(post_void_entry)
         end
 
         mark_voided!
@@ -110,46 +110,45 @@ module Invoices
 
       def income_line_errors
         invoice_lines.reject(&:marked_for_destruction?).each_with_index.filter_map do |line, index|
-          if line.ledger_account.nil?
+          if line.account.nil?
             "Line #{index + 1}: #{line.description.presence || "item"} has no income account"
-          elsif line.ledger_account.base_type != "income"
-            "Line #{index + 1}: account #{line.ledger_account.name} is not an income account"
-          elsif line.ledger_account.ledger.workspace_id != workspace_id
-            "Line #{index + 1}: account #{line.ledger_account.name} belongs to another workspace"
+          elsif line.account.base_type != "income"
+            "Line #{index + 1}: account #{line.account.name} is not an income account"
+          elsif line.account.ledger.workspace_id != workspace_id
+            "Line #{index + 1}: account #{line.account.name} belongs to another workspace"
           end
         end
       end
 
       def post_issue_entry
-        command = Engine::Adapters::Invoice.call(
+        command = Accounting::Adapters::Invoice.call(
           workspace: workspace,
           attributes: {
-            action: "issue",
             effective_date: issue_date,
             income_lines: posted_income_lines
           },
           source_id: id,
           description: "Invoice #{invoice_number}"
         )
-        Engine.post(command)
+        Accounting.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
         reject_receipt([ "Invoice has already been sent." ])
       end
 
-      def post_application(application, payment_ledger_account, received_on)
-        command = Engine::Adapters::InvoicePayment.call(
+      def post_application(application, payment_account, received_on)
+        command = Accounting::Adapters::InvoicePayment.call(
           workspace: workspace,
           attributes: {
             received_on: received_on,
-            payment_ledger_account_id: payment_ledger_account.id,
+            payment_account_id: payment_account.id,
             amount_kobo: application.amount_kobo
           },
           source_id: application.id,
           description: "Payment received for invoice #{invoice_number}"
         )
-        Engine.post(command)
+        Accounting.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
@@ -157,39 +156,43 @@ module Invoices
       end
 
       def post_void_entry
-        command = Engine::Adapters::Invoice.call(
+        command = Accounting::Adapters::Reversal.call(
           workspace: workspace,
           attributes: {
+            source_type: "Invoice",
             action: "void",
             effective_date: Date.current,
-            income_lines: posted_income_lines
+            entry: issue_entry
           },
           source_id: id,
           description: "Invoice #{invoice_number} voided"
         )
-        Engine.post(command)
+        Accounting.post(command)
       rescue ActiveRecord::RecordNotFound => error
         reject_receipt([ error.message ])
       rescue ActiveRecord::RecordNotUnique
         reject_receipt([ "Invoice has already been voided." ])
       end
 
+      def issue_entry
+        workspace.ledger.journal_entries.find_by!(source_type: "Invoice", source_id: id, action: "issue")
+      end
+
       def posted_income_lines
         invoice_lines.reject(&:marked_for_destruction?).map do |line|
-          { ledger_account: line.ledger_account, amount_kobo: line.amount_minor }
+          { account: line.account, amount_kobo: line.amount_minor }
         end
       end
 
-      def apply_receipt(receipt, pause_message:)
-        return true if receipt.success? && receipt.verdict == :allow
+      def apply_receipt(receipt)
+        return true if receipt.success?
 
         receipt.errors.each { |error| errors.add(:base, error.to_s) }
-        errors.add(:base, pause_message) if receipt.verdict == :pause
         raise ActiveRecord::Rollback
       end
 
       def reject_receipt(messages)
-        Engine::Receipt.new(nil, messages.freeze, :reject, [].freeze)
+        Accounting::Receipt.rejected(messages)
       end
 
       # A rollback restores the database but not the in-memory aasm state; put

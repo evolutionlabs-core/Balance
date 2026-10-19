@@ -4,16 +4,16 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
+    @ledger = @workspace.provision_ledger!
   end
 
-  test "lists ledger entries with their ledger lines" do
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
-    entry = post_ledger_entry!(
+  test "lists journal entries with their journal entry lines" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
+    entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: groceries,
-      credit_ledger_account: cash,
+      debit_account: groceries,
+      credit_account: cash,
       amount_kobo: 100_00,
       description: "Weekly shop"
     )
@@ -27,19 +27,19 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /#{Regexp.escape("₦100.00")}/
   end
 
-  test "searches ledger entries by description" do
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    matching_entry = post_ledger_entry!(
+  test "searches journal entries by description" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    matching_entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: @ledger.ledger_accounts.find_by!(name: "Groceries"),
-      credit_ledger_account: cash,
+      debit_account: @ledger.accounts.find_by!(name: "Groceries"),
+      credit_account: cash,
       amount_kobo: 100_00,
       description: "Office lunch"
     )
-    hidden_entry = post_ledger_entry!(
+    hidden_entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: @ledger.ledger_accounts.find_by!(name: "Groceries"),
-      credit_ledger_account: cash,
+      debit_account: @ledger.accounts.find_by!(name: "Groceries"),
+      credit_account: cash,
       amount_kobo: 200_00,
       description: "Opening balance"
     )
@@ -51,18 +51,18 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr##{dom_id(hidden_entry)}", count: 0
   end
 
-  test "searches ledger entries by account" do
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    matching_entry = post_ledger_entry!(
+  test "searches journal entries by account" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    matching_entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: @ledger.ledger_accounts.find_by!(name: "Groceries"),
-      credit_ledger_account: cash,
+      debit_account: @ledger.accounts.find_by!(name: "Groceries"),
+      credit_account: cash,
       amount_kobo: 100_00
     )
-    hidden_entry = post_ledger_entry!(
+    hidden_entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: @ledger.ledger_accounts.find_by!(name: "Housing"),
-      credit_ledger_account: cash,
+      debit_account: @ledger.accounts.find_by!(name: "Housing"),
+      credit_account: cash,
       amount_kobo: 200_00
     )
 
@@ -82,47 +82,47 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "records a manual entry through the ledger engine" do
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
 
-    assert_difference "LedgerEntry.count", 1 do
+    assert_difference "JournalEntry.count", 1 do
       post journal_entries_path, params: { entry: {
         effective_date: Date.current.to_s,
         description: "Manual shop",
         lines: {
-          "0" => { ledger_account_id: groceries.id, debit: "1000.00", credit: "" },
-          "1" => { ledger_account_id: cash.id, debit: "", credit: "1000.00" }
+          "0" => { account_id: groceries.id, debit: "1000.00", credit: "" },
+          "1" => { account_id: cash.id, debit: "", credit: "1000.00" }
         }
       } }
     end
 
     assert_redirected_to journal_entries_path
 
-    entry = @ledger.ledger_entries.sole
+    entry = @ledger.journal_entries.sole
     assert_equal "Manual shop", entry.description
     assert_equal "Entry", entry.source_type
     assert_nil entry.source_id
 
-    groceries_line = entry.ledger_lines.find_by(debit: 100_000)
-    assert_equal groceries, groceries_line&.ledger_account
+    groceries_line = entry.journal_entry_lines.find_by(debit: 100_000)
+    assert_equal groceries, groceries_line&.account
   end
 
   test "rejects an unbalanced manual entry" do
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
 
-    assert_no_difference "LedgerEntry.count" do
+    assert_no_difference "JournalEntry.count" do
       post journal_entries_path, params: { entry: {
         effective_date: Date.current.to_s,
         description: "Unbalanced",
         lines: {
-          "0" => { ledger_account_id: groceries.id, debit: "1000.00", credit: "" },
-          "1" => { ledger_account_id: cash.id, debit: "", credit: "500.00" }
+          "0" => { account_id: groceries.id, debit: "1000.00", credit: "" },
+          "1" => { account_id: cash.id, debit: "", credit: "500.00" }
         }
       } }
     end
 
     assert_response :unprocessable_content
-    assert_includes response.body, "Total debits (100000.0) must equal total credits (50000.0)"
+    assert_includes response.body, "Total debits (1000.00) must equal total credits (500.00)"
   end
 end

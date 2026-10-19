@@ -1,0 +1,14 @@
+<tr id="<%= dom_id(account) %>" class="border-t border-neutral-200 transition-colors hover:bg-neutral-50/80">
+  <td class="px-4 py-3 font-mono text-sm whitespace-nowrap text-neutral-600"><%= account.code %></td>
+  <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-neutral-900"><%= account.name %></td>
+  <td class="px-4 py-3 text-sm whitespace-nowrap text-neutral-600"><%= account.base_type.humanize %></td>
+  <td class="px-4 py-3 text-sm whitespace-nowrap text-neutral-600"><%= account.subtype.humanize %></td>
+  <td class="px-4 py-2 text-right">
+    <% if account.system? %>
+      <span class="inline-flex rounded-md p-1.5 text-neutral-400" title="System account — locked">
+        <span class="sr-only">System account — locked</span>
+        <%= inline_svg_tag "icons/lock.svg", class: "h-4 w-4" %>
+      </span>
+    <% end %>
+  </td>
+</tr>

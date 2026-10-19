@@ -5,9 +5,9 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     @user = users(:one)
     @user.update!(password: "password")
     @workspace = workspaces(:ada_store)
-    ledger = @workspace.provision_ledger!(template: "personal_finance")
-    income = ledger.ledger_accounts.find_by!(name: "Other Income")
-    @workspace.update!(default_sales_ledger_account: income)
+    ledger = @workspace.provision_ledger!
+    income = ledger.accounts.find_by!(name: "Other Income")
+    @workspace.update!(default_sales_account: income)
     @customer = @workspace.customers.create!(name: "Workflow Customer", customer_type: "business", email: "workflow@example.com")
     sign_in(@user)
   end
@@ -86,6 +86,7 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
       assert_no_selector "select"
       click_on "Send invoice"
     end
+    assert_no_selector "#modal dialog"
     assert invoice.reload.sent?
   end
 

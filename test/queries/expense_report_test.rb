@@ -3,10 +3,10 @@ require "test_helper"
 class ExpenseReportTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @bank = @ledger.ledger_accounts.find_by!(name: "Checking Account")
-    @fuel = @ledger.ledger_accounts.find_by!(name: "Groceries")
-    @repairs = @ledger.ledger_accounts.find_by!(name: "Housing")
+    @ledger = @workspace.provision_ledger!
+    @bank = @ledger.accounts.find_by!(name: "Checking Account")
+    @fuel = @ledger.accounts.find_by!(name: "Groceries")
+    @repairs = @ledger.accounts.find_by!(name: "Housing")
   end
 
   test "summarizes posted expenses by month and category" do

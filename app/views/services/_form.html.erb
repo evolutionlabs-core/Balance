@@ -20,9 +20,9 @@
     </div>
 
     <div>
-      <%= form.label :income_ledger_account_id, "Income account", class: field_label_class %>
-      <%= render "shared/select_menu", form: form, attribute: :income_ledger_account_id,
-          options: options_from_collection_for_select(current_workspace.income_accounts.ordered, :id, :name, service.income_ledger_account_id),
+      <%= form.label :income_account_id, "Income account", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :income_account_id,
+          options: options_from_collection_for_select(current_workspace.income_accounts.ordered, :id, :name, service.income_account_id),
           prompt: "Select income account", searchable: true,
           search_placeholder: "Search income accounts…", empty_message: "No income accounts found",
           select_data: {}, required: true %>

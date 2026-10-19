@@ -1,0 +1,11 @@
+<article class="flex items-center gap-3 py-4">
+  <div class="min-w-0 flex-1">
+    <p class="truncate text-sm font-medium text-neutral-950"><%= account.name %></p>
+    <p class="mt-1 truncate text-xs text-neutral-500"><%= account.code %> · <%= account.base_type.humanize %> · <%= account.subtype.humanize %></p>
+  </div>
+  <% if account.system? %>
+    <span class="flex min-h-11 min-w-11 items-center justify-center text-neutral-400" title="System account — locked">
+      <span class="sr-only">System account — locked</span><%= inline_svg_tag "icons/lock.svg", class: "h-4 w-4" %>
+    </span>
+  <% end %>
+</article>

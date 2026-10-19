@@ -68,7 +68,7 @@ class CreateAiFoundation < ActiveRecord::Migration[8.1]
       t.references :workspace, null: false, foreign_key: true
       t.references :llm_chat, null: false, foreign_key: true
       t.references :llm_message, foreign_key: true
-      t.bigint :ledger_entry_id
+      t.bigint :journal_entry_id
       t.string :proposal_type, null: false
       t.string :status, null: false, default: "proposed"
       t.integer :version, null: false, default: 1
@@ -78,6 +78,6 @@ class CreateAiFoundation < ActiveRecord::Migration[8.1]
     end
     add_index :proposals, [ :workspace_id, :status ]
     add_index :proposals, [ :llm_chat_id, :proposal_type, :version ]
-    add_index :proposals, :ledger_entry_id
+    add_index :proposals, :journal_entry_id
   end
 end

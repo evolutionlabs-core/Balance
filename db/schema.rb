@@ -10,9 +10,32 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_000300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "accounts", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "base_type", null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "created_by", default: "admin", null: false
+    t.text "description"
+    t.string "key"
+    t.bigint "ledger_id", null: false
+    t.string "name", null: false
+    t.string "normal_balance", null: false
+    t.string "subtype", null: false
+    t.boolean "system", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["ledger_id", "code"], name: "index_accounts_on_ledger_id_and_code", unique: true
+    t.index ["ledger_id", "key"], name: "index_accounts_on_ledger_id_and_key", unique: true, where: "(key IS NOT NULL)"
+    t.index ["ledger_id", "name"], name: "index_accounts_on_ledger_id_and_name", unique: true
+    t.index ["ledger_id"], name: "index_accounts_on_ledger_id"
+    t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying::text, 'liability'::character varying::text, 'equity'::character varying::text, 'income'::character varying::text, 'expense'::character varying::text])", name: "chk_accounts_base_type"
+    t.check_constraint "created_by::text = ANY (ARRAY['system'::character varying::text, 'admin'::character varying::text, 'agent'::character varying::text])", name: "chk_accounts_created_by"
+    t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying::text, 'credit'::character varying::text])", name: "chk_accounts_normal_balance"
+  end
 
   create_table "customers", force: :cascade do |t|
     t.boolean "active", default: true, null: false
@@ -103,19 +126,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
   end
 
   create_table "invoice_lines", force: :cascade do |t|
+    t.bigint "account_id"
     t.bigint "amount_minor", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.bigint "invoice_id", null: false
-    t.bigint "ledger_account_id"
     t.integer "position", null: false
     t.decimal "quantity", precision: 15, scale: 3
     t.bigint "rate_minor"
     t.bigint "service_id"
     t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_invoice_lines_on_account_id"
     t.index ["invoice_id", "position"], name: "index_invoice_lines_on_invoice_id_and_position", unique: true
     t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
-    t.index ["ledger_account_id"], name: "index_invoice_lines_on_ledger_account_id"
     t.index ["service_id"], name: "index_invoice_lines_on_service_id"
   end
 
@@ -123,13 +146,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.bigint "amount_kobo", null: false
     t.datetime "created_at", null: false
     t.bigint "invoice_id", null: false
-    t.bigint "ledger_entry_id"
+    t.bigint "journal_entry_id"
     t.bigint "reverses_invoice_payment_id"
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["invoice_id"], name: "index_invoice_payments_on_invoice_id"
-    t.index ["ledger_entry_id", "invoice_id"], name: "index_invoice_payments_on_ledger_entry_id_and_invoice_id", unique: true
-    t.index ["ledger_entry_id"], name: "index_invoice_payments_on_ledger_entry_id"
+    t.index ["journal_entry_id", "invoice_id"], name: "index_invoice_payments_on_journal_entry_id_and_invoice_id", unique: true
+    t.index ["journal_entry_id"], name: "index_invoice_payments_on_journal_entry_id"
     t.index ["reverses_invoice_payment_id"], name: "index_invoice_payments_on_reverses_invoice_payment_id", unique: true
     t.index ["workspace_id"], name: "index_invoice_payments_on_workspace_id"
   end
@@ -164,51 +187,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.index ["workspace_id"], name: "index_invoices_on_workspace_id"
   end
 
-  create_table "ledger_accounts", force: :cascade do |t|
-    t.boolean "active", default: true, null: false
-    t.string "base_type", null: false
-    t.string "code", null: false
-    t.datetime "created_at", null: false
-    t.string "created_by", default: "admin", null: false
-    t.text "description"
-    t.bigint "ledger_id", null: false
-    t.string "name", null: false
-    t.string "normal_balance", null: false
-    t.string "subtype", null: false
-    t.boolean "system", default: false, null: false
-    t.datetime "updated_at", null: false
-    t.index ["ledger_id", "code"], name: "index_ledger_accounts_on_ledger_id_and_code", unique: true
-    t.index ["ledger_id", "name"], name: "index_ledger_accounts_on_ledger_id_and_name", unique: true
-    t.index ["ledger_id"], name: "index_ledger_accounts_on_ledger_id"
-    t.check_constraint "base_type::text = ANY (ARRAY['asset'::character varying::text, 'liability'::character varying::text, 'equity'::character varying::text, 'income'::character varying::text, 'expense'::character varying::text])", name: "chk_ledger_accounts_base_type"
-    t.check_constraint "created_by::text = ANY (ARRAY['system'::character varying::text, 'admin'::character varying::text, 'agent'::character varying::text])", name: "chk_ledger_accounts_created_by"
-    t.check_constraint "normal_balance::text = ANY (ARRAY['debit'::character varying::text, 'credit'::character varying::text])", name: "chk_ledger_accounts_normal_balance"
-  end
-
-  create_table "ledger_entries", force: :cascade do |t|
+  create_table "journal_entries", force: :cascade do |t|
     t.string "action"
     t.datetime "created_at", null: false
     t.text "description"
     t.date "effective_date", null: false
     t.bigint "ledger_id", null: false
+    t.integer "number", null: false
+    t.bigint "posted_by_id"
+    t.bigint "reverses_entry_id"
     t.bigint "source_id"
     t.string "source_type"
     t.datetime "updated_at", null: false
-    t.index ["ledger_id", "effective_date"], name: "index_ledger_entries_on_ledger_id_and_effective_date"
-    t.index ["ledger_id", "source_type", "source_id", "action"], name: "idx_ledger_entries_unique_source_effect", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL) AND (action IS NOT NULL))"
-    t.index ["ledger_id"], name: "index_ledger_entries_on_ledger_id"
+    t.index ["ledger_id", "effective_date"], name: "index_journal_entries_on_ledger_id_and_effective_date"
+    t.index ["ledger_id", "number"], name: "index_journal_entries_on_ledger_id_and_number", unique: true
+    t.index ["ledger_id", "source_type", "source_id", "action"], name: "idx_journal_entries_unique_source_effect", unique: true, where: "((source_type IS NOT NULL) AND (source_id IS NOT NULL) AND (action IS NOT NULL))"
+    t.index ["ledger_id"], name: "index_journal_entries_on_ledger_id"
+    t.index ["posted_by_id"], name: "index_journal_entries_on_posted_by_id"
+    t.index ["reverses_entry_id"], name: "index_journal_entries_on_reverses_entry_id", unique: true
   end
 
-  create_table "ledger_lines", force: :cascade do |t|
+  create_table "journal_entry_lines", force: :cascade do |t|
+    t.bigint "account_id", null: false
     t.datetime "created_at", null: false
-    t.decimal "credit", precision: 19, scale: 4, default: "0.0", null: false
-    t.decimal "debit", precision: 19, scale: 4, default: "0.0", null: false
-    t.bigint "ledger_account_id", null: false
-    t.bigint "ledger_entry_id", null: false
+    t.bigint "credit", default: 0, null: false
+    t.bigint "debit", default: 0, null: false
+    t.bigint "journal_entry_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["ledger_account_id"], name: "index_ledger_lines_on_ledger_account_id"
-    t.index ["ledger_entry_id"], name: "index_ledger_lines_on_ledger_entry_id"
-    t.check_constraint "debit > 0::numeric AND credit = 0::numeric OR credit > 0::numeric AND debit = 0::numeric", name: "chk_ledger_lines_one_sided_non_zero"
+    t.index ["account_id"], name: "index_journal_entry_lines_on_account_id"
+    t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
+    t.check_constraint "debit > 0 AND credit = 0 OR credit > 0 AND debit = 0", name: "chk_journal_entry_lines_one_sided_non_zero"
   end
 
   create_table "ledgers", force: :cascade do |t|
@@ -222,7 +230,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
     t.index ["workspace_id", "name"], name: "index_ledgers_on_workspace_id_and_name", unique: true
-    t.index ["workspace_id"], name: "index_ledgers_on_workspace_id"
+    t.index ["workspace_id"], name: "index_ledgers_on_workspace_id", unique: true
   end
 
   create_table "llm_activities", force: :cascade do |t|
@@ -381,7 +389,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
   create_table "proposals", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.jsonb "data", default: {}, null: false
-    t.bigint "ledger_entry_id"
+    t.bigint "journal_entry_id"
     t.bigint "llm_chat_id", null: false
     t.bigint "llm_message_id"
     t.string "proposal_type", null: false
@@ -389,7 +397,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.datetime "updated_at", null: false
     t.integer "version", default: 1, null: false
     t.bigint "workspace_id", null: false
-    t.index ["ledger_entry_id"], name: "index_proposals_on_ledger_entry_id"
+    t.index ["journal_entry_id"], name: "index_proposals_on_journal_entry_id"
     t.index ["llm_chat_id", "proposal_type", "version"], name: "index_proposals_on_llm_chat_id_and_proposal_type_and_version"
     t.index ["llm_chat_id"], name: "index_proposals_on_llm_chat_id"
     t.index ["llm_message_id"], name: "index_proposals_on_llm_message_id"
@@ -410,7 +418,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.datetime "updated_at", null: false
     t.index ["active", "ledger_id", "source_type", "action"], name: "idx_rules_fetch"
     t.index ["ledger_id"], name: "index_rules_on_ledger_id"
-    t.check_constraint "severity::text = ANY (ARRAY['block'::character varying::text, 'require_approval'::character varying::text, 'warn'::character varying::text])", name: "chk_rules_severity"
+    t.check_constraint "severity::text = ANY (ARRAY['block'::character varying::text, 'warn'::character varying::text])", name: "chk_rules_severity"
   end
 
   create_table "services", force: :cascade do |t|
@@ -418,11 +426,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.datetime "created_at", null: false
     t.bigint "default_rate_minor"
     t.text "description"
-    t.bigint "income_ledger_account_id", null: false
+    t.bigint "income_account_id", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.bigint "workspace_id", null: false
-    t.index ["income_ledger_account_id"], name: "index_services_on_income_ledger_account_id"
+    t.index ["income_account_id"], name: "index_services_on_income_account_id"
     t.index ["workspace_id", "name"], name: "index_services_on_workspace_id_and_name", unique: true
     t.index ["workspace_id"], name: "index_services_on_workspace_id"
   end
@@ -451,14 +459,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
     t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
-    t.bigint "default_sales_ledger_account_id"
+    t.bigint "default_sales_account_id"
     t.string "name", null: false
     t.datetime "onboarding_completed_at"
     t.datetime "updated_at", null: false
     t.string "workspace_type", default: "personal", null: false
-    t.index ["default_sales_ledger_account_id"], name: "index_workspaces_on_default_sales_ledger_account_id"
+    t.index ["default_sales_account_id"], name: "index_workspaces_on_default_sales_account_id"
   end
 
+  add_foreign_key "accounts", "ledgers"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_line_items", "services"
@@ -466,26 +475,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
   add_foreign_key "estimates", "projects"
   add_foreign_key "estimates", "users"
   add_foreign_key "estimates", "workspaces"
+  add_foreign_key "expense_lines", "accounts", validate: false
   add_foreign_key "expense_lines", "expenses"
-  add_foreign_key "expense_lines", "ledger_accounts", column: "account_id", validate: false
-  add_foreign_key "expenses", "ledger_accounts", column: "payment_account_id", validate: false
+  add_foreign_key "expenses", "accounts", column: "payment_account_id", validate: false
   add_foreign_key "expenses", "workspaces"
+  add_foreign_key "invoice_lines", "accounts"
   add_foreign_key "invoice_lines", "invoices"
-  add_foreign_key "invoice_lines", "ledger_accounts"
   add_foreign_key "invoice_lines", "services"
   add_foreign_key "invoice_payments", "invoice_payments", column: "reverses_invoice_payment_id"
   add_foreign_key "invoice_payments", "invoices"
-  add_foreign_key "invoice_payments", "ledger_entries"
+  add_foreign_key "invoice_payments", "journal_entries"
   add_foreign_key "invoice_payments", "workspaces"
   add_foreign_key "invoices", "customers"
   add_foreign_key "invoices", "estimates"
   add_foreign_key "invoices", "projects"
   add_foreign_key "invoices", "users"
   add_foreign_key "invoices", "workspaces"
-  add_foreign_key "ledger_accounts", "ledgers"
-  add_foreign_key "ledger_entries", "ledgers"
-  add_foreign_key "ledger_lines", "ledger_accounts"
-  add_foreign_key "ledger_lines", "ledger_entries"
+  add_foreign_key "journal_entries", "journal_entries", column: "reverses_entry_id"
+  add_foreign_key "journal_entries", "ledgers"
+  add_foreign_key "journal_entries", "users", column: "posted_by_id"
+  add_foreign_key "journal_entry_lines", "accounts"
+  add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "ledgers", "users", column: "closed_by_id"
   add_foreign_key "ledgers", "workspaces"
   add_foreign_key "llm_activities", "llm_chats"
@@ -505,14 +515,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_200000) do
   add_foreign_key "project_time_entries", "projects"
   add_foreign_key "projects", "customers"
   add_foreign_key "projects", "workspaces"
-  add_foreign_key "proposals", "ledger_entries"
+  add_foreign_key "proposals", "journal_entries"
   add_foreign_key "proposals", "llm_chats"
   add_foreign_key "proposals", "llm_messages"
   add_foreign_key "proposals", "workspaces"
   add_foreign_key "rules", "ledgers"
-  add_foreign_key "services", "ledger_accounts", column: "income_ledger_account_id"
+  add_foreign_key "services", "accounts", column: "income_account_id"
   add_foreign_key "services", "workspaces"
   add_foreign_key "sessions", "users"
   add_foreign_key "sessions", "workspaces"
-  add_foreign_key "workspaces", "ledger_accounts", column: "default_sales_ledger_account_id"
+  add_foreign_key "workspaces", "accounts", column: "default_sales_account_id"
 end

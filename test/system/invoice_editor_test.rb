@@ -5,10 +5,10 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     user = users(:one)
     user.update!(password: "password")
     workspace = workspaces(:ada_store)
-    ledger = workspace.provision_ledger!(template: "personal_finance")
-    income = ledger.ledger_accounts.find_by!(name: "Other Income")
-    workspace.update!(default_sales_ledger_account: income)
-    cash = ledger.ledger_accounts.find_by!(name: "Cash")
+    ledger = workspace.provision_ledger!
+    income = ledger.accounts.find_by!(name: "Other Income")
+    workspace.update!(default_sales_account: income)
+    cash = ledger.accounts.find_by!(name: "Cash")
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
@@ -51,9 +51,9 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     end
     assert_text "Invoice #{invoice.invoice_number} sent."
     assert invoice.reload.sent?
-    assert_equal income.id, invoice.invoice_lines.sole.ledger_account_id
-    entry = LedgerEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
-    assert_equal 15_000, entry.ledger_lines.sum(&:debit)
+    assert_equal income.id, invoice.invoice_lines.sole.account_id
+    entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 15_000, entry.journal_entry_lines.sum(&:debit)
     assert_no_link "Edit"
 
     click_on "Record payment"

@@ -3,9 +3,9 @@ require "test_helper"
 class ListJournalEntriesTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @groceries = @ledger.accounts.find_by!(name: "Groceries")
     @model = Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model")
     @chat = Llm::Chat.create!(workspace: @workspace, llm_model: @model, title: "Test chat")
   end
@@ -23,7 +23,7 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
     assert_equal "2026-08-12", result.first[:date]
     assert_equal "Weekly shop", result.first[:description]
     assert_equal "Entry", result.first[:source]
-    assert_nil result.first[:reverses_ledger_entry_id]
+    assert_nil result.first[:reverses_journal_entry_id]
     assert_equal "2500.00", result.first[:lines].find { |line| line[:debit_naira] != "0.00" }[:debit_naira]
     assert_equal "Groceries", result.first[:lines].find { |line| line[:debit_naira] != "0.00" }[:account]
   end
@@ -45,56 +45,56 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
 
   test "does not return entries from other workspaces" do
     other_workspace = workspaces(:bola_shop)
-    other_ledger = other_workspace.provision_ledger!(template: "standard_sme")
+    other_ledger = provision_business_ledger!(other_workspace)
     other_chat = Llm::Chat.create!(workspace: other_workspace, llm_model: @model, title: "Other")
     record_entry(workspaces_chat: other_chat)
 
     assert_empty ListJournalEntries.new(@workspace).execute
   end
 
-  test "marks entries that are themselves reversals via reverses_ledger_entry_id" do
+  test "marks entries that are themselves reversals via reverses_journal_entry_id" do
     entry = record_entry(description: "Weekly shop", amount_kobo: 250_000)
     reversal = record_entry(
       description: "Reversal of entry ##{entry.id}",
       amount_kobo: 250_000,
-      reverses_ledger_entry_id: entry.id
+      reverses_journal_entry_id: entry.id
     )
 
     result = ListJournalEntries.new(@workspace).execute
 
-    assert_nil result.find { |item| item[:id] == entry.id }[:reverses_ledger_entry_id]
-    assert_equal entry.id, result.find { |item| item[:id] == reversal.id }[:reverses_ledger_entry_id]
+    assert_nil result.find { |item| item[:id] == entry.id }[:reverses_journal_entry_id]
+    assert_equal entry.id, result.find { |item| item[:id] == reversal.id }[:reverses_journal_entry_id]
   end
 
   private
-    def record_entry(description: "Cash spent", effective_date: Date.current, amount_kobo: 250_000, reverses_ledger_entry_id: nil, workspaces_chat: nil)
+    def record_entry(description: "Cash spent", effective_date: Date.current, amount_kobo: 250_000, reverses_journal_entry_id: nil, workspaces_chat: nil)
       chat = workspaces_chat || @chat
       workspace = chat.workspace
-      ledger = workspace.ledgers.first || workspace.provision_ledger!(template: workspace.ledger_template)
-      original = reverses_ledger_entry_id && ledger.ledger_entries.where(id: reverses_ledger_entry_id).sole
+      ledger = workspace.ledgers.first || workspace.provision_ledger!
+      original = reverses_journal_entry_id && ledger.journal_entries.where(id: reverses_journal_entry_id).sole
 
       lines = if original
-        original.ledger_lines.map do |line|
+        original.journal_entry_lines.map do |line|
           {
-            "ledger_account_id" => line.ledger_account_id,
+            "account_id" => line.account_id,
             "side" => line.debit.positive? ? "credit" : "debit",
             "amount_kobo" => line.debit.positive? ? line.debit : line.credit
           }
         end
       else
-        debit_account = ledger.ledger_accounts.where(base_type: "expense").ordered.first ||
-          ledger.ledger_accounts.ordered.first
-        credit_account = ledger.ledger_accounts.where(base_type: "asset").ordered.first ||
-          ledger.ledger_accounts.ordered.second
+        debit_account = ledger.accounts.where(base_type: "expense").ordered.first ||
+          ledger.accounts.ordered.first
+        credit_account = ledger.accounts.where(base_type: "asset").ordered.first ||
+          ledger.accounts.ordered.second
 
         [
-          { "ledger_account_id" => debit_account.id, "side" => "debit", "amount_kobo" => amount_kobo },
-          { "ledger_account_id" => credit_account.id, "side" => "credit", "amount_kobo" => amount_kobo }
+          { "account_id" => debit_account.id, "side" => "debit", "amount_kobo" => amount_kobo },
+          { "account_id" => credit_account.id, "side" => "credit", "amount_kobo" => amount_kobo }
         ]
       end
 
       data = { "description" => description, "effective_date" => effective_date.iso8601, "lines" => lines }
-      data["reverses_ledger_entry_id"] = original.id if original
+      data["reverses_journal_entry_id"] = original.id if original
       proposal = chat.proposals.create!(
         workspace: workspace,
         proposal_type: "entry",
@@ -102,6 +102,6 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
         data: data
       )
       assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: workspace, data: proposal.data))
-      proposal.reload.ledger_entry
+      proposal.reload.journal_entry
     end
 end

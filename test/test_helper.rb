@@ -13,10 +13,14 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    def post_ledger_entry!(workspace, debit_ledger_account:, credit_ledger_account:, amount_kobo:, effective_date: Date.current, description: nil)
-      ledger = workspace.ledgers.first ||
-        workspace.provision_ledger!(template: workspace.ledger_template)
-      command = Engine::Command.new(
+    def provision_business_ledger!(workspace)
+      workspace.update!(workspace_type: "business")
+      workspace.provision_ledger!
+    end
+
+    def post_journal_entry!(workspace, debit_account:, credit_account:, amount_kobo:, effective_date: Date.current, description: nil)
+      ledger = workspace.ledgers.first || workspace.provision_ledger!
+      command = Accounting::Command.new(
         ledger: ledger,
         effective_date: effective_date,
         source_type: nil,
@@ -24,13 +28,13 @@ module ActiveSupport
         action: "create",
         description: description,
         lines: [
-          Engine::Command::Line.new(ledger_account: debit_ledger_account, debit: amount_kobo, credit: 0),
-          Engine::Command::Line.new(ledger_account: credit_ledger_account, debit: 0, credit: amount_kobo)
+          Accounting::Command::Line.new(account: debit_account, debit: amount_kobo, credit: 0),
+          Accounting::Command::Line.new(account: credit_account, debit: 0, credit: amount_kobo)
         ]
       )
 
-      receipt = Engine.post(command)
-      raise "Ledger entry rejected: #{receipt.errors.map(&:to_s).join(', ')}" unless receipt.success?
+      receipt = Accounting.post(command)
+      raise "Journal entry rejected: #{receipt.errors.map(&:to_s).join(', ')}" unless receipt.success?
 
       receipt.entry
     end

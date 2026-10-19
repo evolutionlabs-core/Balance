@@ -15,10 +15,10 @@ class ProposeReversal < RubyLLM::Tool
   end
 
   def execute(entry_id:, use_original_date: false)
-    entry = ledger.ledger_entries.includes(:ledger_lines).find_by(id: entry_id)
+    entry = ledger.journal_entries.includes(:journal_entry_lines).find_by(id: entry_id)
     return { error: "That entry does not exist in this workspace." } unless entry
-    return { error: "That entry has already been reversed." } if reversed?(entry.id)
-    return { error: "That entry is itself a reversal." } if reversal_entry?(entry.id)
+    return { error: "That entry has already been reversed." } if entry.reversed?
+    return { error: "That entry is itself a reversal." } if entry.reverses_entry_id?
 
     halt({
       proposal: true,
@@ -30,21 +30,7 @@ class ProposeReversal < RubyLLM::Tool
 
   private
 
-  def reversed?(entry_id)
-    confirmed_reversals.where("data ->> 'reverses_ledger_entry_id' = ?", entry_id.to_s).exists?
-  end
-
-  def reversal_entry?(entry_id)
-    confirmed_reversals.where("data -> 'reverses_ledger_entry_id' IS NOT NULL")
-      .find_by(ledger_entry_id: entry_id).present?
-  end
-
-  def confirmed_reversals
-    Proposal.where(proposal_type: "entry", status: "confirmed")
-  end
-
   def ledger
-    @ledger ||= @workspace.ledgers.first ||
-      @workspace.provision_ledger!(template: @workspace.ledger_template)
+    @workspace.ledger
   end
 end

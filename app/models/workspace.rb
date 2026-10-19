@@ -2,7 +2,7 @@ class Workspace < ApplicationRecord
   include Ledgers::Provisioning
   include Workspaces::Creation
 
-  belongs_to :default_sales_ledger_account, class_name: "LedgerAccount", optional: true
+  belongs_to :default_sales_account, class_name: "Account", optional: true
   enum :workspace_type, { personal: "personal", business: "business" }, validate: true
 
   has_many :memberships, dependent: :destroy
@@ -10,7 +10,7 @@ class Workspace < ApplicationRecord
   has_many :expenses, dependent: :destroy
   has_many :customers, dependent: :destroy
   has_many :ledgers, dependent: :restrict_with_error
-  has_many :ledger_accounts, through: :ledgers
+  has_many :accounts, through: :ledgers
   has_many :invoices, dependent: :destroy
   has_many :projects, dependent: :destroy
   has_many :estimates, dependent: :destroy
@@ -21,22 +21,22 @@ class Workspace < ApplicationRecord
 
   validates :name, presence: true
   validates :currency_code, inclusion: { in: %w[NGN] }
-  validate :default_sales_ledger_account_is_workspace_income
+  validate :default_sales_account_is_workspace_income
 
-  def ledger_template
-    personal? ? "personal_finance" : "standard_sme"
+  def ledger
+    ledgers.sole
   end
 
   def payment_accounts
-    ledger_accounts.where(subtype: %w[cash credit_card])
+    accounts.where(subtype: %w[cash credit_card])
   end
 
   def income_accounts
-    ledger_accounts.where(base_type: "income")
+    accounts.where(base_type: "income")
   end
 
   def expense_categories
-    ledger_accounts.where(base_type: "expense")
+    accounts.where(base_type: "expense")
   end
 
   def owned_by?(user)
@@ -46,11 +46,11 @@ class Workspace < ApplicationRecord
   end
 
   private
-    def default_sales_ledger_account_is_workspace_income
-      return if default_sales_ledger_account.blank?
+    def default_sales_account_is_workspace_income
+      return if default_sales_account.blank?
 
-      unless default_sales_ledger_account.ledger.workspace_id == id && default_sales_ledger_account.base_type == "income"
-        errors.add(:default_sales_ledger_account, "must be an income account in this workspace")
+      unless default_sales_account.ledger.workspace_id == id && default_sales_account.base_type == "income"
+        errors.add(:default_sales_account, "must be an income account in this workspace")
       end
     end
 end

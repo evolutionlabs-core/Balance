@@ -5,7 +5,7 @@ class Proposal < ApplicationRecord
   belongs_to :workspace
   belongs_to :llm_chat, class_name: "Llm::Chat"
   belongs_to :llm_message, class_name: "Llm::Message", optional: true
-  belongs_to :ledger_entry, optional: true
+  belongs_to :journal_entry, optional: true
 
   validates :proposal_type, presence: true, inclusion: { in: TYPES }
   validates :status, inclusion: { in: STATUSES }
@@ -23,7 +23,7 @@ class Proposal < ApplicationRecord
   end
 
   def reversal_proposal?
-    entry_proposal? && data["reverses_ledger_entry_id"].present?
+    entry_proposal? && data["reverses_journal_entry_id"].present?
   end
 
   def reversal_confirmation?
@@ -52,7 +52,7 @@ class Proposal < ApplicationRecord
   def complete?
     return false if effective_date.blank?
     return false if lines.size < 2
-    return false if lines.any? { |line| line["ledger_account_id"].blank? || line["amount_kobo"].to_i <= 0 }
+    return false if lines.any? { |line| line["account_id"].blank? || line["amount_kobo"].to_i <= 0 }
 
     total_debit_kobo == total_credit_kobo
   end
@@ -66,12 +66,12 @@ class Proposal < ApplicationRecord
       return [] unless transition_to_confirming?
 
       receipt = draft.post!(source_id: id)
-      unless receipt.success? && receipt.verdict == :allow
-        @confirm_errors = receipt.errors.map(&:to_s).presence || [ "This entry requires approval before it can be recorded." ]
+      unless receipt.success?
+        @confirm_errors = receipt.errors.map(&:to_s)
         raise ActiveRecord::Rollback
       end
 
-      update!(status: "confirmed", ledger_entry: receipt.entry)
+      update!(status: "confirmed", journal_entry: receipt.entry)
       nil
     end
     @confirm_errors

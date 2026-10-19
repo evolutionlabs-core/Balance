@@ -21,9 +21,6 @@ class Llm::Harness::JournalExamplesCorpusTest < ActiveSupport::TestCase
 
   private
     def chart_for(workspace_type)
-      template = Workspace.new(workspace_type: workspace_type).ledger_template
-      YAML.load_file(Rails.root.join("config/charts/#{template}.yml"))
-        .fetch("accounts")
-        .map(&:with_indifferent_access)
+      ChartCatalog.accounts_for(workspace_type).map(&:with_indifferent_access)
     end
 end

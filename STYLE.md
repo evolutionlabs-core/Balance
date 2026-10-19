@@ -74,8 +74,10 @@ service merely to relay a controller call to a model.
 ## Accounting code
 
 Keep validation pure and persistence transactional. Never mix database writes
-into `Accounting::Engine`. Construct entries explicitly, validate them through
-the engine, and persist them through `Accounting::PostingService`.
+into `Accounting::Validation`. Build an `Accounting::Command` through an
+adapter and post it with `Accounting.post`; only `Accounting::Writer` persists
+journal entries. Correct a posted entry by reversing it with
+`Accounting::Adapters::Reversal`, never by editing it.
 
 A balanced entry may still be semantically
 wrong, so preserve account taxonomy and workspace checks.

@@ -17,7 +17,7 @@ for configuration, lifecycle, production-image validation, and troubleshooting.
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md), [STYLE.md](STYLE.md), and
+Read [STYLE.md](STYLE.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md) before changing the application. Every
 feature begins with a project ticket and a dedicated branch.
 

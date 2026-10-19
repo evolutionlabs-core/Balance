@@ -5,8 +5,8 @@ module LlmChatTestHelper
     chat,
     description: "Test entry",
     effective_date: Date.current,
-    debit_ledger_account:,
-    credit_ledger_account:,
+    debit_account:,
+    credit_account:,
     amount_kobo:
   )
     workspace = chat.workspace
@@ -18,8 +18,8 @@ module LlmChatTestHelper
         "effective_date" => effective_date.iso8601,
         "amount_source" => "user_provided",
         "lines" => [
-          { "ledger_account_id" => debit_ledger_account.id, "side" => "debit", "amount_kobo" => amount_kobo },
-          { "ledger_account_id" => credit_ledger_account.id, "side" => "credit", "amount_kobo" => amount_kobo }
+          { "account_id" => debit_account.id, "side" => "debit", "amount_kobo" => amount_kobo },
+          { "account_id" => credit_account.id, "side" => "credit", "amount_kobo" => amount_kobo }
         ]
       }
     )

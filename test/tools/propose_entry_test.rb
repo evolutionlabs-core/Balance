@@ -3,26 +3,26 @@ require "test_helper"
 class ProposeEntryTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @groceries = @ledger.accounts.find_by!(name: "Groceries")
     @model = Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model")
     @chat = stub_llm_chat(workspace: @workspace, prompt: "Paid ₦2,500 cash for supplies")
   end
 
-  test "proposes a balanced entry using existing ledger account IDs" do
+  test "proposes a balanced entry using existing account IDs" do
     result = execute_tool
     result = result.content
 
     assert result[:proposal]
     assert_equal "entry", result[:proposed_action]
-    assert_equal [ @groceries.id, @cash.id ], result.dig(:entry_data, "lines").pluck("ledger_account_id")
+    assert_equal [ @groceries.id, @cash.id ], result.dig(:entry_data, "lines").pluck("account_id")
   end
 
   test "rejects a missing account ID instead of bypassing account approval" do
     result = execute_tool(lines: [
       { side: "debit", amount_naira: "2500" },
-      { ledger_account_id: @cash.id, side: "credit", amount_naira: "2500" }
+      { account_id: @cash.id, side: "credit", amount_naira: "2500" }
     ])
 
     refute result[:proposal]
@@ -30,11 +30,11 @@ class ProposeEntryTest < ActiveSupport::TestCase
   end
 
   test "rejects an account from another workspace" do
-    other_ledger = workspaces(:bola_shop).provision_ledger!(template: "standard_sme")
-    foreign_bank = other_ledger.ledger_accounts.find_by!(name: "Bank")
+    other_ledger = provision_business_ledger!(workspaces(:bola_shop))
+    foreign_bank = other_ledger.accounts.find_by!(name: "Bank")
     result = execute_tool(lines: [
-      { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-      { ledger_account_id: foreign_bank.id, side: "credit", amount_naira: "2500" }
+      { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+      { account_id: foreign_bank.id, side: "credit", amount_naira: "2500" }
     ])
 
     refute result[:proposal]
@@ -43,8 +43,8 @@ class ProposeEntryTest < ActiveSupport::TestCase
 
   test "rejects an unbalanced entry" do
     result = execute_tool(lines: [
-      { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-      { ledger_account_id: @cash.id, side: "credit", amount_naira: "2000" }
+      { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+      { account_id: @cash.id, side: "credit", amount_naira: "2000" }
     ])
 
     refute result[:proposal]
@@ -52,7 +52,7 @@ class ProposeEntryTest < ActiveSupport::TestCase
   end
 
   test "requires every account created for the resumed transaction" do
-    tax = @ledger.ledger_accounts.create!(name: "Tax Expense", base_type: "expense", subtype: "other_expense", code: "9510", created_by: "admin")
+    tax = @ledger.accounts.create!(name: "Tax Expense", base_type: "expense", subtype: "other_expense", code: "9510", created_by: "admin")
     chat = Llm::Chat.create!(workspace: @workspace, llm_model: @model, title: "Resumed transaction")
     chat.proposals.create!(
       workspace: @workspace,
@@ -71,8 +71,8 @@ class ProposeEntryTest < ActiveSupport::TestCase
       description: "Salary with tax",
       effective_date: Date.current.to_s,
       lines: [
-        { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-        { ledger_account_id: @cash.id, side: "credit", amount_naira: "2500" }
+        { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+        { account_id: @cash.id, side: "credit", amount_naira: "2500" }
       ]
     )
 
@@ -82,9 +82,9 @@ class ProposeEntryTest < ActiveSupport::TestCase
       description: "Salary with tax",
       effective_date: Date.current.to_s,
       lines: [
-        { "ledger_account_id" => @groceries.id, "side" => "debit", "amount_naira" => "2000" },
-        { "ledger_account_id" => tax.id, "side" => "debit", "amount_naira" => "500" },
-        { "ledger_account_id" => @cash.id, "side" => "credit", "amount_naira" => "2500" }
+        { "account_id" => @groceries.id, "side" => "debit", "amount_naira" => "2000" },
+        { "account_id" => tax.id, "side" => "debit", "amount_naira" => "500" },
+        { "account_id" => @cash.id, "side" => "credit", "amount_naira" => "2500" }
       ]
     )
 
@@ -102,8 +102,8 @@ class ProposeEntryTest < ActiveSupport::TestCase
 
     def lines_default
       [
-        { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-        { ledger_account_id: @cash.id, side: "credit", amount_naira: "2500" }
+        { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+        { account_id: @cash.id, side: "credit", amount_naira: "2500" }
       ]
     end
 end

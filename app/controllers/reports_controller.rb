@@ -2,7 +2,7 @@ class ReportsController < ApplicationController
   def balance_sheet
     return unless ledger
 
-    @report = Engine::Query.call(ledger_id: ledger.id, query_type: "balance_sheet")[:data]
+    @report = Accounting::Query.call(ledger_id: ledger.id, query_type: "balance_sheet")[:data]
   end
 
   def income_statement
@@ -11,7 +11,7 @@ class ReportsController < ApplicationController
     @end_date = [ @month.end_of_month, Date.current ].min
     return unless ledger
 
-    @report = Engine::Query.call(
+    @report = Accounting::Query.call(
       ledger_id: ledger.id,
       query_type: "income_statement",
       options: { start_date: @start_date, end_date: @end_date }

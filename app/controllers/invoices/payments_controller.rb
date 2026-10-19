@@ -8,7 +8,7 @@ class Invoices::PaymentsController < ApplicationController
 
   def create
     if @invoice.record_payment!(
-      payment_ledger_account_id: payment_params[:payment_ledger_account_id],
+      payment_account_id: payment_params[:payment_account_id],
       received_on: parsed_received_on,
       amount_kobo: (payment_params[:amount].to_d * 100).round
     )
@@ -34,7 +34,7 @@ class Invoices::PaymentsController < ApplicationController
     end
 
     def payment_params
-      params.expect(invoice_payment: [ :payment_ledger_account_id, :received_on, :amount ])
+      params.expect(invoice_payment: [ :payment_account_id, :received_on, :amount ])
     end
 
     def parsed_received_on

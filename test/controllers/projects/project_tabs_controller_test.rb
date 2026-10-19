@@ -11,9 +11,9 @@ class Projects::ProjectTabsControllerTest < ActionDispatch::IntegrationTest
     @project = @workspace.projects.create!(
       customer: @customer, name: "Tab Project", description: "Fit-out works"
     )
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    @service = @workspace.services.create!(name: "Building work", income_ledger_account: income_account)
+    @ledger = @workspace.provision_ledger!
+    income_account = @ledger.accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Building work", income_account: income_account)
   end
 
   test "index opens edit inside the modal frame" do

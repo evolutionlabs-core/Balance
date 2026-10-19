@@ -11,7 +11,7 @@ class ProposeEntry < RubyLLM::Tool
                             description: "ISO date (YYYY-MM-DD) the transaction happened; defaults to today"
     array :lines, description: "at least two debit or credit lines that balance" do
       object do
-        number :ledger_account_id, description: "ledger account ID returned by list_accounts"
+        number :account_id, description: "account ID returned by list_accounts"
         string :side, enum: %w[debit credit], description: "whether this line is a debit or credit"
         string :amount_naira, description: "positive amount in naira as a decimal string, e.g. \"4550.50\""
       end
@@ -27,7 +27,7 @@ class ProposeEntry < RubyLLM::Tool
     missing_accounts = required_created_accounts.reject do |account|
       lines.any? do |line|
         attributes = line.to_h
-        (attributes[:ledger_account_id] || attributes["ledger_account_id"]).to_i == account.id
+        (attributes[:account_id] || attributes["account_id"]).to_i == account.id
       end
     end
     if missing_accounts.any?
@@ -56,15 +56,14 @@ class ProposeEntry < RubyLLM::Tool
 
   def required_created_accounts
     turn = @chat.active_turn if @chat.respond_to?(:active_turn)
-    return LedgerAccount.none unless turn&.user_message&.role == "system"
+    return Account.none unless turn&.user_message&.role == "system"
 
     proposal = @chat.proposals.by_type("account_creation").where(status: "confirmed").order(id: :desc).first
     ids = proposal&.data&.fetch("created_accounts", [])&.pluck("id")
-    ledger.ledger_accounts.where(id: ids)
+    ledger.accounts.where(id: ids)
   end
 
   def ledger
-    @ledger ||= @workspace.ledgers.first ||
-      @workspace.provision_ledger!(template: @workspace.ledger_template)
+    @ledger ||= @workspace.ledger
   end
 end

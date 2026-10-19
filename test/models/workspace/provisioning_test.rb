@@ -3,13 +3,13 @@ require "test_helper"
 class Workspace::ProvisioningTest < ActiveSupport::TestCase
   test "provisions SME ledger with template and system accounts" do
     workspace = Workspace.create!(name: "SME Co", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
+    ledger = provision_business_ledger!(workspace)
 
-    assert_equal 24, ledger.ledger_accounts.count
+    assert_equal 24, ledger.accounts.count
     assert_equal "General", ledger.name
     assert_equal "NGN", ledger.currency_code
 
-    cash = ledger.ledger_accounts.find_by!(code: "1010")
+    cash = ledger.accounts.find_by!(code: "1010")
     assert_equal "Cash", cash.name
     assert_equal "asset", cash.base_type
     assert_equal "cash", cash.subtype
@@ -18,18 +18,18 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
     assert_equal "system", cash.created_by
     assert_equal true, cash.active
 
-    retained = ledger.ledger_accounts.find_by!(code: "3900")
+    retained = ledger.accounts.find_by!(code: "3900")
     assert_equal true, retained.system
     assert_equal "Retained Earnings", retained.name
   end
 
   test "provisions personal ledger with template and system accounts" do
     workspace = Workspace.create!(name: "Personal Co", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "personal_finance")
+    ledger = workspace.provision_ledger!
 
-    assert_equal 18, ledger.ledger_accounts.count
+    assert_equal 18, ledger.accounts.count
 
-    salary = ledger.ledger_accounts.find_by!(code: "4010")
+    salary = ledger.accounts.find_by!(code: "4010")
     assert_equal "Salary", salary.name
     assert_equal "income", salary.base_type
     assert_equal "salary", salary.subtype
@@ -37,17 +37,17 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
 
   test "prevents deleting a system account" do
     workspace = Workspace.create!(name: "SME Guard", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
-    account = ledger.ledger_accounts.find_by!(code: "3900")
+    ledger = provision_business_ledger!(workspace)
+    account = ledger.accounts.find_by!(code: "3900")
 
     assert_not account.destroy
-    assert LedgerAccount.exists?(account.id)
+    assert Account.exists?(account.id)
   end
 
   test "prevents deactivating a system account" do
     workspace = Workspace.create!(name: "SME Freeze", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
-    account = ledger.ledger_accounts.find_by!(code: "3900")
+    ledger = provision_business_ledger!(workspace)
+    account = ledger.accounts.find_by!(code: "3900")
 
     assert_not account.update(active: false)
     assert account.reload.active
@@ -55,25 +55,25 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
 
   test "prevents deleting an account with entries" do
     workspace = Workspace.create!(name: "SME Locked", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
-    cash = ledger.ledger_accounts.find_by!(code: "1010")
-    sales = ledger.ledger_accounts.find_by!(code: "4010")
-    entry = ledger.ledger_entries.create!(effective_date: Date.current)
-    entry.ledger_lines.create!(ledger_account: cash, debit: 1000, credit: 0)
-    entry.ledger_lines.create!(ledger_account: sales, debit: 0, credit: 1000)
+    ledger = provision_business_ledger!(workspace)
+    cash = ledger.accounts.find_by!(code: "1010")
+    sales = ledger.accounts.find_by!(code: "4010")
+    entry = ledger.journal_entries.create!(number: 1, effective_date: Date.current)
+    entry.journal_entry_lines.create!(account: cash, debit: 1000, credit: 0)
+    entry.journal_entry_lines.create!(account: sales, debit: 0, credit: 1000)
 
     assert_not cash.destroy
-    assert LedgerAccount.exists?(cash.id)
+    assert Account.exists?(cash.id)
   end
 
   test "allows deactivating an account with entries" do
     workspace = Workspace.create!(name: "SME Soft Close", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
-    cash = ledger.ledger_accounts.find_by!(code: "1010")
-    sales = ledger.ledger_accounts.find_by!(code: "4010")
-    entry = ledger.ledger_entries.create!(effective_date: Date.current)
-    entry.ledger_lines.create!(ledger_account: cash, debit: 1000, credit: 0)
-    entry.ledger_lines.create!(ledger_account: sales, debit: 0, credit: 1000)
+    ledger = provision_business_ledger!(workspace)
+    cash = ledger.accounts.find_by!(code: "1010")
+    sales = ledger.accounts.find_by!(code: "4010")
+    entry = ledger.journal_entries.create!(number: 1, effective_date: Date.current)
+    entry.journal_entry_lines.create!(account: cash, debit: 1000, credit: 0)
+    entry.journal_entry_lines.create!(account: sales, debit: 0, credit: 1000)
 
     assert cash.update(active: false)
     assert_not cash.reload.active
@@ -81,23 +81,46 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
 
   test "allows deleting an account without entries" do
     workspace = Workspace.create!(name: "SME Prune", currency_code: "NGN")
-    ledger = workspace.provision_ledger!(template: "standard_sme")
-    account = ledger.ledger_accounts.find_by!(code: "5900")
+    ledger = provision_business_ledger!(workspace)
+    account = ledger.accounts.find_by!(code: "5900")
 
     assert account.destroy
-    assert_not LedgerAccount.exists?(account.id)
+    assert_not Account.exists?(account.id)
   end
 
-  test "raises for template row with invalid subtype" do
-    workspace = Workspace.create!(name: "SME Bad Template", currency_code: "NGN")
-    bad = { "accounts" => [ { "code" => "9999", "name" => "Bad", "base_type" => "asset", "subtype" => "bogus", "normal_balance" => "debit" } ] }
+  test "rejects a catalog account whose subtype does not belong to its base type" do
+    workspace = Workspace.create!(name: "SME Bad Catalog", currency_code: "NGN", workspace_type: "business")
+    bad = [ { key: "bad", code: "9999", name: "Bad", base_type: "asset", subtype: "salary", system: false } ]
 
-    Bootsnap::CompileCache::YAML.stub(:supported_internal_encoding?, false) do
-      YAML.stub(:load_file, bad) do
-        assert_raises(ArgumentError) do
-          workspace.provision_ledger!(template: "standard_sme")
-        end
+    ChartCatalog.stub(:accounts_for, bad) do
+      assert_raises(ActiveRecord::RecordInvalid) { workspace.provision_ledger! }
+    end
+    assert_not workspace.ledgers.exists?
+  end
+
+  test "contra accounts carry the opposite normal balance of their base type" do
+    ledger = provision_business_ledger!(Workspace.create!(name: "SME Contra", currency_code: "NGN"))
+
+    assert_equal "credit", ledger.accounts.find_by!(key: "accumulated_depreciation").normal_balance
+    assert_equal "debit", ledger.accounts.find_by!(key: "owner_draws").normal_balance
+  end
+
+  test "keys the accounts the application posts to" do
+    %w[personal business].each do |workspace_type|
+      workspace = Workspace.create!(name: "Keys #{workspace_type}", currency_code: "NGN", workspace_type: workspace_type)
+      ledger = workspace.provision_ledger!
+
+      %w[bank accounts_receivable retained_earnings opening_balance_equity].each do |key|
+        assert ledger.accounts.find_by!(key: key).system, "#{workspace_type} #{key} should be a system account"
       end
     end
+  end
+
+  test "a personal workspace keeps its personal chart names and codes" do
+    ledger = Workspace.create!(name: "Personal Names", currency_code: "NGN").provision_ledger!
+
+    assert_equal [ "1020", "Checking Account" ], ledger.accounts.find_by!(key: "bank").values_at(:code, :name)
+    assert_equal [ "1050", "Accounts Receivable" ], ledger.accounts.find_by!(key: "accounts_receivable").values_at(:code, :name)
+    assert_equal [ "3020", "Personal Spending" ], ledger.accounts.find_by!(key: "owner_draws").values_at(:code, :name)
   end
 end

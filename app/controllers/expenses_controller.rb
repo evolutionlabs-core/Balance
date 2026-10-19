@@ -23,13 +23,13 @@ class ExpensesController < ApplicationController
   end
 
   def show
-    @ledger_entry = @expense.ledger_entry
+    @journal_entry = @expense.journal_entry
   end
 
   private
     def set_expense
       @expense = current_workspace.expenses
-        .includes(:payment_account, expense_lines: :account, ledger_entry: { ledger_lines: :ledger_account })
+        .includes(:payment_account, expense_lines: :account, journal_entry: { journal_entry_lines: :account })
         .find(params[:id])
     end
 

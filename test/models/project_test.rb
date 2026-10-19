@@ -6,10 +6,10 @@ class ProjectTest < ActiveSupport::TestCase
     @other_workspace = workspaces(:bola_shop)
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Project Customer", customer_type: "business", email: "project@example.com")
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @income = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @service = @workspace.services.create!(name: "Project service", income_ledger_account: @income)
+    @ledger = @workspace.provision_ledger!
+    @income = @ledger.accounts.find_by!(name: "Other Income")
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @service = @workspace.services.create!(name: "Project service", income_account: @income)
   end
 
   test "requires workspace customer and name" do
@@ -67,7 +67,7 @@ class ProjectTest < ActiveSupport::TestCase
     assert_equal 75_000, summary.amount_owed_kobo
     assert_equal 0, summary.amount_received_kobo
 
-    assert invoice.record_payment!(payment_ledger_account_id: @cash.id, received_on: Date.current, amount_kobo: 25_000),
+    assert invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 25_000),
       invoice.errors.full_messages.to_sentence
     summary = project.summary
     assert_equal 50_000, summary.amount_owed_kobo

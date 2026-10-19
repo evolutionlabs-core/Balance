@@ -23,7 +23,7 @@ class ExpenseReport
   def top_categories(limit: 5)
     expense_lines
       .joins(:account)
-      .group("ledger_accounts.id", "ledger_accounts.name")
+      .group("accounts.id", "accounts.name")
       .order(Arel.sql("SUM(expense_lines.amount_kobo) DESC"))
       .limit(limit)
       .sum(:amount_kobo)
@@ -33,7 +33,7 @@ class ExpenseReport
   def category_trends
     rows = expense_lines
       .joins(:account)
-      .group(Arel.sql("DATE_TRUNC('month', expenses.payment_date)"), "ledger_accounts.id", "ledger_accounts.name")
+      .group(Arel.sql("DATE_TRUNC('month', expenses.payment_date)"), "accounts.id", "accounts.name")
       .order(Arel.sql("DATE_TRUNC('month', expenses.payment_date)"))
       .sum(:amount_kobo)
 

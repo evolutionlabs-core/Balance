@@ -1,13 +1,13 @@
 class Service < ApplicationRecord
   belongs_to :workspace
-  belongs_to :income_ledger_account, class_name: "LedgerAccount"
+  belongs_to :income_account, class_name: "Account"
   has_many :estimate_line_items, dependent: :restrict_with_error
   has_many :invoice_lines, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :workspace_id }
   validates :default_rate_minor, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
-  validate :income_ledger_account_belongs_to_workspace
-  validate :income_ledger_account_is_income
+  validate :income_account_belongs_to_workspace
+  validate :income_account_is_income
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:name) }
@@ -23,16 +23,16 @@ class Service < ApplicationRecord
   end
 
   private
-    def income_ledger_account_belongs_to_workspace
-      return if income_ledger_account.blank? || workspace.blank?
-      return if income_ledger_account.ledger.workspace_id == workspace_id
+    def income_account_belongs_to_workspace
+      return if income_account.blank? || workspace.blank?
+      return if income_account.ledger.workspace_id == workspace_id
 
-      errors.add(:income_ledger_account, "must belong to the workspace")
+      errors.add(:income_account, "must belong to the workspace")
     end
 
-    def income_ledger_account_is_income
-      return if income_ledger_account.blank? || income_ledger_account.base_type == "income"
+    def income_account_is_income
+      return if income_account.blank? || income_account.base_type == "income"
 
-      errors.add(:income_ledger_account, "must be an income account")
+      errors.add(:income_account, "must be an income account")
     end
 end

@@ -3,16 +3,16 @@ require "test_helper"
 class ListAccountsTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
   end
 
-  test "returns existing ledger accounts with balances and remaining chart recommendations" do
-    @ledger.ledger_accounts.find_by!(name: "Housing").destroy
-    post_ledger_entry!(
+  test "returns existing accounts with balances and remaining chart recommendations" do
+    @ledger.accounts.find_by!(name: "Housing").destroy
+    post_journal_entry!(
       @workspace,
-      debit_ledger_account: @cash,
-      credit_ledger_account: @ledger.ledger_accounts.find_by!(name: "Other Income"),
+      debit_account: @cash,
+      credit_account: @ledger.accounts.find_by!(name: "Other Income"),
       amount_kobo: 12_400
     )
 
@@ -40,8 +40,8 @@ class ListAccountsTest < ActiveSupport::TestCase
   end
 
   test "drops recommended chart accounts that already exist" do
-    @ledger.ledger_accounts.find_by!(name: "Housing").destroy
-    @ledger.ledger_accounts.create!(
+    @ledger.accounts.find_by!(name: "Housing").destroy
+    @ledger.accounts.create!(
       name: "Housing",
       base_type: "expense",
       subtype: "housing",

@@ -3,19 +3,19 @@ require "test_helper"
 class LedgerSummaryTest < ActiveSupport::TestCase
   test "chart series includes only workspace activity in the selected period and fills empty days" do
     workspace = workspaces(:ada_store)
-    ledger = workspace.provision_ledger!(template: "personal_finance")
-    cash = ledger.ledger_accounts.find_by!(name: "Cash")
-    income = ledger.ledger_accounts.find_by!(name: "Salary")
-    expense = ledger.ledger_accounts.find_by!(name: "Groceries")
-    post_ledger_entry!(workspace, debit_ledger_account: cash, credit_ledger_account: income, amount_kobo: 500_25)
-    post_ledger_entry!(workspace, debit_ledger_account: expense, credit_ledger_account: cash, amount_kobo: 700_50)
-    post_ledger_entry!(workspace, debit_ledger_account: cash, credit_ledger_account: income, amount_kobo: 900_00, effective_date: 8.days.ago.to_date)
+    ledger = workspace.provision_ledger!
+    cash = ledger.accounts.find_by!(name: "Cash")
+    income = ledger.accounts.find_by!(name: "Salary")
+    expense = ledger.accounts.find_by!(name: "Groceries")
+    post_journal_entry!(workspace, debit_account: cash, credit_account: income, amount_kobo: 500_25)
+    post_journal_entry!(workspace, debit_account: expense, credit_account: cash, amount_kobo: 700_50)
+    post_journal_entry!(workspace, debit_account: cash, credit_account: income, amount_kobo: 900_00, effective_date: 8.days.ago.to_date)
     other = workspaces(:bola_shop)
-    other_ledger = other.provision_ledger!(template: "standard_sme")
-    post_ledger_entry!(
+    other_ledger = provision_business_ledger!(other)
+    post_journal_entry!(
       other,
-      debit_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Cash"),
-      credit_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Sales"),
+      debit_account: other_ledger.accounts.find_by!(name: "Cash"),
+      credit_account: other_ledger.accounts.find_by!(name: "Sales"),
       amount_kobo: 999_00
     )
 
@@ -29,14 +29,14 @@ class LedgerSummaryTest < ActiveSupport::TestCase
     assert_equal(-200.25, summary.performance_series(days: 7).first[:data][Date.current])
   end
 
-  test "summarizes balances from ledger lines across all posted entries" do
+  test "summarizes balances from journal entry lines across all posted entries" do
     workspace = workspaces(:ada_store)
-    ledger = workspace.provision_ledger!(template: "personal_finance")
-    cash = ledger.ledger_accounts.find_by!(name: "Cash")
-    income = ledger.ledger_accounts.find_by!(name: "Salary")
-    expense = ledger.ledger_accounts.find_by!(name: "Groceries")
-    post_ledger_entry!(workspace, debit_ledger_account: cash, credit_ledger_account: income, amount_kobo: 500_00)
-    post_ledger_entry!(workspace, debit_ledger_account: expense, credit_ledger_account: cash, amount_kobo: 200_00)
+    ledger = workspace.provision_ledger!
+    cash = ledger.accounts.find_by!(name: "Cash")
+    income = ledger.accounts.find_by!(name: "Salary")
+    expense = ledger.accounts.find_by!(name: "Groceries")
+    post_journal_entry!(workspace, debit_account: cash, credit_account: income, amount_kobo: 500_00)
+    post_journal_entry!(workspace, debit_account: expense, credit_account: cash, amount_kobo: 200_00)
 
     summary = LedgerSummary.new(workspace)
 

@@ -3,8 +3,8 @@ require "test_helper"
 class InvoiceTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Acme Customer", email: "acme@example.com", customer_type: "business")
   end
@@ -45,9 +45,9 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_not build_invoice(customer: foreign, lines: [ { description: "Design", quantity: 1, rate: "5000.00" } ]).valid?
   end
 
-  test "snapshots the income ledger account upon saving" do
-    @workspace.update!(default_sales_ledger_account: @income_account)
-    service = @workspace.services.create!(name: "Design", income_ledger_account: @income_account)
+  test "snapshots the income account upon saving" do
+    @workspace.update!(default_sales_account: @income_account)
+    service = @workspace.services.create!(name: "Design", income_account: @income_account)
     invoice = build_invoice(
       lines: [
         { service_id: service.id, description: "Design", quantity: 1, rate: "10000.00" },
@@ -58,8 +58,8 @@ class InvoiceTest < ActiveSupport::TestCase
     invoice.save!
 
     invoice_lines = invoice.invoice_lines.order(:position).to_a
-    assert_equal @income_account.id, invoice_lines.first.ledger_account_id
-    assert_equal @income_account.id, invoice_lines.last.ledger_account_id
+    assert_equal @income_account.id, invoice_lines.first.account_id
+    assert_equal @income_account.id, invoice_lines.last.account_id
   end
 
   test "content edits are allowed while draft" do

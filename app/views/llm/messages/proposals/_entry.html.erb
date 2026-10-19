@@ -1,5 +1,5 @@
 <% errors ||= local_assigns[:errors] %>
-<% accounts = proposal.workspace.ledgers.first&.ledger_accounts&.ordered || LedgerAccount.none %>
+<% accounts = proposal.workspace.ledgers.first&.accounts&.ordered || Account.none %>
 <% balanced = proposal.total_debit_kobo == proposal.total_credit_kobo %>
 <% editable = proposal.pending? %>
 <% reversal = proposal.reversal_proposal? %>
@@ -11,7 +11,7 @@
   <div class="flex items-start justify-between gap-3 px-4 py-3">
     <div class="min-w-0">
       <div class="flex items-center gap-2">
-        <p class="text-[11px] font-semibold tracking-wide text-[#0f7082] uppercase"><%= proposal.data["reverses_ledger_entry_id"].present? ? "Reversal proposal" : "Entry proposal" %></p>
+        <p class="text-[11px] font-semibold tracking-wide text-[#0f7082] uppercase"><%= proposal.data["reverses_journal_entry_id"].present? ? "Reversal proposal" : "Entry proposal" %></p>
         <span class="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500"><%= status_label %></span>
       </div>
       <h3 class="mt-0.5 truncate text-sm font-semibold text-neutral-950"><%= proposal.description %></h3>
@@ -53,12 +53,12 @@
             <div class="grid grid-cols-[3.5rem_minmax(0,1fr)_6.25rem] items-center gap-1.5 px-4 py-1.5">
               <span class="w-fit rounded px-1.5 py-0.5 text-[11px] font-semibold <%= line["side"] == "debit" ? "bg-[#e9f5f6] text-[#0f7082]" : "bg-neutral-100 text-neutral-600" %>"><%= line["side"] == "debit" ? "Debit" : "Credit" %></span>
               <% if reversal %>
-                <span class="truncate px-1.5 py-1 text-[13px] text-neutral-900"><%= accounts.find { |account| account.id.to_s == line["ledger_account_id"].to_s }&.name %></span>
+                <span class="truncate px-1.5 py-1 text-[13px] text-neutral-900"><%= accounts.find { |account| account.id.to_s == line["account_id"].to_s }&.name %></span>
                 <span class="px-1.5 py-1 text-right text-[13px] tabular-nums text-neutral-900"><%= naira(line["amount_kobo"]) %></span>
               <% else %>
                 <%= fields_for "proposal[lines][#{index}]" do |line_form| %>
-                  <%= render "shared/select_menu", form: line_form, attribute: :ledger_account_id,
-                      options: options_from_collection_for_select(accounts, :id, :name, line["ledger_account_id"]),
+                  <%= render "shared/select_menu", form: line_form, attribute: :account_id,
+                      options: options_from_collection_for_select(accounts, :id, :name, line["account_id"]),
                       prompt: "Choose an account", searchable: true, search_placeholder: "Search accounts…",
                       empty_message: "No accounts found", select_data: {} %>
                 <% end %>

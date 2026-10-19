@@ -2,7 +2,7 @@ class ServicesController < ApplicationController
   before_action :set_service, only: %i[edit update]
 
   def index
-    @services = current_workspace.services.includes(:income_ledger_account).ordered
+    @services = current_workspace.services.includes(:income_account).ordered
   end
 
   def new
@@ -36,6 +36,6 @@ class ServicesController < ApplicationController
     end
 
     def service_params
-      params.expect(service: [ :name, :description, :default_rate, :income_ledger_account_id, :active ])
+      params.expect(service: [ :name, :description, :default_rate, :income_account_id, :active ])
     end
 end

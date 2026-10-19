@@ -18,15 +18,15 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_equal "personal", workspace.workspace_type
     assert_equal "NGN", workspace.currency_code
     assert workspace.onboarding_completed_at?
-    assert_equal "personal_finance", workspace.ledger_template
-    assert_equal 18, workspace.ledgers.sole.ledger_accounts.count
+    assert workspace.ledger.accounts.exists?(key: "salary")
+    assert_equal 18, workspace.ledgers.sole.accounts.count
     assert_redirected_to overview_path
   end
 
   test "posts a non-zero opening balance to the bank and opening balance equity through the engine" do
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
 
-    assert_difference "LedgerEntry.count", 1 do
+    assert_difference "JournalEntry.count", 1 do
       patch onboarding_step_path(:details), params: {
         workspace_name: "Nneka's Money",
         opening_balance_naira: "125000.50"
@@ -35,12 +35,12 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
 
     workspace = @user.workspaces.last
     ledger = workspace.ledgers.sole
-    entry = LedgerEntry.find_by!(source_type: "OpeningBalance", source_id: workspace.id)
-    bank = ledger.ledger_accounts.find_by!(code: "1020")
-    equity = ledger.ledger_accounts.find_by!(name: "Opening Balance Equity")
+    entry = JournalEntry.find_by!(source_type: "OpeningBalance", source_id: workspace.id)
+    bank = ledger.accounts.find_by!(code: "1020")
+    equity = ledger.accounts.find_by!(name: "Opening Balance Equity")
 
-    assert_equal 12_500_050, entry.ledger_lines.find_by!(ledger_account: bank).debit
-    assert_equal 12_500_050, entry.ledger_lines.find_by!(ledger_account: equity).credit
+    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: bank).debit
+    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: equity).credit
   end
 
   test "provisions a business workspace with the standard SME chart" do
@@ -54,8 +54,8 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     workspace = @user.workspaces.last
     assert_equal "business", workspace.workspace_type
     assert_equal "NGN", workspace.currency_code
-    assert_equal "standard_sme", workspace.ledger_template
-    assert_equal 24, workspace.ledgers.sole.ledger_accounts.count
+    assert workspace.ledger.accounts.exists?(key: "sales")
+    assert_equal 24, workspace.ledgers.sole.accounts.count
     assert_redirected_to overview_path
   end
 

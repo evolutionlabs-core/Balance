@@ -5,7 +5,7 @@
     <div class="min-w-0">
       <p class="text-[11px] font-semibold tracking-wide text-[#0f7082] uppercase">Confirm entry for reversal</p>
       <h3 class="mt-0.5 text-sm font-semibold text-neutral-950"><%= proposal.description %></h3>
-      <p class="mt-0.5 text-xs text-neutral-500">Entry #<%= proposal.data.fetch("source_ledger_entry_id") %> · <%= proposal.effective_date.to_date.strftime("%B %-d, %Y") %></p>
+      <p class="mt-0.5 text-xs text-neutral-500">Entry #<%= proposal.data.fetch("source_journal_entry_id") %> · <%= proposal.effective_date.to_date.strftime("%B %-d, %Y") %></p>
     </div>
     <p class="flex-none text-lg font-semibold tracking-tight tabular-nums text-neutral-950"><%= naira(proposal.total_debit_kobo) %></p>
   </div>

@@ -33,11 +33,11 @@
   <% end %>
 <% end %>
 
-<% if @ledger_entries.empty? %>
+<% if @journal_entries.empty? %>
   <%= render "shared/empty_state",
       icon: "icons/list.svg",
       title: "No entries yet",
       description: "Entries recorded in your ledger appear here." %>
 <% else %>
-  <%= render "journal_entries/table", ledger_entries: @ledger_entries %>
+  <%= render "journal_entries/table", journal_entries: @journal_entries %>
 <% end %>

@@ -9,9 +9,9 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
     @customer = @workspace.customers.create!(name: "Estimate Customer", customer_type: "business", email: "estimate@example.com")
     @project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    @service = @workspace.services.create!(name: "Hosting", income_ledger_account: @income_account)
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Hosting", income_account: @income_account)
   end
 
   test "show downloads the estimate as a PDF" do
@@ -222,17 +222,17 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Custom Name", invoice.bill_to_name
     assert_equal [ "Hosting" ], invoice.invoice_lines.map(&:description)
     assert_equal [ @service ], invoice.invoice_lines.map(&:service)
-    assert_equal [ @income_account ], invoice.invoice_lines.map(&:ledger_account)
+    assert_equal [ @income_account ], invoice.invoice_lines.map(&:account)
     assert_equal 12 * 500_000, invoice.total_minor
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
   end
 
-  test "carries an estimate through to a posted ledger entry end to end" do
+  test "carries an estimate through to a posted journal entry end to end" do
     estimate = @project.estimates.create!(
       workspace: @workspace, user: @user, customer: @customer,
       line_items_attributes: { "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" } }
     )
-    assert_no_difference("LedgerEntry.count") do
+    assert_no_difference("JournalEntry.count") do
       estimate.send_to_client!
       estimate.approve!
       post project_estimate_conversion_path(estimate)
@@ -244,19 +244,19 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_equal estimate, invoice.estimate
     assert_equal 12 * 500_000, invoice.total_minor
     assert invoice.draft?
-    assert_empty LedgerEntry.where(source_type: "Invoice")
+    assert_empty JournalEntry.where(source_type: "Invoice")
 
-    receivable = @ledger.ledger_accounts.find_by!(subtype: "accounts_receivable")
-    assert_difference("LedgerEntry.where(source_type: \"Invoice\").count", 1) do
+    receivable = @ledger.accounts.find_by!(subtype: "accounts_receivable")
+    assert_difference("JournalEntry.where(source_type: \"Invoice\").count", 1) do
       post invoice_issuance_path(invoice)
     end
 
     assert invoice.reload.sent?
-    entry = LedgerEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
-    assert_equal 12 * 500_000, entry.ledger_lines.sum(&:debit)
-    assert_equal 12 * 500_000, entry.ledger_lines.sum(&:credit)
-    assert_equal [ receivable.id ], entry.ledger_lines.select { |line| line.debit.positive? }.map(&:ledger_account_id)
-    assert_equal [ @income_account.id ], entry.ledger_lines.select { |line| line.credit.positive? }.map(&:ledger_account_id).uniq
+    entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:debit)
+    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:credit)
+    assert_equal [ receivable.id ], entry.journal_entry_lines.select { |line| line.debit.positive? }.map(&:account_id)
+    assert_equal [ @income_account.id ], entry.journal_entry_lines.select { |line| line.credit.positive? }.map(&:account_id).uniq
   end
 
   test "rejects conversion of a non-approved estimate" do

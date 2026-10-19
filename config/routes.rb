@@ -32,7 +32,7 @@ Rails.application.routes.draw do
 
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create]
-  resources :ledger_accounts, path: "accounts", only: %i[index new create edit update]
+  resources :accounts, path: "accounts", only: %i[index new create edit update]
   resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]

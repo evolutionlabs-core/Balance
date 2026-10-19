@@ -3,14 +3,14 @@ class Llm::ReversalConfirmation
 
   def self.entry_data(entry, use_original_date: false)
     {
-      "source_ledger_entry_id" => entry.id,
+      "source_journal_entry_id" => entry.id,
       "description" => entry.description,
       "effective_date" => entry.effective_date.iso8601,
       "use_original_date" => use_original_date,
-      "lines" => entry.ledger_lines.map do |line|
+      "lines" => entry.journal_entry_lines.map do |line|
         {
-          "ledger_account_id" => line.ledger_account_id,
-          "account_name" => line.ledger_account.name,
+          "account_id" => line.account_id,
+          "account_name" => line.account.name,
           "side" => line.debit.positive? ? "debit" : "credit",
           "amount_kobo" => line.debit.positive? ? line.debit : line.credit
         }
@@ -36,7 +36,7 @@ class Llm::ReversalConfirmation
       end
       return self unless @confirmation.pending?
 
-      entry = ledger.ledger_entries.includes(:ledger_lines).find_by(id: @confirmation.data.fetch("source_ledger_entry_id"))
+      entry = ledger.journal_entries.includes(:journal_entry_lines).find_by(id: @confirmation.data.fetch("source_journal_entry_id"))
       unless entry
         @errors = [ "That entry does not exist in this workspace." ]
         return self
@@ -68,14 +68,14 @@ class Llm::ReversalConfirmation
 
   def reversal_data(entry)
     {
-      "description" => "Reversal of entry ##{entry.id}: #{entry.description}",
+      "description" => "Reversal of entry ##{entry.number}: #{entry.description}",
       "effective_date" => (@confirmation.data["use_original_date"] ? entry.effective_date : Date.current).iso8601,
       "amount_source" => "existing_posted_entry",
-      "reverses_ledger_entry_id" => entry.id,
-      "lines" => entry.ledger_lines.map do |line|
+      "reverses_journal_entry_id" => entry.id,
+      "lines" => entry.journal_entry_lines.map do |line|
         {
           "source_line_id" => line.id,
-          "ledger_account_id" => line.ledger_account_id,
+          "account_id" => line.account_id,
           "side" => line.credit.positive? ? "debit" : "credit",
           "amount_kobo" => line.credit.positive? ? line.credit : line.debit
         }
@@ -84,6 +84,6 @@ class Llm::ReversalConfirmation
   end
 
   def ledger
-    @chat.workspace.ledgers.first || @chat.workspace.provision_ledger!(template: @chat.workspace.ledger_template)
+    @chat.workspace.ledger
   end
 end

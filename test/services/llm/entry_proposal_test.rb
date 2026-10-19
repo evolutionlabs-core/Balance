@@ -3,9 +3,9 @@ require "test_helper"
 class Llm::EntryProposalTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    @groceries = @ledger.ledger_accounts.find_by!(name: "Groceries")
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @groceries = @ledger.accounts.find_by!(name: "Groceries")
     @chat = Llm::Chat.create!(
       workspace: @workspace,
       llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Entry test"),
@@ -30,8 +30,8 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
       description: "Unbalanced",
       effective_date: Date.current.to_s,
       lines: [
-        { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-        { ledger_account_id: @cash.id, side: "credit", amount_naira: "2000" }
+        { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+        { account_id: @cash.id, side: "credit", amount_naira: "2000" }
       ]
     )
 
@@ -39,13 +39,13 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
   end
 
   test "rejects accounts outside the workspace ledger" do
-    other_ledger = workspaces(:bola_shop).provision_ledger!(template: "standard_sme")
-    foreign_cash = other_ledger.ledger_accounts.find_by!(name: "Bank")
+    other_ledger = provision_business_ledger!(workspaces(:bola_shop))
+    foreign_cash = other_ledger.accounts.find_by!(name: "Bank")
 
     draft = build_draft(
       lines: [
-        { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" },
-        { ledger_account_id: foreign_cash.id, side: "credit", amount_naira: "2500" }
+        { account_id: @groceries.id, side: "debit", amount_naira: "2500" },
+        { account_id: foreign_cash.id, side: "credit", amount_naira: "2500" }
       ]
     )
 
@@ -61,7 +61,7 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
 
   test "requires at least two lines" do
     draft = build_draft(
-      lines: [ { ledger_account_id: @groceries.id, side: "debit", amount_naira: "2500" } ]
+      lines: [ { account_id: @groceries.id, side: "debit", amount_naira: "2500" } ]
     )
 
     assert_includes draft.errors, "An entry requires at least two lines"
@@ -72,12 +72,12 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
 
     assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: @workspace, data: entry_data))
 
-    entry = proposal.reload.ledger_entry
+    entry = proposal.reload.journal_entry
     assert_equal "Entry", entry.source_type
     assert_equal proposal.id, entry.source_id
     assert_equal "create", entry.action
-    assert_equal 250_000, entry.ledger_lines.sum(&:debit)
-    assert_equal 250_000, entry.ledger_lines.sum(&:credit)
+    assert_equal 250_000, entry.journal_entry_lines.sum(&:debit)
+    assert_equal 250_000, entry.journal_entry_lines.sum(&:credit)
   end
 
   test "a duplicate posting is rejected instead of crashing" do
@@ -98,16 +98,16 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
     proposal = @chat.proposals.create!(workspace: @workspace, proposal_type: "entry", version: 2, data: reversal_data)
     assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: @workspace, data: reversal_data))
 
-    reversal = proposal.reload.ledger_entry
+    reversal = proposal.reload.journal_entry
     assert_equal "reverse", reversal.action
-    assert_equal entry.ledger_lines.sum(&:debit), reversal.ledger_lines.sum(&:credit)
+    assert_equal entry.journal_entry_lines.sum(&:debit), reversal.journal_entry_lines.sum(&:credit)
   end
 
   test "rejects reversing a posting from another feature" do
-    entry = post_ledger_entry!(
+    entry = post_journal_entry!(
       @workspace,
-      debit_ledger_account: @groceries,
-      credit_ledger_account: @cash,
+      debit_account: @groceries,
+      credit_account: @cash,
       amount_kobo: 100_00
     )
 
@@ -117,7 +117,7 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
   end
 
   test "rejects reversing an unknown entry" do
-    draft = Llm::EntryProposal.new(workspace: @workspace, data: reversal_data(LedgerEntry.new(id: 999_999)))
+    draft = Llm::EntryProposal.new(workspace: @workspace, data: reversal_data(JournalEntry.new(id: 999_999)))
 
     assert_includes draft.errors, "Original entry not found in this workspace"
   end
@@ -129,7 +129,7 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
 
     second_reversal = Llm::EntryProposal.new(workspace: @workspace, data: reversal_data(entry))
 
-    assert_includes second_reversal.errors, "Entry ##{entry.id} has already been reversed"
+    assert_includes second_reversal.errors, "Entry ##{entry.number} has already been reversed"
   end
 
   test "rejects reversing a reversal" do
@@ -143,8 +143,8 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
 
   private
     def build_draft(amount: "2500", description: "Office expense", effective_date: Date.current.to_s, lines: [
-      { ledger_account_id: @groceries.id, side: "debit", amount_naira: amount },
-      { ledger_account_id: @cash.id, side: "credit", amount_naira: amount }
+      { account_id: @groceries.id, side: "debit", amount_naira: amount },
+      { account_id: @cash.id, side: "credit", amount_naira: amount }
     ])
       Llm::EntryProposal.from_tool(
         workspace: @workspace,
@@ -159,8 +159,8 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
         "description" => "Office expense",
         "effective_date" => Date.current.to_s,
         "lines" => [
-          { "ledger_account_id" => @groceries.id, "side" => "debit", "amount_kobo" => 250_000 },
-          { "ledger_account_id" => @cash.id, "side" => "credit", "amount_kobo" => 250_000 }
+          { "account_id" => @groceries.id, "side" => "debit", "amount_kobo" => 250_000 },
+          { "account_id" => @cash.id, "side" => "credit", "amount_kobo" => 250_000 }
         ]
       }
     end
@@ -170,10 +170,10 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
         "description" => "Reversal of entry ##{entry.id}: #{entry.description}",
         "effective_date" => Date.current.to_s,
         "amount_source" => "existing_posted_entry",
-        "reverses_ledger_entry_id" => entry.id,
+        "reverses_journal_entry_id" => entry.id,
         "lines" => [
-          { "ledger_account_id" => @cash.id, "side" => "debit", "amount_kobo" => 250_000 },
-          { "ledger_account_id" => @groceries.id, "side" => "credit", "amount_kobo" => 250_000 }
+          { "account_id" => @cash.id, "side" => "debit", "amount_kobo" => 250_000 },
+          { "account_id" => @groceries.id, "side" => "credit", "amount_kobo" => 250_000 }
         ]
       }
     end
@@ -187,6 +187,6 @@ class Llm::EntryProposalTest < ActiveSupport::TestCase
         data: data
       )
       assert_nil proposal.confirm!(draft: Llm::EntryProposal.new(workspace: @workspace, data: proposal.data))
-      proposal.reload.ledger_entry
+      proposal.reload.journal_entry
     end
 end

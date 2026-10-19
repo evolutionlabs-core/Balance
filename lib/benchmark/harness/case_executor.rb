@@ -27,7 +27,7 @@ module Llm
           workspace_type: @test_case.fetch("workspace_type", "personal"),
           currency_code: "NGN"
         )
-        @ledger = @workspace.provision_ledger!(template: @workspace.ledger_template)
+        @ledger = @workspace.provision_ledger!
         seed_posted_entries!
         @chat = @workspace.llm_chats.create!(llm_model: @llm_model, title: @test_case.fetch("id"))
         seed_pending_proposal! if seed_pending_proposal?
@@ -55,17 +55,17 @@ module Llm
       def seed_posted_entries!
         Array(setup["posted_entries"]).each do |spec|
           amount = spec.fetch("amount_kobo")
-          cash = @ledger.ledger_accounts.find_by!(subtype: "cash")
-          expense = @ledger.ledger_accounts.find_by!(subtype: "other_expense")
+          cash = @ledger.accounts.find_by!(key: "cash")
+          expense = @ledger.accounts.find_by!(key: "other_expense")
 
-          Engine.post(
-            Engine::Adapters::Entry.call(
+          Accounting.post(
+            Accounting::Adapters::Entry.call(
               workspace: @workspace,
               attributes: {
                 effective_date: Date.current,
                 lines: [
-                  { ledger_account_id: expense.id, debit: amount, credit: 0 },
-                  { ledger_account_id: cash.id, debit: 0, credit: amount }
+                  { account_id: expense.id, debit: amount, credit: 0 },
+                  { account_id: cash.id, debit: 0, credit: amount }
                 ]
               },
               source_id: nil,
@@ -80,8 +80,8 @@ module Llm
       end
 
       def seed_pending_proposal!
-        expense = @ledger.ledger_accounts.find_by!(subtype: "other_expense")
-        cash = @ledger.ledger_accounts.find_by!(subtype: "cash")
+        expense = @ledger.accounts.find_by!(key: "other_expense")
+        cash = @ledger.accounts.find_by!(key: "cash")
 
         @workspace.proposals.create!(
           llm_chat: @chat,
@@ -90,8 +90,8 @@ module Llm
             "description" => "Pending expense",
             "effective_date" => Date.current.to_s,
             "lines" => [
-              { "ledger_account_id" => expense.id, "side" => "debit", "amount_kobo" => 100_000 },
-              { "ledger_account_id" => cash.id, "side" => "credit", "amount_kobo" => 100_000 }
+              { "account_id" => expense.id, "side" => "debit", "amount_kobo" => 100_000 },
+              { "account_id" => cash.id, "side" => "credit", "amount_kobo" => 100_000 }
             ]
           }
         )
@@ -104,7 +104,7 @@ module Llm
       end
 
       def interpolate(content)
-        latest_id = @ledger.ledger_entries.order(effective_date: :desc, id: :desc).pick(:id)
+        latest_id = @ledger.journal_entries.order(effective_date: :desc, id: :desc).pick(:id)
         content.gsub("{{latest_posted_id}}", latest_id.to_s)
       end
 
@@ -112,8 +112,8 @@ module Llm
       # proposals — belongs to this case's turn.
       def baseline_snapshot
         {
-          ledger_entries: @ledger.ledger_entries.count,
-          ledger_accounts: @ledger.ledger_accounts.count,
+          journal_entries: @ledger.journal_entries.count,
+          accounts: @ledger.accounts.count,
           proposals_proposed: Proposal.where(workspace_id: @workspace.id).proposed.count,
           last_message_id: @chat.llm_messages.maximum(:id) || 0,
           max_proposal_id: Proposal.where(workspace_id: @workspace.id).maximum(:id) || 0
@@ -156,8 +156,8 @@ module Llm
           final_response: assistant.last,
           failure_reported: assistant.select { |content| failure?(content) },
           infrastructure_failure: assistant.find { |content| content.match?(/temporarily unavailable/i) },
-          ledger_entries_delta: @ledger.ledger_entries.count - baseline[:ledger_entries],
-          ledger_accounts_delta: @ledger.ledger_accounts.count - baseline[:ledger_accounts],
+          journal_entries_delta: @ledger.journal_entries.count - baseline[:journal_entries],
+          accounts_delta: @ledger.accounts.count - baseline[:accounts],
           proposals_created: created_proposals(baseline),
           superseded_count: superseded_count(baseline),
           wall_clock_ms: wall_clock_ms

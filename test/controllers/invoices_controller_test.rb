@@ -5,9 +5,9 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     @workspace = workspaces(:ada_store)
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Customer", customer_type: "business", email: "customer@example.com")
-    @ledger = @workspace.provision_ledger!(template: "personal_finance")
-    @income_account = @ledger.ledger_accounts.find_by!(name: "Other Income")
-    @service = @workspace.services.create!(name: "Consulting", income_ledger_account: @income_account)
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
+    @service = @workspace.services.create!(name: "Consulting", income_account: @income_account)
     sign_in_as(@user)
   end
 
@@ -93,8 +93,8 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
   test "show displays the remaining balance after a partial payment" do
     invoice = create_invoice
     assert invoice.issue!
-    cash = @ledger.ledger_accounts.find_by!(name: "Cash")
-    assert invoice.record_payment!(payment_ledger_account_id: cash.id, received_on: Date.current, amount_kobo: 15_000)
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    assert invoice.record_payment!(payment_account_id: cash.id, received_on: Date.current, amount_kobo: 15_000)
 
     get invoice_path(invoice)
 
@@ -106,9 +106,9 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
   test "invoices are scoped to the current workspace" do
     other_workspace = workspaces(:bola_shop)
-    other_ledger = other_workspace.provision_ledger!(template: "standard_sme")
+    other_ledger = provision_business_ledger!(other_workspace)
     other_customer = other_workspace.customers.create!(name: "Other", customer_type: "business", email: "other@example.com")
-    service = other_workspace.services.create!(name: "Other Consulting", income_ledger_account: other_ledger.ledger_accounts.find_by!(name: "Sales"))
+    service = other_workspace.services.create!(name: "Other Consulting", income_account: other_ledger.accounts.find_by!(name: "Sales"))
     invoice = other_workspace.invoices.create!(user: users(:two), customer: other_customer,
       invoice_lines_attributes: [ { service_id: service.id, description: "Consulting", quantity: 1, rate: 100 } ])
 
