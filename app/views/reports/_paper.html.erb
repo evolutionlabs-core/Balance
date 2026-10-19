@@ -1,0 +1,11 @@
+<article class="mt-6 rounded-xl border border-neutral-200 bg-white px-4 py-6 sm:px-8 sm:py-8" aria-labelledby="statement-heading">
+  <header class="text-center">
+    <p class="text-sm font-medium text-neutral-500"><%= current_workspace.name %></p>
+    <h2 id="statement-heading" class="mt-1 text-lg font-semibold tracking-tight text-neutral-950"><%= title %></h2>
+    <p class="mt-0.5 text-sm text-neutral-500"><%= subtitle %></p>
+  </header>
+
+  <%= yield %>
+
+  <p class="mt-6 text-xs text-neutral-500">Amounts in <%= current_workspace.currency_code %>. Figures in parentheses are negative.</p>
+</article>

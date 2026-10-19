@@ -14,6 +14,19 @@ class ReportsController < ApplicationController
     @statement = AccountingEngine::FinancialStatements.income_statement(ledger: ledger, periods: periods)
   end
 
+  def trial_balance
+    @trial_balance = AccountingEngine::TrialBalance.new(ledger) if ledger
+  end
+
+  def general_ledger
+    @trial_balance = AccountingEngine::TrialBalance.new(ledger) if ledger
+  end
+
+  def general_ledger_account
+    account = current_workspace.accounts.find(params[:account_id])
+    @general_ledger = AccountingEngine::GeneralLedger.new(account, from: Date.current.beginning_of_year)
+  end
+
   def aged_receivables
     @aging = AgedBalances.new(current_workspace, side: :receivables) if ledger
   end

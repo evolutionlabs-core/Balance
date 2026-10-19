@@ -49,6 +49,5 @@ class LedgerSummaryTest < ActiveSupport::TestCase
     assert_equal 500_00, summary.today.income_kobo
     assert_equal 200_00, summary.today.expense_kobo
     assert_equal 300_00, summary.today.profit_kobo
-    assert_equal 300_00, summary.trial_balance.find { |line| line.account.name == "Cash" }.debit_kobo
   end
 end

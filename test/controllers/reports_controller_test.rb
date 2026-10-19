@@ -56,11 +56,45 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr", text: /Net savings\s+9,000.00\s+0.00/
   end
 
+  test "trial balance totals agree and link each account to its ledger" do
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 500_000)
+
+    get trial_balance_path
+
+    assert_response :success
+    assert_select "#statement-heading", "Trial Balance"
+    assert_select "#total-debit", "5,000.00"
+    assert_select "#total-credit", "5,000.00"
+    assert_select "a[href='#{general_ledger_account_path(@cash)}']", "Cash"
+  end
+
+  test "general ledger lists accounts and shows an account's lines with a running balance" do
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 500_000, description: "June salary")
+
+    get general_ledger_path
+    assert_response :success
+    assert_select "a[href='#{general_ledger_account_path(@cash)}']", text: /Cash/
+
+    get general_ledger_account_path(@cash)
+    assert_response :success
+    assert_select "tbody th", text: "June salary"
+    assert_select "#closing-balance", "5,000.00"
+    assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a[aria-current=page]", text: "General ledger"
+  end
+
+  test "general ledger only opens accounts in the current workspace" do
+    other = provision_business_ledger!(workspaces(:bola_shop)).accounts.first
+
+    get general_ledger_account_path(other)
+
+    assert_response :not_found
+  end
+
   test "reports are listed under Reports in the sidebar" do
     get income_statement_path
 
     assert_select "nav[aria-label=Primary] details[open] summary", text: "Reports"
-    assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a", count: 2
+    assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a", count: 4
     assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a[aria-current=page]", text: "Income statement"
     assert_select "nav[aria-label=Primary] a", text: "Receivables", count: 0
     assert_select "nav[aria-label=Reports]", count: 0

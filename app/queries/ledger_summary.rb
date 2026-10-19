@@ -36,8 +36,6 @@ class LedgerSummary
     end
   end
 
-  TrialBalanceLine = Struct.new(:account, :debit_kobo, :credit_kobo, keyword_init: true)
-
   def initialize(workspace)
     @workspace = workspace
   end
@@ -100,21 +98,6 @@ class LedgerSummary
     range.map do |date|
       period = period_from((by_date[date] || []).to_h { |(_date, account_id), raw| [ account_id, raw ] })
       { date: date, income_kobo: period.income_kobo, expense_kobo: period.expense_kobo, net_kobo: period.profit_kobo }
-    end
-  end
-
-  def trial_balance
-    raw_balances = raw_by_account
-
-    accounts.values.sort_by(&:name).filter_map do |account|
-      raw = raw_balances.fetch(account.id, 0)
-      next if raw.zero?
-
-      if raw.positive?
-        TrialBalanceLine.new(account: account, debit_kobo: raw, credit_kobo: 0)
-      else
-        TrialBalanceLine.new(account: account, debit_kobo: 0, credit_kobo: -raw)
-      end
     end
   end
 

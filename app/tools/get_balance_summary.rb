@@ -14,17 +14,22 @@ class GetBalanceSummary < RubyLLM::Tool
         "This week" => period_data(summary.this_week),
         "This month" => period_data(summary.this_month)
       },
-      account_balances: summary.trial_balance.map do |line|
+      account_balances: trial_balance_rows.map do |row|
         {
-          account: line.account.name,
-          balance_naira: format_amount(line.debit_kobo.positive? ? line.debit_kobo : -line.credit_kobo),
-          normal_side: line.debit_kobo.positive? ? "debit" : "credit"
+          account: row.account.name,
+          balance_naira: format_amount(row.debit.positive? ? row.debit : -row.credit),
+          normal_side: row.debit.positive? ? "debit" : "credit"
         }
       end
     }
   end
 
   private
+
+  def trial_balance_rows
+    ledger = @workspace.ledgers.first
+    ledger ? AccountingEngine::TrialBalance.new(ledger).rows : []
+  end
 
   def period_data(period)
     {

@@ -1,0 +1,24 @@
+<% content_for :title, "General ledger" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "General ledger" } ] %>
+<% end %>
+
+<%= render "shared/page_header", title: "General ledger", description: "Choose an account to see every line posted to it this year." %>
+
+<% if @trial_balance.nil? %>
+  <%= render "shared/empty_state", icon: "icons/gauge.svg", title: "No accounts yet",
+      description: "The general ledger appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <div class="mt-6 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white">
+    <% balances = @trial_balance.rows.index_by(&:account) %>
+    <% current_workspace.accounts.order(:code).each do |account| %>
+      <% row = balances[account] %>
+      <%= link_to general_ledger_account_path(account), class: "flex items-center justify-between gap-4 px-4 py-3 text-sm hover:bg-neutral-50" do %>
+        <span class="min-w-0 truncate"><span class="mr-2 font-mono text-xs text-neutral-400"><%= account.code %></span><%= account.name %></span>
+        <span class="shrink-0 tabular-nums <%= row ? "text-neutral-950" : "text-neutral-400" %>">
+          <%= row ? statement_figure(account.normal_balance == "debit" ? row.debit - row.credit : row.credit - row.debit) : "–" %>
+        </span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
