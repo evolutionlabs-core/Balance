@@ -13,7 +13,7 @@ module AccountingEngine
         def lines
           attributes.fetch(:lines).map do |line|
             AccountingEngine::Command::Line.new(
-              account: ledger.accounts.find(line.fetch(:account_id)),
+              account: account(line.fetch(:account_id)),
               debit: line.fetch(:debit),
               credit: line.fetch(:credit)
             )

@@ -40,10 +40,13 @@ module AccountingEngine
         end
 
         def account_for(key)
-          ledger.accounts.find_by!(key: key)
-        rescue ActiveRecord::RecordNotFound
-          raise ActiveRecord::RecordNotFound,
-            "No #{key.titleize} account is provisioned in the #{ledger.name} ledger."
+          ledger.accounts.find_by(key: key) ||
+            raise(AccountMissing, "No #{key.titleize} account is provisioned in the #{ledger.name} ledger.")
+        end
+
+        def account(id)
+          ledger.accounts.find_by(id: id) ||
+            raise(AccountMissing, "Account #{id} is not in the #{ledger.name} ledger.")
         end
 
         def reverses_entry

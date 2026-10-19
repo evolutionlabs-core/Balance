@@ -76,7 +76,7 @@ class AccountingEngine::Builders::EntryTest < ActiveSupport::TestCase
   end
 
   test "raises when a line references a missing account" do
-    error = assert_raises(ActiveRecord::RecordNotFound) do
+    error = assert_raises(AccountingEngine::Builders::AccountMissing) do
       AccountingEngine::Builders::Entry.call(
         workspace: @workspace,
         attributes: {
@@ -90,6 +90,6 @@ class AccountingEngine::Builders::EntryTest < ActiveSupport::TestCase
       )
     end
 
-    assert_instance_of ActiveRecord::RecordNotFound, error
+    assert_equal "Account -1 is not in the General ledger.", error.message
   end
 end

@@ -45,7 +45,7 @@ class AccountingEngine::Builders::InvoiceTest < ActiveSupport::TestCase
   test "raises a readable error when no receivable account is provisioned" do
     @ar.delete
 
-    error = assert_raises(ActiveRecord::RecordNotFound) do
+    error = assert_raises(AccountingEngine::Builders::AccountMissing) do
       AccountingEngine::Builders::Invoice.call(
         workspace: @workspace,
         attributes: { effective_date: Date.current, income_lines: [ { account: @income, amount_kobo: 100 } ] },

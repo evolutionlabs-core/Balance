@@ -41,7 +41,7 @@ class AccountingEngine::Builders::BillTest < ActiveSupport::TestCase
   test "raises a readable error when no payables account is provisioned" do
     @ap.delete
 
-    error = assert_raises(ActiveRecord::RecordNotFound) do
+    error = assert_raises(AccountingEngine::Builders::AccountMissing) do
       AccountingEngine::Builders::Bill.call(
         workspace: @workspace,
         attributes: { effective_date: Date.current, vendor: @vendor, expense_lines: [ { account: @rent, amount_kobo: 100 } ] },

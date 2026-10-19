@@ -33,10 +33,6 @@ module AccountingEngine
             credit: total_kobo
           )
         end
-
-        def account(id)
-          ledger.accounts.find(id)
-        end
     end
   end
 end

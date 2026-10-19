@@ -31,7 +31,7 @@ class AccountingEngine::Builders::BillPaymentTest < ActiveSupport::TestCase
   test "rejects a payment account from another ledger" do
     other = workspaces(:ada_store).provision_ledger!.accounts.find_by!(key: "cash")
 
-    assert_raises(ActiveRecord::RecordNotFound) do
+    assert_raises(AccountingEngine::Builders::AccountMissing) do
       AccountingEngine::Builders::BillPayment.call(
         workspace: @workspace,
         attributes: { paid_on: Date.current, payment_account_id: other.id, amount_kobo: 100, vendor: @vendor },

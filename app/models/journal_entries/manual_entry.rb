@@ -1,6 +1,7 @@
 module JournalEntries
   class ManualEntry
     include ActiveModel::Model
+    include AccountingEngine::Postable
 
     validates :description, :effective_date, presence: true
     validate :effective_date_is_parseable
@@ -25,19 +26,16 @@ module JournalEntries
     def record!
       return false unless valid?
 
-      receipt = AccountingEngine.post(
-        AccountingEngine::Builders::Entry.call(
-          workspace: workspace,
+      recorded = JournalEntry.transaction do
+        record_in_ledger!(
+          AccountingEngine::Builders::Entry,
           attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line) },
           source_id: nil,
           description: description
         )
-      )
+      end
 
-      return true if receipt.success?
-
-      receipt.errors.each { |error| errors.add(:base, error.to_s) }
-      false
+      recorded.present?
     end
 
     private

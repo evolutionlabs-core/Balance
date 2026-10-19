@@ -18,7 +18,7 @@ module AccountingEngine
         end
 
         def payment_account
-          ledger.accounts.find(attributes.fetch(:payment_account_id))
+          account(attributes.fetch(:payment_account_id))
         end
 
         def amount

@@ -62,11 +62,23 @@ class Llm::EntryProposal
   def reversal? = data["reverses_journal_entry_id"].present?
 
   def post!(source_id:)
-    AccountingEngine.post(reversal? ? reversal_command(source_id) : entry_command(source_id))
-  rescue ActiveRecord::RecordNotFound => error
-    AccountingEngine::Receipt.rejected([ error.message ])
-  rescue ActiveRecord::RecordNotUnique
-    AccountingEngine::Receipt.rejected([ already_recorded_message ])
+    if reversal?
+      AccountingEngine.record(
+        AccountingEngine::Builders::Reversal,
+        workspace: @workspace,
+        attributes: { source_type: "Entry", effective_date: parsed_date, entry: original_entry },
+        source_id: source_id,
+        description: data["description"]
+      )
+    else
+      AccountingEngine.record(
+        AccountingEngine::Builders::Entry,
+        workspace: @workspace,
+        attributes: { effective_date: parsed_date, lines: command_lines },
+        source_id: source_id,
+        description: data["description"]
+      )
+    end
   end
 
   private
@@ -97,26 +109,6 @@ class Llm::EntryProposal
         messages << "This entry is itself a reversal" if original_entry.reverses_entry_id?
       end
       messages.uniq
-    end
-
-    def entry_command(source_id)
-      AccountingEngine::Builders::Entry.call(
-        workspace: @workspace,
-        attributes: { effective_date: parsed_date, lines: command_lines },
-        source_id: source_id,
-        description: data["description"]
-      )
-    end
-
-    # A reversal posts the mirror of the original entry; the proposal's lines
-    # only display it.
-    def reversal_command(source_id)
-      AccountingEngine::Builders::Reversal.call(
-        workspace: @workspace,
-        attributes: { source_type: "Entry", effective_date: parsed_date, entry: original_entry },
-        source_id: source_id,
-        description: data["description"]
-      )
     end
 
     def original_entry
@@ -162,9 +154,5 @@ class Llm::EntryProposal
 
     def ledger
       @ledger ||= @workspace.ledger
-    end
-
-    def already_recorded_message
-      reversal? ? "This reversal has already been recorded." : "This entry has already been recorded."
     end
 end

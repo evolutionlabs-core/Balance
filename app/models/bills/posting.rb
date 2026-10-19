@@ -1,6 +1,7 @@
 module Bills
   module Posting
     extend ActiveSupport::Concern
+    include AccountingEngine::Postable
 
     def issue!
       posted = Bill.transaction do
@@ -20,7 +21,7 @@ module Bills
         update!(bill_date: bill_date.presence || Date.current)
         enter!
 
-        apply_receipt(post_issue_entry)
+        post_issue_entry
       end
 
       restore_status unless posted
@@ -48,10 +49,8 @@ module Bills
           raise ActiveRecord::Rollback
         end
 
-        receipt = post_application(application, payment_account, paid_on)
-        apply_receipt(receipt)
-
-        application.update!(journal_entry_id: receipt.entry.id)
+        entry = post_application(application, payment_account, paid_on)
+        application.update!(journal_entry_id: entry.id)
 
         payments.reset
         pay! if may_pay?
@@ -72,7 +71,7 @@ module Bills
         end
 
         if open?
-          apply_receipt(post_void_entry)
+          post_void_entry
         end
 
         mark_voided!
@@ -121,8 +120,8 @@ module Bills
       end
 
       def post_issue_entry
-        command = AccountingEngine::Builders::Bill.call(
-          workspace: workspace,
+        record_in_ledger!(
+          AccountingEngine::Builders::Bill,
           attributes: {
             effective_date: bill_date,
             vendor: vendor,
@@ -131,16 +130,11 @@ module Bills
           source_id: id,
           description: "#{display_name} from #{vendor.name}"
         )
-        AccountingEngine.post(command)
-      rescue ActiveRecord::RecordNotFound => error
-        reject_receipt([ error.message ])
-      rescue ActiveRecord::RecordNotUnique
-        reject_receipt([ "Bill has already been entered." ])
       end
 
       def post_application(application, payment_account, paid_on)
-        command = AccountingEngine::Builders::BillPayment.call(
-          workspace: workspace,
+        record_in_ledger!(
+          AccountingEngine::Builders::BillPayment,
           attributes: {
             paid_on: paid_on,
             payment_account_id: payment_account.id,
@@ -150,16 +144,11 @@ module Bills
           source_id: application.id,
           description: "Payment to #{vendor.name} for #{display_name.downcase_first}"
         )
-        AccountingEngine.post(command)
-      rescue ActiveRecord::RecordNotFound => error
-        reject_receipt([ error.message ])
-      rescue ActiveRecord::RecordNotUnique
-        reject_receipt([ "This payment has already been recorded." ])
       end
 
       def post_void_entry
-        command = AccountingEngine::Builders::Reversal.call(
-          workspace: workspace,
+        record_in_ledger!(
+          AccountingEngine::Builders::Reversal,
           attributes: {
             source_type: "Bill",
             action: "void",
@@ -169,11 +158,6 @@ module Bills
           source_id: id,
           description: "#{display_name} voided"
         )
-        AccountingEngine.post(command)
-      rescue ActiveRecord::RecordNotFound => error
-        reject_receipt([ error.message ])
-      rescue ActiveRecord::RecordNotUnique
-        reject_receipt([ "Bill has already been voided." ])
       end
 
       def issue_entry
@@ -184,17 +168,6 @@ module Bills
         bill_lines.reject(&:marked_for_destruction?).map do |line|
           { account: line.account, amount_kobo: line.amount_kobo }
         end
-      end
-
-      def apply_receipt(receipt)
-        return true if receipt.success?
-
-        receipt.errors.each { |error| errors.add(:base, error.to_s) }
-        raise ActiveRecord::Rollback
-      end
-
-      def reject_receipt(messages)
-        AccountingEngine::Receipt.rejected(messages)
       end
 
       # A rollback restores the database but not the in-memory aasm state; put

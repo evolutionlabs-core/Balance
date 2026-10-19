@@ -17,7 +17,7 @@ class AccountingEngine::Builders::BaseTest < ActiveSupport::TestCase
   end
 
   test "raises a readable error when the chart has no account for the requested key" do
-    error = assert_raises(ActiveRecord::RecordNotFound) do
+    error = assert_raises(AccountingEngine::Builders::AccountMissing) do
       adapter.send(:account_for, "fuel")
     end
 

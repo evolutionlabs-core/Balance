@@ -58,19 +58,18 @@ module Llm
           cash = @ledger.accounts.find_by!(key: "cash")
           expense = @ledger.accounts.find_by!(key: "other_expense")
 
-          AccountingEngine.post(
-            AccountingEngine::Builders::Entry.call(
-              workspace: @workspace,
-              attributes: {
-                effective_date: Date.current,
-                lines: [
-                  { account_id: expense.id, debit: amount, credit: 0 },
-                  { account_id: cash.id, debit: 0, credit: amount }
-                ]
-              },
-              source_id: nil,
-              description: spec["description"] || "Test entry"
-            )
+          AccountingEngine.record(
+            AccountingEngine::Builders::Entry,
+            workspace: @workspace,
+            attributes: {
+              effective_date: Date.current,
+              lines: [
+                { account_id: expense.id, debit: amount, credit: 0 },
+                { account_id: cash.id, debit: 0, credit: amount }
+              ]
+            },
+            source_id: nil,
+            description: spec["description"] || "Test entry"
           )
         end
       end
