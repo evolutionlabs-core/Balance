@@ -13,7 +13,7 @@ class AccountingEngine::Posting
 
     receipt = nil
 
-    JournalEntry.transaction do
+    JournalEntry.transaction(requires_new: true) do
       command.ledger.lock!
       receipt = recorded_entry ? replay(recorded_entry) : post
       raise ActiveRecord::Rollback unless receipt.success?

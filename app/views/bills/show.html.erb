@@ -58,6 +58,8 @@
     </table>
   </div>
 
+  <%= render "bills/payments", bill: @bill %>
+
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
     <%= link_to "Back to bills", bills_path, class: ghost_button_class %>
     <div class="flex flex-wrap items-center gap-2">

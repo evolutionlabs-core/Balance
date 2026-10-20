@@ -18,7 +18,7 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        update!(issue_date: issue_date.presence || Date.current)
+        raise ActiveRecord::Rollback unless update(issue_date: issue_date.presence || Date.current)
         send_to_client!
 
         post_issue_entry
@@ -42,7 +42,7 @@ module Invoices
         lock!
         payments.reset
 
-        if payment_rejected?(amount_kobo)
+        if payment_rejected?(amount_kobo, received_on)
           raise ActiveRecord::Rollback
         end
 
@@ -120,7 +120,7 @@ module Invoices
     end
 
     private
-      def payment_rejected?(amount_kobo)
+      def payment_rejected?(amount_kobo, received_on)
         unless sent?
           errors.add(:base, "Only a sent invoice with a balance can receive payment")
           return true
@@ -141,7 +141,17 @@ module Invoices
           return true
         end
 
-        false
+        if received_on.nil?
+          errors.add(:base, "Payment date is required")
+        elsif received_on > Date.current
+          errors.add(:base, "Payment date can't be in the future")
+        elsif received_on < issue_date
+          errors.add(:base, "Payment date can't be before the invoice date")
+        else
+          return false
+        end
+
+        true
       end
 
       def income_line_errors
@@ -184,12 +194,18 @@ module Invoices
       end
 
       def post_void_entry
-        reverse_in_ledger!(issue_entry, on: Date.current, source_type: "Invoice", source_id: id, action: "void",
+        entry = issue_entry
+        unless entry
+          errors.add(:base, "This invoice has no recorded entry to reverse")
+          raise ActiveRecord::Rollback
+        end
+
+        reverse_in_ledger!(entry, on: Date.current, source_type: "Invoice", source_id: id, action: "void",
           description: "Invoice #{invoice_number} voided")
       end
 
       def issue_entry
-        workspace.ledger.journal_entries.find_by!(source_type: "Invoice", source_id: id, action: "issue")
+        workspace.ledger.journal_entries.find_by(source_type: "Invoice", source_id: id, action: "issue")
       end
 
       def posted_income_lines

@@ -125,4 +125,23 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_includes response.body, "Total debits (1000.00) must equal total credits (500.00)"
   end
+
+  test "a malformed amount is a form error, not a crash" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
+
+    assert_no_difference "JournalEntry.count" do
+      post journal_entries_path, params: { entry: {
+        effective_date: Date.current.to_s,
+        description: "Typo",
+        lines: {
+          "0" => { account_id: groceries.id, debit: "1.2.3", credit: "" },
+          "1" => { account_id: cash.id, debit: "", credit: "-50" }
+        }
+      } }
+    end
+
+    assert_response :unprocessable_content
+    assert_includes response.body, "Line 1: enter amounts as positive numbers, like 1,250.00"
+  end
 end

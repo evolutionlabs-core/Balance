@@ -56,7 +56,9 @@ module JournalEntries
             errors.add(:base, "Line #{number}: choose an account in this workspace")
           end
 
-          if line.debit_kobo.positive? && line.credit_kobo.positive?
+          if line.debit_kobo.nil? || line.credit_kobo.nil?
+            errors.add(:base, "Line #{number}: enter amounts as positive numbers, like 1,250.00")
+          elsif line.debit_kobo.positive? && line.credit_kobo.positive?
             errors.add(:base, "Line #{number}: enter a debit or a credit, not both")
           elsif line.debit_kobo.zero? && line.credit_kobo.zero?
             errors.add(:base, "Line #{number}: enter a debit or a credit")
@@ -80,7 +82,7 @@ module JournalEntries
         attr_accessor :account_id, :debit, :credit, :_destroy
 
         def blank_row?
-          account_id.blank? && debit_kobo.zero? && credit_kobo.zero?
+          account_id.blank? && debit.blank? && credit.blank?
         end
 
         def command_line
@@ -97,10 +99,7 @@ module JournalEntries
 
         private
           def kobo(naira)
-            raw = naira.to_s.gsub(/[^\d.]/, "")
-            return 0 if raw.blank?
-
-            (BigDecimal(raw) * 100).round
+            naira.blank? ? 0 : MoneyInput.to_kobo(naira)
           end
       end
   end

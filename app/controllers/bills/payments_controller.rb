@@ -46,8 +46,6 @@ class Bills::PaymentsController < ApplicationController
     end
 
     def parsed_amount_kobo
-      (BigDecimal(payment_params[:amount].to_s) * 100).round
-    rescue ArgumentError
-      nil
+      MoneyInput.to_kobo(payment_params[:amount])
     end
 end

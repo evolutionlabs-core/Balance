@@ -55,6 +55,9 @@ Rails.application.routes.draw do
   resources :bills, only: %i[index new create show edit update] do
     resource :issuance, only: %i[new create], controller: "bills/issuances"
     resource :payment, only: %i[new create], controller: "bills/payments"
+    resources :payments, only: [], controller: "bills/payments" do
+      resource :reversal, only: %i[create], controller: "bills/payment_reversals"
+    end
     resource :void, only: %i[new create], controller: "bills/voids"
   end
   scope :invoice, module: :invoices, as: :invoice do

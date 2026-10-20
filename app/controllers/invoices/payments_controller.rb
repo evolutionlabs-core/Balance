@@ -10,7 +10,7 @@ class Invoices::PaymentsController < ApplicationController
     if @invoice.record_payment!(
       deposit_account_id: payment_params[:deposit_account_id],
       received_on: parsed_received_on,
-      amount_kobo: (payment_params[:amount].to_d * 100).round
+      amount_kobo: MoneyInput.to_kobo(payment_params[:amount])
     )
       redirect_out_of_frame invoice_path(@invoice), notice: "Payment recorded for invoice #{@invoice.invoice_number}."
     else

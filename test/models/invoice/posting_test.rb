@@ -209,6 +209,24 @@ class Invoice::PostingTest < ActiveSupport::TestCase
     assert_equal false, @invoice.record_payment!(deposit_account_id: card.id, received_on: Date.current, amount_kobo: 10_000)
   end
 
+
+  test "an invoice payment can't be dated in the future or before the invoice" do
+    raise "setup failure" unless @invoice.issue!
+
+    assert_equal false, @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current + 1, amount_kobo: 10_000)
+    assert_includes @invoice.errors.full_messages, "Payment date can't be in the future"
+
+    assert_equal false, @invoice.record_payment!(deposit_account_id: @cash.id, received_on: @invoice.issue_date - 1, amount_kobo: 10_000)
+    assert_includes @invoice.errors.full_messages, "Payment date can't be before the invoice date"
+  end
+
+  test "voiding without a recorded issue entry is a form error, not an exception" do
+    @invoice.update_columns(status: "sent", issue_date: Date.current)
+
+    assert_equal false, @invoice.reload.void!
+    assert_includes @invoice.errors.full_messages, "This invoice has no recorded entry to reverse"
+  end
+
   private
     def owner
       User.create!(full_name: "Owner", email_address: "owner2@example.com", password: "supersecret123").tap do |user|

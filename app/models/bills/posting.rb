@@ -18,7 +18,7 @@ module Bills
           raise ActiveRecord::Rollback
         end
 
-        update!(bill_date: bill_date.presence || Date.current)
+        raise ActiveRecord::Rollback unless update(bill_date: bill_date.presence || Date.current)
         enter!
 
         post_issue_entry
@@ -33,7 +33,7 @@ module Bills
         lock!
         payments.reset
 
-        if payment_rejected?(amount_kobo)
+        if payment_rejected?(amount_kobo, paid_on)
           raise ActiveRecord::Rollback
         end
 
@@ -61,6 +61,34 @@ module Bills
       recorded.present?
     end
 
+    def reverse_payment!(payment)
+      reversed = Bill.transaction do
+        lock!
+
+        if payment.reverses_bill_payment_id? || payment.reversal_payment.present?
+          errors.add(:base, "This payment has already been reversed")
+          raise ActiveRecord::Rollback
+        end
+
+        reversal = payments.build(workspace: workspace, amount_kobo: payment.amount_kobo, reverses_bill_payment: payment)
+        unless reversal.save
+          reversal.errors.full_messages.each { |message| errors.add(:base, message) }
+          raise ActiveRecord::Rollback
+        end
+
+        entry = reverse_in_ledger!(payment.journal_entry, on: Date.current, source_type: "BillPayment", source_id: reversal.id,
+          description: "Payment reversed for #{display_name.downcase_first}")
+        reversal.update!(journal_entry_id: entry.id)
+
+        payments.reset
+        reopen! if may_reopen?
+        true
+      end
+
+      restore_status unless reversed
+      reversed.present?
+    end
+
     def void!
       voided = Bill.transaction do
         lock!
@@ -83,7 +111,7 @@ module Bills
     end
 
     private
-      def payment_rejected?(amount_kobo)
+      def payment_rejected?(amount_kobo, paid_on)
         unless open?
           errors.add(:base, "Only an entered bill with a balance can be paid")
           return true
@@ -104,7 +132,17 @@ module Bills
           return true
         end
 
-        false
+        if paid_on.nil?
+          errors.add(:base, "Payment date is required")
+        elsif paid_on > Date.current
+          errors.add(:base, "Payment date can't be in the future")
+        elsif paid_on < bill_date
+          errors.add(:base, "Payment date can't be before the bill date")
+        else
+          return false
+        end
+
+        true
       end
 
       def expense_line_errors
@@ -147,12 +185,18 @@ module Bills
       end
 
       def post_void_entry
-        reverse_in_ledger!(issue_entry, on: Date.current, source_type: "Bill", source_id: id, action: "void",
+        entry = issue_entry
+        unless entry
+          errors.add(:base, "This bill has no recorded entry to reverse")
+          raise ActiveRecord::Rollback
+        end
+
+        reverse_in_ledger!(entry, on: Date.current, source_type: "Bill", source_id: id, action: "void",
           description: "#{display_name} voided")
       end
 
       def issue_entry
-        workspace.ledger.journal_entries.find_by!(source_type: "Bill", source_id: id, action: "issue")
+        workspace.ledger.journal_entries.find_by(source_type: "Bill", source_id: id, action: "issue")
       end
 
       def posted_expense_lines

@@ -37,6 +37,10 @@ class Bill < ApplicationRecord
       transitions from: :open, to: :paid, guard: :fully_paid?
     end
 
+    event :reopen do
+      transitions from: :paid, to: :open, guard: -> { !fully_paid? }
+    end
+
     event :mark_voided do
       transitions from: :draft, to: :voided
       transitions from: :open, to: :voided, guard: :nothing_applied?

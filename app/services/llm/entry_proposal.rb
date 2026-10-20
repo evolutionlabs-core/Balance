@@ -37,12 +37,7 @@ class Llm::EntryProposal
   end
 
   def self.amount_to_kobo(value)
-    raw = value.to_s.gsub(/[^\d.]/, "")
-    return nil if raw.blank?
-
-    (BigDecimal(raw) * 100).round
-  rescue ArgumentError
-    nil
+    MoneyInput.to_kobo(value)
   end
 
   def initialize(workspace:, data:)

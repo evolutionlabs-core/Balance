@@ -182,6 +182,32 @@ class Bill::PostingTest < ActiveSupport::TestCase
     assert_equal open_balances, ap_balance
   end
 
+
+  test "reversing a bill payment reopens the bill and restores the payable" do
+    assert @bill.issue!
+    assert @bill.record_payment!(payment_account_id: @bank.id, paid_on: Date.current, amount_kobo: @bill.balance_due_kobo)
+    assert @bill.reload.paid?
+    payment = @bill.payments.sole
+
+    assert @bill.reverse_payment!(payment)
+
+    assert @bill.reload.open?
+    assert_equal 70_000, @bill.balance_due_kobo
+    assert_equal 70_000, ap_balance
+    assert_equal false, @bill.reverse_payment!(payment.reload)
+    assert_includes @bill.errors.full_messages, "This payment has already been reversed"
+  end
+
+  test "a bill payment can't be dated before the bill or in the future" do
+    assert @bill.issue!
+
+    assert_equal false, @bill.record_payment!(payment_account_id: @bank.id, paid_on: Date.current + 1, amount_kobo: 10_000)
+    assert_includes @bill.errors.full_messages, "Payment date can't be in the future"
+
+    assert_equal false, @bill.record_payment!(payment_account_id: @bank.id, paid_on: @bill.bill_date - 1, amount_kobo: 10_000)
+    assert_includes @bill.errors.full_messages, "Payment date can't be before the bill date"
+  end
+
   private
     def build_bill(rent: nil, stock: nil)
       lines = []
