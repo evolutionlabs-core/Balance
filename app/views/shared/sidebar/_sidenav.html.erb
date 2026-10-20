@@ -13,7 +13,8 @@
     <% navigation_sections.each do |section| %>
       <div>
         <% if section[:label] %>
-          <p class="px-3 pb-1 text-xs font-medium text-neutral-500 lg:group-data-[rail=collapsed]/sidebar:hidden"><%= section[:label] %></p>
+          <p class="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase lg:group-data-[rail=collapsed]/sidebar:hidden"><%= section[:label] %></p>
+          <hr class="mx-3 mb-2 hidden border-neutral-200 lg:group-data-[rail=collapsed]/sidebar:block">
         <% end %>
 
         <ul role="list" class="flex flex-col gap-1">

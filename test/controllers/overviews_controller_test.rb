@@ -96,4 +96,14 @@ class OverviewsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "nav[aria-label=Primary] details:not([open]) summary", text: "Reports"
   end
+
+  test "the sidebar groups its links under section labels" do
+    get overview_path
+
+    assert_select "nav[aria-label=Primary] p", text: "Sales"
+    assert_select "nav[aria-label=Primary] p", text: "Purchases"
+    assert_select "nav[aria-label=Primary] p", text: "Accounting"
+    labels = css_select("nav[aria-label=Primary] p").map { |label| label.text.strip }
+    assert_equal %w[Sales Purchases Accounting], labels
+  end
 end
