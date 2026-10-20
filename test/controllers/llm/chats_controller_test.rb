@@ -8,6 +8,11 @@ class Llm::ChatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates a chat from a prompt" do
+    Llm::Model.find_or_create_by!(provider: "openai", model_id: RubyLLM.config.default_model) do |model|
+      model.name = RubyLLM.config.default_model
+    end
+    RubyLLM.models.load_from_database!
+
     assert_difference "Llm::Chat.count", 1 do
       post chats_path, params: { llm_chat: { prompt: "I sold shoes for 5000 naira cash" } }
     end

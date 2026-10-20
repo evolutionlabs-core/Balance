@@ -1,5 +1,9 @@
 class AccountingEngine::Balances
   DIFFERENCE = "journal_entry_lines.debit - journal_entry_lines.credit".freeze
+  COUNTERPARTY_COLUMNS = {
+    customer: "journal_entry_lines.customer_id",
+    vendor: "journal_entry_lines.vendor_id"
+  }.freeze
 
   def initialize(ledger)
     @ledger = ledger
@@ -10,7 +14,7 @@ class AccountingEngine::Balances
   end
 
   def by_counterparty(counterparty, subtype:, dates: nil)
-    sums(lines(dates).joins(:account).where(accounts: { subtype: subtype }).group("journal_entry_lines.#{counterparty}_id"))
+    sums(lines(dates).joins(:account).where(accounts: { subtype: subtype }).group(COUNTERPARTY_COLUMNS.fetch(counterparty)))
   end
 
   def by_date_and_account(dates)
