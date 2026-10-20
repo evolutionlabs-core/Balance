@@ -1,0 +1,34 @@
+<% period = overview.current_period %>
+<% granularity = if overview.days > 90 then "monthly" elsif overview.days > 30 then "weekly" else "daily" end %>
+<% label_format = granularity == "monthly" ? "%b %Y" : "%b %-d" %>
+<% series = overview.income_expense_series.zip([ [ "income", OverviewsHelper::INCOME_COLOR ], [ "expenses", OverviewsHelper::EXPENSE_COLOR ] ]).map do |entry, (key, color)|
+     { name: overview.t("income_expenses.#{key}"), data: entry[:data].transform_keys { |date| date.strftime(label_format) }, dataset: { backgroundColor: color, borderWidth: 0 } }
+   end %>
+<% margin = overview_share(period.profit_kobo, period.income_kobo) %>
+
+<section class="<%= overview_panel_class %>" aria-labelledby="performance-heading">
+  <h2 id="performance-heading" class="text-base font-semibold text-neutral-950"><%= overview.t("income_expenses.title") %></h2>
+  <p class="mt-1 text-sm text-neutral-500"><%= overview.t("income_expenses.description.#{granularity}") %></p>
+
+  <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+    <% [ [ "income", period.income_kobo, OverviewsHelper::INCOME_COLOR ], [ "expenses", period.expense_kobo, OverviewsHelper::EXPENSE_COLOR ] ].each do |key, amount, color| %>
+      <div>
+        <dt class="flex items-center gap-1.5 text-sm text-neutral-500">
+          <span class="size-2.5 rounded-sm" style="background-color: <%= color %>" aria-hidden="true"></span>
+          <%= overview.t("income_expenses.#{key}") %>
+        </dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-neutral-950"><%= overview_money(overview, amount) %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <div class="mt-4" role="img" aria-label="<%= overview.t("income_expenses.chart_label") %>">
+    <%= column_chart series, height: "240px", colors: [ OverviewsHelper::INCOME_COLOR, OverviewsHelper::EXPENSE_COLOR ], legend: false, discrete: true, **overview_chart_money_options(overview),
+        dataset: { borderRadius: 4, borderSkipped: "bottom", barPercentage: 0.8, categoryPercentage: 0.7 },
+        library: { interaction: { mode: "index", intersect: false }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } }, y: { border: { display: false }, grid: { color: "#f0f0f0" } } } } %>
+  </div>
+
+  <p class="mt-4 border-t border-neutral-100 pt-4 text-sm <%= period.profit_kobo.negative? ? "text-red-700" : "text-neutral-600" %>">
+    <%= margin ? overview.t("income_expenses.margin", rate: margin) : overview.t("income_expenses.no_margin") %>
+  </p>
+</section>

@@ -1,0 +1,30 @@
+<% position = overview.position %>
+
+<section class="<%= overview_panel_class %>" aria-labelledby="position-heading">
+  <h2 id="position-heading" class="text-base font-semibold text-neutral-950"><%= overview.t("position.title") %></h2>
+  <p class="mt-1 text-sm text-neutral-500"><%= overview.t("position.as_of", date: Date.current.strftime("%b %-d, %Y")) %></p>
+
+  <% if position.nil? %>
+    <p class="mt-4 rounded-lg border border-dashed border-neutral-200 p-4 text-sm text-neutral-500"><%= overview.t("position.empty") %></p>
+  <% else %>
+    <dl class="mt-4 divide-y divide-neutral-100 text-sm">
+      <% position.total(:outline).each do |section| %>
+        <div class="py-3 first:pt-0">
+          <div class="flex items-baseline justify-between gap-3">
+            <dt class="font-medium text-neutral-950"><%= section.label %></dt>
+            <dd class="font-semibold tabular-nums text-neutral-950"><%= statement_figure(section.amounts.first) %></dd>
+          </div>
+          <% section.groups.each do |group| %>
+            <div class="mt-1.5 flex items-baseline justify-between gap-3 pl-3 text-neutral-600">
+              <dt class="truncate"><%= group.label %></dt>
+              <dd class="tabular-nums"><%= statement_figure(group.amounts.first) %></dd>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </dl>
+    <p class="mt-2 text-xs text-neutral-500"><%= overview.t("position.currency", currency: overview.workspace.currency_code) %></p>
+  <% end %>
+
+  <%= link_to overview.t("position.link"), balance_sheet_path, class: "mt-4 inline-block text-sm font-medium text-balance-teal-700 hover:underline" %>
+</section>
