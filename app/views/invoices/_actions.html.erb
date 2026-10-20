@@ -14,8 +14,7 @@
   <% end %>
 
   <% if invoice.draft? %>
-    <%= button_to "Send invoice", invoice_issuance_path(invoice), method: :post,
-        class: primary_button_class(size: :compact), form: { class: "contents" } %>
+    <%= link_to "Send invoice", new_invoice_issuance_path(invoice), class: primary_button_class(size: :compact) %>
   <% elsif collecting %>
     <%= button_to "Mark as paid", invoice_settlement_path(invoice), method: :post,
         class: primary_button_class(size: :compact), form: { class: "contents" } %>

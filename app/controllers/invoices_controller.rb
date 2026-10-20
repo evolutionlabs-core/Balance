@@ -33,7 +33,7 @@ class InvoicesController < ApplicationController
       format.html
       format.pdf do
         send_data Pdf::Invoice.new(@invoice).render, filename: "invoice-#{@invoice.id}.pdf",
-          type: "application/pdf", disposition: "attachment"
+          type: "application/pdf", disposition: params[:disposition] == "inline" ? "inline" : "attachment"
       end
     end
   end

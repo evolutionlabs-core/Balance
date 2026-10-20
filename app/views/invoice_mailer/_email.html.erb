@@ -1,0 +1,35 @@
+<% font = "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;" %>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f4; padding: 24px 12px; <%= font %>">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background-color: #ffffff; border: 1px solid #e7e5e4; border-radius: 8px; overflow: hidden;">
+        <tr>
+          <td align="center" style="background-color: #eef6f7; padding: 36px 24px 32px;">
+            <p style="margin: 0; font-size: 22px; font-weight: 700; color: #171717;">Your invoice is ready</p>
+            <p style="margin: 6px 0 0; font-size: 14px; color: #404040;">Total <%= minor_currency(invoice.total_minor, invoice.currency_code) %></p>
+            <p style="margin: 28px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #525252; text-transform: uppercase;">Balance due</p>
+            <p style="margin: 4px 0 0; font-size: 32px; font-weight: 600; color: #171717;"><%= minor_currency(invoice.balance_due_kobo, invoice.currency_code) %></p>
+            <% if invoice.due_date %>
+              <p style="margin: 6px 0 0; font-size: 13px; color: #525252;">Due <%= invoice.due_date.strftime("%b %-d, %Y") %></p>
+            <% end %>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 28px 32px 8px; font-size: 15px; line-height: 1.6; color: #262626;">
+            <div id="invoice-message"><%= simple_format(message, {}, sanitize: true) %></div>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding: 12px 32px 32px;">
+            <a href="<%= link || "#" %>" style="display: inline-block; background-color: #0f7082; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 12px 36px; border-radius: 999px;">View invoice</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="border-top: 1px solid #e7e5e4; padding: 16px 32px; font-size: 12px; color: #737373;">
+            Invoice <%= invoice.invoice_number %> from <%= sender_name %>. The PDF is attached to this email.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

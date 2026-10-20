@@ -82,7 +82,8 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_nil invoice.invoice_lines.sole.service
     assert invoice.draft?
     click_on "Send invoice"
-    assert_text "Invoice #{invoice.invoice_number} sent."
+    click_button "Mark as sent"
+    assert_text "Invoice #{invoice.invoice_number} marked as sent."
     assert invoice.reload.sent?
   end
 
