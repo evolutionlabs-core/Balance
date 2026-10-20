@@ -1,0 +1,29 @@
+<%= render "shared/modal" do %>
+  <%= form_with model: @report, url: feedback_path, method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Send feedback" %>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @report %>
+      <%= form.hidden_field :page %>
+
+      <fieldset class="grid grid-cols-2 gap-2">
+        <legend class="sr-only">What kind of feedback?</legend>
+        <% { "bug" => "Something's broken", "idea" => "I have an idea" }.each do |kind, label| %>
+          <label class="flex cursor-pointer items-center justify-center rounded-md border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 has-checked:border-[#0f7082] has-checked:bg-[#0f7082]/5 has-checked:text-[#0f7082]">
+            <%= form.radio_button :kind, kind, class: "sr-only" %>
+            <%= label %>
+          </label>
+        <% end %>
+      </fieldset>
+
+      <div>
+        <%= form.label :description, "Tell us more", class: "sr-only" %>
+        <%= form.text_area :description, rows: 6, autofocus: true, class: field_class,
+            placeholder: "What happened, or what would make this better? The more detail the better." %>
+        <p class="mt-2 text-xs text-neutral-500">We'll note the page you're on, so no need to mention it.</p>
+      </div>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Send" %>
+  <% end %>
+<% end %>
