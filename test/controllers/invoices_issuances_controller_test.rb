@@ -27,13 +27,13 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "Accounts Receivable", 30_000, 0 ], [ "Other Income", 0, 30_000 ] ], lines.sort
   end
 
-  test "the review page previews the email to the customer" do
-    get new_invoice_issuance_path(@invoice)
+  test "the invoice page previews the email to the customer" do
+    get invoice_path(@invoice, view: "email")
 
     assert_response :success
-    assert_select "input[name='delivery[to]'][value='acme@example.com']"
+    assert_select "[role=tab][aria-selected=true]", text: /Email view/
+    assert_select "form#invoice-delivery input[name='delivery[to]'][value='acme@example.com']"
     assert_select "iframe[title='Email preview'][srcdoc*='Your invoice is ready']"
-    assert_select "button[name='delivery[send_email]'][value='1']", text: "Send invoice"
   end
 
   test "sending by email issues the invoice and emails the customer" do
@@ -56,6 +56,8 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
+    assert_select "[role=tab][aria-selected=true]", text: /Email view/
+    assert_select "form#invoice-delivery input[name='delivery[to]'][value='not-an-email']"
     assert @invoice.reload.draft?
   end
 

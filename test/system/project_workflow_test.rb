@@ -81,8 +81,8 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_equal 6_000_000, invoice.total_minor
     assert_nil invoice.invoice_lines.sole.service
     assert invoice.draft?
-    click_on "Send invoice"
-    click_button "Mark as sent"
+    find("button[aria-label='More invoice actions']").click
+    accept_confirm { click_button "Mark as sent" }
     assert_text "Invoice #{invoice.invoice_number} marked as sent."
     assert invoice.reload.sent?
   end

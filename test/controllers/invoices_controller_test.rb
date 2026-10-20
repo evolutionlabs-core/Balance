@@ -77,7 +77,11 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     get invoice_path(invoice)
 
     assert_select "a[href='#{edit_invoice_path(invoice)}']", text: "Edit"
-    assert_select "a[href='#{new_invoice_issuance_path(invoice)}']", text: "Send invoice"
+    assert_select "button[form=invoice-delivery][name='delivery[send_email]'][value='1']", text: /Send invoice/
+    assert_select "[role=menu] button[form=invoice-delivery][value='0']", text: /Mark as sent/
+    assert_select "[role=tab]", text: /Customer view/
+    assert_select "[role=tab]", text: /Email view/
+    assert_select "[role=tab]", text: /PDF view/
     assert_select "[role=menu] a[href='#{invoice_path(invoice, format: :pdf)}']", text: /Download PDF/
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
   end

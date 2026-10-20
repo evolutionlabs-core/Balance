@@ -14,7 +14,13 @@
   <% end %>
 
   <% if invoice.draft? %>
-    <%= link_to "Send invoice", new_invoice_issuance_path(invoice), class: primary_button_class(size: :compact) %>
+    <% recipient = local_assigns[:delivery]&.to %>
+    <button type="submit" form="invoice-delivery" name="delivery[send_email]" value="1"
+        class="<%= primary_button_class(size: :compact) %>"
+        data-invoice-review-target="sendButton" data-action="invoice-review#send"
+        data-turbo-confirm="Email invoice <%= invoice.invoice_number %> to <%= recipient.presence || "the customer" %>?">
+      <%= inline_svg_tag "icons/mail.svg", class: "h-4 w-4" %>Send invoice
+    </button>
   <% elsif collecting %>
     <%= button_to "Mark as paid", invoice_settlement_path(invoice), method: :post,
         class: primary_button_class(size: :compact), form: { class: "contents" } %>
@@ -33,6 +39,11 @@
             <%= inline_svg_tag "icons/download.svg", class: "h-4 w-4 flex-none" %>
             Download PDF
           <% end %>
+          <button type="submit" form="invoice-delivery" name="delivery[send_email]" value="0" role="menuitem" class="<%= menu_item_class %>"
+              data-turbo-confirm="Mark invoice <%= invoice.invoice_number %> as sent without emailing it?">
+            <%= inline_svg_tag "icons/check.svg", class: "h-4 w-4 flex-none" %>
+            Mark as sent
+          </button>
         <% end %>
 
         <% if collecting %>

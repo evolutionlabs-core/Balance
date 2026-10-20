@@ -1,0 +1,53 @@
+<% views = [ [ "customer", "Customer", "icons/eye.svg" ] ]
+   views << [ "email", "Email", "icons/mail.svg" ] if delivery
+   views << [ "pdf", "PDF", "icons/file-text.svg" ] %>
+<% tab_class = "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 aria-selected:bg-white aria-selected:text-neutral-950 aria-selected:shadow-sm" %>
+
+<div role="tablist" aria-label="Invoice views" class="mb-5 inline-flex gap-1 rounded-lg bg-neutral-100 p-1">
+  <% views.each do |name, label, icon| %>
+    <button type="button" role="tab" aria-selected="<%= name == view %>" class="<%= tab_class %>"
+        data-invoice-review-target="tab" data-panel="<%= name %>" data-action="invoice-review#select">
+      <%= inline_svg_tag icon, class: "h-4 w-4", aria: { hidden: true } %><span><%= label %><span class="hidden sm:inline"> view</span></span>
+    </button>
+  <% end %>
+</div>
+
+<section role="tabpanel" aria-label="Customer view" data-invoice-review-target="panel" data-panel="customer" <%= "hidden" unless view == "customer" %>>
+  <%= render "invoices/document", invoice: invoice %>
+</section>
+
+<% if delivery %>
+  <section role="tabpanel" aria-label="Email view" data-invoice-review-target="panel" data-panel="email" <%= "hidden" unless view == "email" %>>
+    <%= form_with model: delivery, scope: :delivery, url: invoice_issuance_path(invoice), method: :post, id: "invoice-delivery",
+        class: "grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]" do |form| %>
+      <div class="space-y-4">
+        <%= render "shared/form_errors", record: delivery %>
+        <div>
+          <%= form.label :to, "Send to", class: field_label_class %>
+          <%= form.email_field :to, class: field_class, autocomplete: "off",
+              data: { invoice_review_target: "recipient", action: "input->invoice-review#confirmation" } %>
+        </div>
+        <div>
+          <%= form.label :subject, class: field_label_class %>
+          <%= form.text_field :subject, class: field_class %>
+        </div>
+        <div>
+          <%= form.label :message, class: field_label_class %>
+          <%= form.text_area :message, rows: 9, class: field_class,
+              data: { invoice_review_target: "message", action: "input->invoice-review#preview" } %>
+        </div>
+        <p class="text-xs text-neutral-500">The PDF is attached and the customer gets a secure link to view the invoice.</p>
+      </div>
+
+      <%= tag.iframe title: "Email preview", class: "h-[36rem] w-full rounded-lg border border-neutral-200 bg-white",
+          data: { invoice_review_target: "frame", action: "load->invoice-review#preview" },
+          srcdoc: render("invoice_mailer/email", invoice: invoice, message: delivery.message, link: nil, sender_name: delivery.sender_name).to_str %>
+    <% end %>
+  </section>
+<% end %>
+
+<section role="tabpanel" aria-label="PDF view" data-invoice-review-target="panel" data-panel="pdf" <%= "hidden" unless view == "pdf" %>>
+  <% pdf_url = invoice_path(invoice, format: :pdf, disposition: "inline") %>
+  <%= tag.iframe title: "Invoice PDF", class: "h-[48rem] w-full rounded-lg border border-neutral-200 bg-white",
+      src: (pdf_url if view == "pdf"), data: { invoice_review_target: "pdf", src: pdf_url } %>
+</section>

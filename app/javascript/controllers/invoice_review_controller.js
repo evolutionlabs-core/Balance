@@ -1,15 +1,33 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["tab", "panel", "message", "frame", "pdf"]
+  static targets = ["tab", "panel", "message", "frame", "pdf", "recipient", "sendButton"]
+  static values = { number: String }
 
   select(event) {
-    const name = event.currentTarget.dataset.panel
+    this.show(event.currentTarget.dataset.panel)
+  }
 
+  show(name) {
     this.tabTargets.forEach((tab) => tab.setAttribute("aria-selected", tab.dataset.panel === name))
     this.panelTargets.forEach((panel) => { panel.hidden = panel.dataset.panel !== name })
 
-    if (name === "pdf" && !this.pdfTarget.src) this.pdfTarget.src = this.pdfTarget.dataset.src
+    if (name === "pdf" && this.hasPdfTarget && !this.pdfTarget.src) this.pdfTarget.src = this.pdfTarget.dataset.src
+  }
+
+  send(event) {
+    if (!this.hasRecipientTarget || this.recipientTarget.value.trim()) return
+
+    event.preventDefault()
+    this.show("email")
+    this.recipientTarget.focus()
+  }
+
+  confirmation() {
+    if (!this.hasSendButtonTarget) return
+
+    const recipient = this.recipientTarget.value.trim() || "the customer"
+    this.sendButtonTarget.dataset.turboConfirm = `Email invoice ${this.numberValue} to ${recipient}?`
   }
 
   preview() {

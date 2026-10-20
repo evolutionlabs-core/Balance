@@ -3,15 +3,12 @@ module Invoices
     before_action :set_invoice
     before_action :ensure_draft
 
-    def new
-      @delivery = InvoiceDelivery.new(invoice: @invoice)
-    end
-
     def create
       @delivery = InvoiceDelivery.new(invoice: @invoice, **delivery_params)
 
       if @delivery.send_email && @delivery.invalid?
-        render :new, status: :unprocessable_content
+        @view = "email"
+        render "invoices/show", status: :unprocessable_content
       elsif @invoice.issue!
         @delivery.deliver_later if @delivery.send_email
         redirect_to invoice_path(@invoice), notice: sent_notice

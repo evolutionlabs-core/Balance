@@ -30,7 +30,10 @@ class InvoicesController < ApplicationController
 
   def show
     respond_to do |format|
-      format.html
+      format.html do
+        @delivery = InvoiceDelivery.new(invoice: @invoice) if @invoice.draft?
+        @view = params[:view].presence_in(@delivery ? %w[customer email pdf] : %w[customer pdf]) || "customer"
+      end
       format.pdf do
         send_data Pdf::Invoice.new(@invoice).render, filename: "invoice-#{@invoice.id}.pdf",
           type: "application/pdf", disposition: params[:disposition] == "inline" ? "inline" : "attachment"
