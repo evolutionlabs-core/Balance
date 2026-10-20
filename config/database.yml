@@ -93,6 +93,10 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Hosts like Railway provide a single DATABASE_URL. Rails merges it into the
+# primary config; the cache, queue and cable databases live on the same server
+# under the same name with a suffix, which db:prepare creates on first boot.
+<% sibling_url = ->(suffix) { ENV["DATABASE_URL"]&.sub(%r{/([^/?]+)(?=\?|\z)}) { "/#{$1}_#{suffix}" } } %>
 production:
   primary: &primary_production
     <<: *default
@@ -103,12 +107,15 @@ production:
   cache:
     <<: *primary_production
     database: balance_production_cache
+    url: <%= sibling_url.("cache") %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
     database: balance_production_queue
+    url: <%= sibling_url.("queue") %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
     database: balance_production_cable
+    url: <%= sibling_url.("cable") %>
     migrations_paths: db/cable_migrate
