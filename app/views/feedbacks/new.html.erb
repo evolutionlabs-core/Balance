@@ -8,7 +8,7 @@
 
       <fieldset class="grid grid-cols-2 gap-2">
         <legend class="sr-only">What kind of feedback?</legend>
-        <% { "bug" => "Something's broken", "idea" => "I have an idea" }.each do |kind, label| %>
+        <% FeedbackReport::KINDS.each do |kind, label| %>
           <label class="flex cursor-pointer items-center justify-center rounded-md border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 has-checked:border-[#0f7082] has-checked:bg-[#0f7082]/5 has-checked:text-[#0f7082]">
             <%= form.radio_button :kind, kind, class: "sr-only" %>
             <%= label %>
@@ -19,7 +19,7 @@
       <div>
         <%= form.label :description, "Tell us more", class: "sr-only" %>
         <%= form.text_area :description, rows: 6, autofocus: true, class: field_class,
-            placeholder: "What happened, or what would make this better? The more detail the better." %>
+            placeholder: "What happened, or what would you like added? The more detail the better." %>
         <p class="mt-2 text-xs text-neutral-500">We'll note the page you're on, so no need to mention it.</p>
       </div>
     </div>

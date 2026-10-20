@@ -2,8 +2,8 @@ class FeedbackReport
   include ActiveModel::Model
   include ActiveModel::Attributes
 
-  KINDS = { "bug" => "Bug", "idea" => "Idea" }.freeze
-  LABELS = { "bug" => "bug", "idea" => "enhancement" }.freeze
+  KINDS = { "bug" => "Bug", "feature" => "Feature" }.freeze
+  LABELS = { "bug" => "bug", "feature" => "enhancement" }.freeze
 
   attribute :kind, :string, default: "bug"
   attribute :description, :string

@@ -47,15 +47,15 @@ class FeedbacksControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes filed[:body], users(:one).full_name.split.last
   end
 
-  test "files an idea as an enhancement" do
+  test "files a feature request as an enhancement" do
     filed = nil
     GithubIssue.stub(:configured?, true) do
       GithubIssue.stub(:create, ->(**issue) { filed = issue; "url" }) do
-        post feedback_path, params: { feedback_report: { kind: "idea", description: "Let me export reports to Excel" } }
+        post feedback_path, params: { feedback_report: { kind: "feature", description: "Let me export reports to Excel" } }
       end
     end
 
-    assert_equal "Idea: Let me export reports to Excel", filed[:title]
+    assert_equal "Feature: Let me export reports to Excel", filed[:title]
     assert_equal [ "enhancement" ], filed[:labels]
   end
 
