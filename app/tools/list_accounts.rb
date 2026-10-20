@@ -6,7 +6,7 @@ class ListAccounts < RubyLLM::Tool
               "recommended catalog account. If no recommendation fits, define a clear account name using the " \
               "returned valid taxonomy. Never substitute an unrelated account or invent an account ID."
 
-  params do
+  parameters do
     string :purpose, description: "short description of the current event with each known amount stated separately"
   end
 

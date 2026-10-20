@@ -8,7 +8,7 @@ class Llm::ModelCatalogsControllerTest < ActionDispatch::IntegrationTest
   test "updates the model catalog" do
     refreshed = false
 
-    Llm::Model.stub(:refresh!, -> { refreshed = true }) do
+    RubyLLM.models.stub(:refresh, -> { refreshed = true }) do
       patch model_catalog_path
     end
 

@@ -10,7 +10,6 @@ class ProposeEntryTest < ActiveSupport::TestCase
 
   test "proposes a balanced entry using existing account IDs" do
     result = execute_tool
-    result = result.content
 
     assert result[:proposal]
     assert_equal "journal_entry", result[:proposed_action]
@@ -49,8 +48,7 @@ class ProposeEntryTest < ActiveSupport::TestCase
   end
 
   test "requires every account created for the resumed transaction" do
-    model = Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model")
-    chat = Llm::Chat.create!(workspace: @workspace, llm_model: model, title: "Resumed transaction")
+    chat = Llm::Chat.create!(workspace: @workspace, model: ruby_llm_models(:default), title: "Resumed transaction")
     tax = @workspace.accounts.create!(
       name: "Tax Expense",
       base_type: "expense",
@@ -89,7 +87,8 @@ class ProposeEntryTest < ActiveSupport::TestCase
       ]
     )
 
-    assert_instance_of RubyLLM::Tool::Halt, corrected
+    assert corrected[:proposal]
+    assert_equal "journal_entry", corrected[:proposed_action]
   end
 
   private

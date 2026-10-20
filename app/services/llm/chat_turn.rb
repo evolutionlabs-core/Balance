@@ -46,11 +46,12 @@ class Llm::ChatTurn
 
   def run_model
     agent = @agent || LedgerAgent.new(chat: @chat)
-    agent.before_tool_call { |tool_call| start_tool_call(tool_call) }
-    agent.after_tool_result { |result| finish_tool_call(result) }
+    # RubyLLM keeps callbacks on the chat record for its lifetime, so a record
+    # reused for a later turn still carries this turn's callbacks.
+    agent.before_tool_call { |tool_call| start_tool_call(tool_call) if current_turn? }
+    agent.after_tool_result { |result| finish_tool_call(result) if current_turn? }
 
-    result = run_completion(agent)
-    run_completion(agent) if result.is_a?(RubyLLM::Tool::Halt) && !@published_proposal
+    run_completion(agent)
     run_completion(agent) if !@published_proposal && visible_turn_response.blank?
     raise RubyLLM::Error, "The model returned an empty response" if !@published_proposal && visible_turn_response.blank?
   end
@@ -61,9 +62,15 @@ class Llm::ChatTurn
     Llm::Current.visible_response = true
 
     with_provider_retries do
-      agent.complete do |chunk|
-        @broadcaster.append_assistant_chunk(chunk.content) if chunk.content.present?
-      end
+      stream = ->(chunk) { @broadcaster.append_assistant_chunk(chunk.content) if chunk.content.present? }
+
+      # A chat that already ended on a reply (a silent one, when retrying)
+      # still owes this turn a fresh answer.
+      agent.generate(&stream) if agent.complete?
+
+      # A published proposal ends the turn: the user reviews it before the
+      # model says anything more.
+      agent.step(&stream) until agent.complete? || agent.waiting? || @published_proposal
     end
   ensure
     Llm::Current.visible_response = false
@@ -83,8 +90,7 @@ class Llm::ChatTurn
     @broadcaster.tool_running(tool_call)
   end
 
-  def finish_tool_call(result)
-    payload = result.is_a?(RubyLLM::Tool::Halt) ? result.content : result
+  def finish_tool_call(payload)
     status = tool_failure?(payload) ? "failed" : "completed"
     persist_tool_result(@current_tool_call, payload, status: status)
 
@@ -104,6 +110,10 @@ class Llm::ChatTurn
     @running_tool_calls.delete(@current_tool_call)
     @current_tool_call = nil
     payload
+  end
+
+  def current_turn?
+    Llm::Current.turn == @turn
   end
 
   def with_provider_retries
@@ -127,7 +137,9 @@ class Llm::ChatTurn
   def compact_context(force: false)
     return false unless force || @chat.needs_compaction?
 
-    (@compactor || Llm::ChatCompactor.new(@chat)).call
+    compacted = (@compactor || Llm::ChatCompactor.new(@chat)).call
+    @chat.reload if compacted
+    compacted
   end
 
   def persisted_tool_call(tool_call)

@@ -5,7 +5,7 @@ class Llm::ChatCompactorTest < ActiveSupport::TestCase
     @workspace = workspaces(:ada_store)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Compactor test"
     )
     @chat.llm_messages.create!(role: "system", content: "You are Balance.")

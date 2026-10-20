@@ -52,8 +52,9 @@ module Llm
       end
 
       def resolve_llm_model!
-        Llm::Model.find_by(provider: "openai", model_id: @requested_model) ||
-          Llm::Model.create!(provider: "openai", model_id: @requested_model, name: @requested_model)
+        RubyLLM::ActiveRecord::Model.find_or_create_by!(provider: "openai", model_id: @requested_model) do |model|
+          model.name = @requested_model
+        end
       end
 
       def load_cases

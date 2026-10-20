@@ -1,11 +1,11 @@
 <% details = {
-     "Provider" => llm_model.provider_class&.name || llm_model.provider,
+     "Provider" => llm_model.provider_class&.display_name || llm_model.provider,
      "Model" => llm_model.name,
      "ID" => llm_model.model_id,
      "Context window" => (number_with_delimiter(llm_model.context_window) if llm_model.context_window),
      "Max output tokens" => (number_with_delimiter(llm_model.max_output_tokens) if llm_model.max_output_tokens),
-     "Input per 1M tokens" => (number_to_currency(llm_model.input_price_per_million) if llm_model.input_price_per_million),
-     "Output per 1M tokens" => (number_to_currency(llm_model.output_price_per_million) if llm_model.output_price_per_million),
+     "Input per 1M tokens" => (number_to_currency(llm_model.price(:input)) if llm_model.price(:input)),
+     "Output per 1M tokens" => (number_to_currency(llm_model.price(:output)) if llm_model.price(:output)),
      "Knowledge cutoff" => llm_model.knowledge_cutoff&.strftime("%b %Y")
    } %>
 

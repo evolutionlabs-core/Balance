@@ -1,17 +1,19 @@
+# Read model over RubyLLM's tool-call records, adding the run trace the chat
+# timeline shows. RubyLLM writes these rows; the app only adds the trace.
 class Llm::ToolCall < ApplicationRecord
-  self.table_name = "llm_tool_calls"
+  self.table_name = "ruby_llm_tool_calls"
 
-  acts_as_tool_call message: :llm_message, message_class: "Llm::Message", result_foreign_key: :llm_tool_call_id
+  belongs_to :message, polymorphic: true
+  belongs_to :llm_message, class_name: "Llm::Message", foreign_key: :message_id, optional: true
+  belongs_to :result_message, class_name: "Llm::Message", foreign_key: :result_id, optional: true
 
   def display_output
     return symbolize_output(trace_output) if trace_output.present?
+    return if result_message&.content.blank?
 
-    message = Llm::Message.find_by(llm_tool_call_id: id)
-    return if message&.content.blank?
-
-    JSON.parse(message.content, symbolize_names: true)
+    JSON.parse(result_message.content, symbolize_names: true)
   rescue JSON::ParserError
-    message.content
+    result_message.content
   end
 
   def trace_failed?

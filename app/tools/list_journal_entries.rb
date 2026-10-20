@@ -1,7 +1,7 @@
 class ListJournalEntries < RubyLLM::Tool
   description "List posted journal entries in this workspace. Proposals awaiting confirmation are not included. Each entry includes its reverses_journal_entry_id, which is present only when the entry is itself a reversal."
 
-  params do
+  parameters do
     integer :limit, required: false, description: "maximum number of entries to return, from 1 to 20; defaults to 10"
     string :from_date, required: false, description: "optional inclusive ISO date filter (YYYY-MM-DD)"
     string :to_date, required: false, description: "optional inclusive ISO date filter (YYYY-MM-DD)"

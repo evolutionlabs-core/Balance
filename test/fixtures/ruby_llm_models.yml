@@ -1,0 +1,7 @@
+_fixture:
+  model_class: RubyLLM::ActiveRecord::Model
+
+default:
+  provider: openai
+  model_id: <%= RubyLLM.config.default_model %>
+  name: Default test model

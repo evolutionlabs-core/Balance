@@ -1,11 +1,11 @@
-<% model_id = model.respond_to?(:model_id) ? model.model_id : model.id %>
-<% name = model.respond_to?(:display_name) ? model.display_name : model.name %>
-<% input = model.input_price_per_million %>
-<% output = model.output_price_per_million %>
+<% model_id = model.id %>
+<% name = model.name %>
+<% input = model.price(:input) %>
+<% output = model.price(:output) %>
 <% persisted_id = persisted_ids[[ model.provider.to_s, model_id.to_s ]] %>
 
 <tr id="model_<%= [ model.provider, model_id ].join("_").parameterize(separator: "_") %>" class="transition-colors hover:bg-neutral-50">
-  <td class="<%= table_cell_class %> whitespace-nowrap"><%= model.provider_class&.name || model.provider %></td>
+  <td class="<%= table_cell_class %> whitespace-nowrap"><%= model.provider_class&.display_name || model.provider %></td>
 
   <td class="px-4 py-3 text-sm font-medium text-neutral-900">
     <% if persisted_id %>

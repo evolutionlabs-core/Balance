@@ -5,7 +5,7 @@ class Llm::ChatTest < ActiveSupport::TestCase
     @workspace = workspaces(:ada_store)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Compaction test"
     )
   end

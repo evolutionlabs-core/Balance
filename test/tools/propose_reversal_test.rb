@@ -8,14 +8,14 @@ class ProposeReversalTest < ActiveSupport::TestCase
     @entry = post_journal_entry!(@workspace, debit_account: @expense, credit_account: @cash, amount_kobo: 250_000)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Test chat"
     )
   end
 
   test "returns an exact entry confirmation without preparing or posting a reversal" do
     assert_no_difference [ "JournalEntry.count", "Proposal.count" ] do
-      result = ProposeReversal.new(@chat).execute(entry_id: @entry.id).content
+      result = ProposeReversal.new(@chat).execute(entry_id: @entry.id)
 
       assert result[:proposal]
       assert_equal "reversal_confirmation", result[:proposed_action]
@@ -32,19 +32,19 @@ class ProposeReversalTest < ActiveSupport::TestCase
     @chat.llm_messages.create!(role: "assistant", content: "Entry ID #{@entry.id}. Please confirm yes if correct.")
     @chat.llm_messages.create!(role: "user", content: "yes")
 
-    result = ProposeReversal.new(@chat).execute(entry_id: @entry.id).content
+    result = ProposeReversal.new(@chat).execute(entry_id: @entry.id)
 
     assert_equal "reversal_confirmation", result[:proposed_action]
   end
 
   test "keeps an explicit original-date choice for the confirmation" do
-    result = ProposeReversal.new(@chat).execute(entry_id: @entry.id, use_original_date: true).content
+    result = ProposeReversal.new(@chat).execute(entry_id: @entry.id, use_original_date: true)
 
     assert result.dig(:entry_data, "use_original_date")
   end
 
   test "rejects another workspace entry" do
-    other_chat = Llm::Chat.create!(workspace: workspaces(:bola_shop), llm_model: @chat.llm_model, title: "Other")
+    other_chat = Llm::Chat.create!(workspace: workspaces(:bola_shop), model: @chat.model, title: "Other")
 
     result = ProposeReversal.new(other_chat).execute(entry_id: @entry.id)
 

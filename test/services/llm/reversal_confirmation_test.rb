@@ -15,7 +15,7 @@ class Llm::ReversalConfirmationTest < ActiveSupport::TestCase
     )
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Reversal test"),
+      model: ruby_llm_models(:default),
       title: "Reversal test"
     )
     @confirmation = @chat.proposals.create!(

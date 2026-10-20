@@ -7,7 +7,7 @@ class CheckProposalStatusTest < ActiveSupport::TestCase
     @expense = Account.for_role!(@workspace, :uncategorized_expense)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Test chat"
     )
     @proposal = @chat.proposals.create!(

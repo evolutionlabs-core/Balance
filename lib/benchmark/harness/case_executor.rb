@@ -29,7 +29,7 @@ module Llm
         )
         seed_accounts!
         seed_posted_entries!
-        @chat = @workspace.llm_chats.create!(llm_model: @llm_model, title: @test_case.fetch("id"))
+        @chat = @workspace.llm_chats.create!(model: @llm_model, title: @test_case.fetch("id"))
         seed_pending_proposal! if seed_pending_proposal?
         replay_prior_messages!
 
