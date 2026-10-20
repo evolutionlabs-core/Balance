@@ -21,9 +21,6 @@ class AccountingEngine::Balances
     sums(lines(dates).group("journal_entries.effective_date", :account_id))
   end
 
-  # Net movement on accounts of a subtype per journal entry, keyed by
-  # [effective date, entry id], so a transfer between two such accounts nets
-  # to zero instead of counting as money in and money out.
   def by_entry(dates, subtype:)
     sums(lines(dates).joins(:account).where(accounts: { subtype: subtype }).group("journal_entries.effective_date", "journal_entries.id"))
   end

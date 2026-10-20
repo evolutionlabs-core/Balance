@@ -69,9 +69,6 @@ class LedgerSummary
     period_from(raw_by_account(date_range))
   end
 
-  # Cash and bank balances day by day, starting from what was held the day
-  # before the period. Money in and out is counted per journal entry, so moving
-  # money between two of your own accounts is neither.
   def cash_flow(days: 30)
     range = (Date.current - (days - 1))..Date.current
     movements = balances ? balances.by_entry(range, subtype: "cash") : {}
@@ -93,16 +90,12 @@ class LedgerSummary
     )
   end
 
-  # Expense accounts by amount incurred in the period, largest first. Built
-  # from the ledger, so it agrees with the period's expense total.
   def expense_breakdown(days: 30)
     raw_by_account((Date.current - (days - 1))..Date.current)
       .filter_map { |account_id, raw| AccountAmount.new(account: accounts.fetch(account_id), amount_kobo: raw) if accounts.fetch(account_id).base_type == "expense" && raw.positive? }
       .sort_by { |row| [ -row.amount_kobo, row.account.code ] }
   end
 
-  # Today's balance on each active account of the given subtypes, as a
-  # positive amount held (assets) or owed (liabilities).
   def account_balances(subtypes:)
     totals = raw_by_account(..Date.current)
 

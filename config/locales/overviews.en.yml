@@ -1,6 +1,3 @@
-# Copy for the overview page. Each workspace type reads its own scope first
-# and falls back to `shared` (see Overview#t), so a type only lists the
-# wording where it differs.
 en:
   overviews:
     shared:

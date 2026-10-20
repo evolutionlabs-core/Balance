@@ -1,8 +1,4 @@
 module OverviewsHelper
-  # Teal, indigo, amber, rose, sky, lime: led by the brand teal and validated
-  # as a categorical set against the white surface (adjacent pairs stay apart
-  # under colour-blindness, every hue clears 3:1). Assigned in this order,
-  # never cycled.
   CHART_SERIES_COLORS = %w[#0d9488 #6366f1 #d97706 #e11d48 #0284c7 #65a30d].freeze
   CHART_REST_COLOR = "#a3a3a3".freeze
   CHART_CASH_COLOR = "#0f7082".freeze
@@ -14,9 +10,6 @@ module OverviewsHelper
     "min-w-0 rounded-xl border border-neutral-200 bg-white p-5 sm:p-6"
   end
 
-  # The line under a headline figure: an arrow and a percentage coloured by
-  # whether the change is good news, then what it is compared with, so colour
-  # never carries the meaning alone.
   def overview_kpi_change(overview, kpi)
     basis = { period: overview.t("previous_periods.#{overview.days}"), date: (overview.date_range.begin - 1).strftime("%b %-d") }
     percent = kpi.change_percent
@@ -30,7 +23,6 @@ module OverviewsHelper
     end
   end
 
-  # Where the figure started, in words, for when a percentage would mislead.
   def overview_kpi_basis(overview, kpi, moment)
     basis = kpi.basis_kobo
     amount = overview_money(overview, basis.abs)
