@@ -10,6 +10,7 @@ concurrency:
 
 jobs:
   review:
+    if: github.event.pull_request.user.login == 'VickTor61'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
