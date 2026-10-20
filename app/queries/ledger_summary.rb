@@ -5,6 +5,9 @@ class LedgerSummary
     end
   end
 
+  CashFlow = Data.define(:opening_kobo, :incoming_kobo, :outgoing_kobo, :closing_kobo, :series)
+  AccountAmount = Data.define(:account, :amount_kobo)
+
   def initialize(workspace)
     @workspace = workspace
   end
@@ -45,7 +48,7 @@ class LedgerSummary
   end
 
   def income_expense_series(days: 30)
-    buckets = daily_series(days: days).group_by { |day| days > 30 ? day[:date].beginning_of_week : day[:date] }
+    buckets = daily_series(days: days).group_by { |day| bucket_start(day[:date], days) }
 
     [ [ "Income", :income_kobo ], [ "Expenses", :expense_kobo ] ].map do |name, key|
       { name: name, data: buckets.transform_values { |grouped| grouped.sum { |day| day[key] } / 100.0 } }
@@ -66,8 +69,57 @@ class LedgerSummary
     period_from(raw_by_account(date_range))
   end
 
+  def cash_flow(days: 30)
+    range = (Date.current - (days - 1))..Date.current
+    movements = balances ? balances.by_entry(range, subtype: "cash") : {}
+    by_date = movements.each_with_object(Hash.new(0)) { |((date, _entry_id), raw), totals| totals[date] += raw }
+    opening = liquid_balance_kobo(as_of: range.begin - 1)
+
+    running = opening
+    series = range.to_h do |date|
+      running += by_date[date]
+      [ date, running / 100.0 ]
+    end
+
+    CashFlow.new(
+      opening_kobo: opening,
+      incoming_kobo: movements.values.select(&:positive?).sum,
+      outgoing_kobo: -movements.values.select(&:negative?).sum,
+      closing_kobo: running,
+      series: series
+    )
+  end
+
+  def expense_breakdown(days: 30)
+    raw_by_account((Date.current - (days - 1))..Date.current)
+      .filter_map { |account_id, raw| AccountAmount.new(account: accounts.fetch(account_id), amount_kobo: raw) if accounts.fetch(account_id).base_type == "expense" && raw.positive? }
+      .sort_by { |row| [ -row.amount_kobo, row.account.code ] }
+  end
+
+  def account_balances(subtypes:)
+    totals = raw_by_account(..Date.current)
+
+    accounts.values
+      .select { |account| account.active? && subtypes.include?(account.subtype) }
+      .sort_by(&:code)
+      .map do |account|
+        raw = totals.fetch(account.id, 0)
+        AccountAmount.new(account: account, amount_kobo: account.base_type == "asset" ? raw : -raw)
+      end
+  end
+
   private
     attr_reader :workspace
+
+    def bucket_start(date, days)
+      if days > 90
+        date.beginning_of_month
+      elsif days > 30
+        date.beginning_of_week
+      else
+        date
+      end
+    end
 
     def period_from(raw_by_account)
       income = raw_by_account.sum { |account_id, raw| accounts.fetch(account_id).base_type == "income" ? -raw : 0 }

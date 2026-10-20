@@ -21,6 +21,10 @@ class AccountingEngine::Balances
     sums(lines(dates).group("journal_entries.effective_date", :account_id))
   end
 
+  def by_entry(dates, subtype:)
+    sums(lines(dates).joins(:account).where(accounts: { subtype: subtype }).group("journal_entries.effective_date", "journal_entries.id"))
+  end
+
   def activity(account, dates)
     lines(dates).where(account: account)
       .includes(:journal_entry, :customer, :vendor)

@@ -13,6 +13,8 @@ module UiHelper
     neutral: "border-neutral-200 bg-neutral-50 text-neutral-600"
   }.freeze
 
+  CURRENCY_SYMBOLS = { "NGN" => "₦" }.freeze
+
   def primary_button_class(size: :md)
     "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-[#0f7082] text-white hover:bg-[#0b5d6d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f7082]"
   end
@@ -51,6 +53,10 @@ module UiHelper
 
   def table_cell_class
     "px-4 py-3 text-sm text-neutral-500"
+  end
+
+  def currency_symbol(currency_code)
+    CURRENCY_SYMBOLS.fetch(currency_code, "#{currency_code} ")
   end
 
   def naira(kobo)
