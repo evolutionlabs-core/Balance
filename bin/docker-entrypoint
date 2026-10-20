@@ -1,5 +1,12 @@
 #!/bin/bash -e
 
+# Platforms like Railway route traffic to $PORT. Thruster is the process that
+# listens for it, so hand it that port and keep Puma behind it on 3000.
+if [ -n "${PORT}" ] && [ -z "${HTTP_PORT}" ] && [ "${1}" == "./bin/thrust" ]; then
+  export HTTP_PORT="${PORT}" TARGET_PORT="${TARGET_PORT:-3000}"
+  export PORT="${TARGET_PORT}"
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
