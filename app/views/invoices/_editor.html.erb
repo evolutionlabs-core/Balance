@@ -1,6 +1,4 @@
 <div class="mx-auto max-w-6xl" data-controller="invoice-editor form">
-  <%= render "invoices/view_tabs", invoice: invoice, active: :edit %>
-
   <% if invoice.persisted? %>
     <%= form_with model: invoice, url: invoice_calculation_path, method: :post, id: "new_invoice_form",
         data: { invoice_editor_target: "form", save_url: invoice_path(invoice), save_method: "patch" } do %>

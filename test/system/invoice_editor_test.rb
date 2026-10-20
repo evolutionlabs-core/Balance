@@ -44,11 +44,6 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_equal 15_000, invoice.reload.total_minor
 
     click_on "Send invoice"
-    within "#modal dialog" do
-      assert_text "Consulting"
-      assert_no_selector "select"
-      click_on "Send invoice"
-    end
     assert_text "Invoice #{invoice.invoice_number} sent."
     assert invoice.reload.sent?
     assert_equal income.id, invoice.invoice_lines.sole.account_id
@@ -56,16 +51,18 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_equal 15_000, entry.journal_entry_lines.sum(&:debit)
     assert_no_link "Edit"
 
-    click_on "Record payment"
-    within "#modal dialog" do
-      select cash.name, from: "Cash or credit-card account"
-      click_on "Record payment"
-    end
-    assert_text "Payment recorded for invoice #{invoice.invoice_number}."
+    click_on "Mark as paid"
+    assert_text "₦150.00 received into Checking Account."
     assert_selector "dd", text: "NGN 0.00"
-    assert_no_link "Record payment"
+    assert_no_button "Mark as paid"
     assert_equal 0, invoice.reload.balance_due_kobo
     assert invoice.reload.paid?
+
+    accept_confirm { click_on "Reverse" }
+    assert_text "Payment reversed. Invoice #{invoice.invoice_number} is open again."
+    assert_selector "td", text: "Reversed"
+    assert invoice.reload.sent?
+    assert_equal 15_000, invoice.balance_due_kobo
   end
 
   private

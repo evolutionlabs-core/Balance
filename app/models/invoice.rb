@@ -42,6 +42,10 @@ class Invoice < ApplicationRecord
       transitions from: :sent, to: :paid, guard: :fully_paid?
     end
 
+    event :reopen do
+      transitions from: :paid, to: :sent, guard: -> { !fully_paid? }
+    end
+
     event :mark_voided do
       transitions from: :draft, to: :voided
       transitions from: :sent, to: :voided, guard: :nothing_applied?

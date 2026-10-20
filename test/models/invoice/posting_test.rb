@@ -67,7 +67,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
   test "records an application and settles the invoice at full application" do
    raise "setup failure" unless @invoice.issue!
 
-    assert @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 30_000)
+    assert @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 30_000)
 
     assert @invoice.reload.paid?
     application = @invoice.payments.sole
@@ -81,7 +81,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
   test "partial applications keep the invoice sent" do
     raise "setup failure" unless @invoice.issue!
 
-    assert @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 15_000)
+    assert @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 15_000)
 
     assert @invoice.reload.sent?
     assert_equal 15_000, @invoice.balance_due_kobo
@@ -90,7 +90,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
   test "amounts above the balance are refused" do
     raise "setup failure" unless @invoice.issue!
 
-    assert_equal false, @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 40_000)
+    assert_equal false, @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 40_000)
 
     assert_includes @invoice.errors.full_messages, "Payment amount must be no more than the balance due"
     assert_empty JournalEntry.where(source_type: "InvoicePayment")
@@ -100,9 +100,9 @@ class Invoice::PostingTest < ActiveSupport::TestCase
   test "accounts outside the workspace payment accounts are refused" do
     raise "setup failure" unless @invoice.issue!
 
-    assert_equal false, @invoice.record_payment!(payment_account_id: @income.id, received_on: Date.current, amount_kobo: 15_000)
+    assert_equal false, @invoice.record_payment!(deposit_account_id: @income.id, received_on: Date.current, amount_kobo: 15_000)
 
-    assert_includes @invoice.errors.full_messages, "Payment account must be a cash or credit-card account in this workspace"
+    assert_includes @invoice.errors.full_messages, "Deposit account must be a bank or cash account in this workspace"
   end
 
   test "draft invoices cannot receive payment" do
@@ -111,7 +111,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
       invoice_lines_attributes: [ { service_id: @service.id, description: "Work", quantity: 1, rate: 100 } ]
     )
 
-    assert_equal false, draft.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
+    assert_equal false, draft.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
 
     assert_includes draft.errors.full_messages, "Only a sent invoice with a balance can receive payment"
   end
@@ -141,7 +141,7 @@ class Invoice::PostingTest < ActiveSupport::TestCase
 
   test "a sent invoice with an applied payment cannot be voided" do
     raise "setup failure" unless @invoice.issue!
-    assert @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
+    assert @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
 
     assert_equal false, @invoice.void!
 
@@ -152,11 +152,61 @@ class Invoice::PostingTest < ActiveSupport::TestCase
 
   test "paid invoices cannot be voided" do
     raise "setup failure" unless @invoice.issue!
-    assert @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 30_000)
+    assert @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 30_000)
 
     assert_equal false, @invoice.void!
 
     assert @invoice.reload.paid?
+  end
+
+
+  test "mark as paid settles the full balance into the default deposit account today" do
+    raise "setup failure" unless @invoice.issue!
+
+    assert @invoice.mark_paid!
+
+    assert @invoice.reload.paid?
+    entry = @invoice.payments.sole.journal_entry
+    assert_equal Date.current, entry.effective_date
+    assert_equal @workspace.default_deposit_account, entry.journal_entry_lines.find { |line| line.debit.positive? }.account
+  end
+
+  test "mark as paid needs a default deposit account" do
+    raise "setup failure" unless @invoice.issue!
+    @invoice.workspace.update!(default_deposit_account: nil)
+
+    assert_equal false, @invoice.mark_paid!
+    assert_includes @invoice.errors.full_messages, "Choose a default deposit account in company settings before marking invoices as paid"
+  end
+
+  test "reversing a payment reopens the invoice and restores the receivable" do
+    raise "setup failure" unless @invoice.issue!
+    assert @invoice.mark_paid!
+    payment = @invoice.payments.sole
+
+    assert @invoice.reverse_payment!(payment)
+
+    assert @invoice.reload.sent?
+    assert_equal 30_000, @invoice.balance_due_kobo
+    assert_equal payment.journal_entry, payment.reload.reversal_payment.journal_entry.reverses_entry
+    assert_equal 30_000, @ar.journal_entry_lines.sum(:debit) - @ar.journal_entry_lines.sum(:credit)
+  end
+
+  test "a payment can only be reversed once" do
+    raise "setup failure" unless @invoice.issue!
+    assert @invoice.mark_paid!
+    payment = @invoice.payments.sole
+    assert @invoice.reverse_payment!(payment)
+
+    assert_equal false, @invoice.reverse_payment!(payment.reload)
+    assert_includes @invoice.errors.full_messages, "This payment has already been reversed"
+  end
+
+  test "credit-card accounts are not deposit accounts" do
+    raise "setup failure" unless @invoice.issue!
+    card = @ledger.accounts.find_by!(subtype: "credit_card")
+
+    assert_equal false, @invoice.record_payment!(deposit_account_id: card.id, received_on: Date.current, amount_kobo: 10_000)
   end
 
   private

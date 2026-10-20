@@ -123,4 +123,19 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
     assert_equal [ "1050", "Accounts Receivable" ], ledger.accounts.find_by!(key: "accounts_receivable").values_at(:code, :name)
     assert_equal [ "3020", "Personal Spending" ], ledger.accounts.find_by!(key: "owner_draws").values_at(:code, :name)
   end
+
+  test "sets the bank account as the default deposit account" do
+    workspace = Workspace.create!(name: "Deposits", currency_code: "NGN")
+    ledger = workspace.provision_ledger!
+
+    assert_equal ledger.accounts.find_by!(key: "bank"), workspace.reload.default_deposit_account
+  end
+
+  test "the default deposit account must be a bank or cash account" do
+    workspace = Workspace.create!(name: "Deposits", currency_code: "NGN")
+    ledger = workspace.provision_ledger!
+
+    assert_not workspace.update(default_deposit_account: ledger.accounts.find_by!(key: "credit_card"))
+    assert_includes workspace.errors.full_messages, "Default deposit account must be a bank or cash account in this workspace"
+  end
 end

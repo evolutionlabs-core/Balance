@@ -82,11 +82,7 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_nil invoice.invoice_lines.sole.service
     assert invoice.draft?
     click_on "Send invoice"
-    within "#modal dialog" do
-      assert_no_selector "select"
-      click_on "Send invoice"
-    end
-    assert_no_selector "#modal dialog"
+    assert_text "Invoice #{invoice.invoice_number} sent."
     assert invoice.reload.sent?
   end
 

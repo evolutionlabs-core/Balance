@@ -7,11 +7,11 @@
       <p class="text-sm text-neutral-600">Record money received from <%= @invoice.customer.name %> against this invoice.</p>
 
       <div>
-        <%= form.label :payment_account_id, "Cash or credit-card account", class: field_label_class %>
-        <%= render "shared/select_menu", form: form, attribute: :payment_account_id,
-            options: options_from_collection_for_select(@payment_accounts, :id, :name, params.dig(:invoice_payment, :payment_account_id)),
-            prompt: "Select account", searchable: true, search_placeholder: "Search payment accounts…",
-            empty_message: "No payment accounts found", select_data: {}, required: true %>
+        <%= form.label :deposit_account_id, "Deposit to", class: field_label_class %>
+        <%= render "shared/select_menu", form: form, attribute: :deposit_account_id,
+            options: options_from_collection_for_select(@deposit_accounts, :id, :name, params.dig(:invoice_payment, :deposit_account_id) || current_workspace.default_deposit_account_id),
+            prompt: "Select account", searchable: true, search_placeholder: "Search bank and cash accounts…",
+            empty_message: "No bank or cash accounts found", select_data: {}, required: true %>
       </div>
 
       <div>

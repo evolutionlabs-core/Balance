@@ -1,14 +1,14 @@
 class Invoices::PaymentsController < ApplicationController
   before_action :set_invoice
   before_action :ensure_payable_invoice
-  before_action :set_payment_accounts
+  before_action :set_deposit_accounts
 
   def new
   end
 
   def create
     if @invoice.record_payment!(
-      payment_account_id: payment_params[:payment_account_id],
+      deposit_account_id: payment_params[:deposit_account_id],
       received_on: parsed_received_on,
       amount_kobo: (payment_params[:amount].to_d * 100).round
     )
@@ -29,12 +29,12 @@ class Invoices::PaymentsController < ApplicationController
       redirect_to invoice_path(@invoice), alert: "Only a sent invoice with a balance can receive payment."
     end
 
-    def set_payment_accounts
-      @payment_accounts = current_workspace.payment_accounts
+    def set_deposit_accounts
+      @deposit_accounts = current_workspace.deposit_accounts.ordered
     end
 
     def payment_params
-      params.expect(invoice_payment: [ :payment_account_id, :received_on, :amount ])
+      params.expect(invoice_payment: [ :deposit_account_id, :received_on, :amount ])
     end
 
     def parsed_received_on

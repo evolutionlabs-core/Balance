@@ -19,6 +19,12 @@
           { include_blank: "Choose when posting" }, { class: field_class } %>
       <p class="mt-1 text-xs text-neutral-500">Used for invoice lines without a service. You can change the account before posting.</p>
     </div>
+    <div>
+      <%= form.label :default_deposit_account_id, "Default deposit account", class: field_label_class %>
+      <%= form.collection_select :default_deposit_account_id, workspace.deposit_accounts.ordered, :id, :name,
+          {}, { class: field_class } %>
+      <p class="mt-1 text-xs text-neutral-500">Where customer payments land when you mark an invoice as paid.</p>
+    </div>
   </div>
 
   <%= render "shared/modal/footer", form: form, submit_label: "Save changes" %>

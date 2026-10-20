@@ -1,6 +1,7 @@
 class AttachLedgerForeignKeys < ActiveRecord::Migration[8.1]
   def change
     add_reference :workspaces, :default_sales_account, foreign_key: { to_table: :accounts }
+    add_reference :workspaces, :default_deposit_account, foreign_key: { to_table: :accounts }
 
     add_foreign_key :invoice_lines, :accounts
     add_foreign_key :expense_lines, :accounts, column: :account_id, validate: false

@@ -49,14 +49,14 @@ class Invoices::PaymentsControllerTest < ActionDispatch::IntegrationTest
   test "rejects accounts outside the workspace payment accounts" do
     post invoice_payment_path(@invoice), params: {
       invoice_payment: {
-        payment_account_id: @income.id,
+        deposit_account_id: @income.id,
         received_on: Date.current,
         amount: "150.00"
       }
     }
 
     assert_response :unprocessable_content
-    assert_match /cash or credit-card/, response.body
+    assert_match /bank or cash account/, response.body
   end
 
   test "draft invoices cannot receive payment" do
@@ -85,7 +85,7 @@ class Invoices::PaymentsControllerTest < ActionDispatch::IntegrationTest
 
     def invoice_payment_params(amount: "300.00")
       { invoice_payment: {
-        payment_account_id: @cash.id,
+        deposit_account_id: @cash.id,
         received_on: Date.current,
         amount: amount
       } }

@@ -83,7 +83,7 @@ class AccountingEngine::Builders::InvoicePaymentTest < ActiveSupport::TestCase
   test "apply debits the payment account and credits receivable" do
     command = AccountingEngine::Builders::InvoicePayment.call(
       workspace: @workspace,
-      attributes: { received_on: Date.current, payment_account_id: @cash.id, amount_kobo: 15_000, customer: @customer },
+      attributes: { received_on: Date.current, deposit_account_id: @cash.id, amount_kobo: 15_000, customer: @customer },
       source_id: 3
     )
 

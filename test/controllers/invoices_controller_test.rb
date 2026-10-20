@@ -66,9 +66,34 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     get invoice_path(invoice)
     assert_response :success
     assert_select "a", text: "Edit", count: 0
-    assert_select "a", text: "Send invoice", count: 0
+    assert_select "button", text: "Send invoice", count: 0
     assert_select "button[data-copy-value-value]", text: /Copy secure link/
-    assert_select "a", text: "Record payment"
+    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
+  end
+
+  test "a draft's header offers edit and send, with download and void in the menu" do
+    invoice = create_invoice
+
+    get invoice_path(invoice)
+
+    assert_select "a[href='#{edit_invoice_path(invoice)}']", text: "Edit"
+    assert_select "form[action='#{invoice_issuance_path(invoice)}'] button", text: "Send invoice"
+    assert_select "[role=menu] a[href='#{invoice_path(invoice, format: :pdf)}']", text: /Download PDF/
+    assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
+  end
+
+  test "a sent invoice's header offers download and payment, with the client link and void in the menu" do
+    invoice = create_invoice
+    assert invoice.issue!
+
+    get invoice_path(invoice)
+
+    assert_select "a[href='#{invoice_path(invoice, format: :pdf)}']:not([role=menuitem])", text: /Download PDF/
+    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
+    assert_select "[role=menu] a[href='#{new_invoice_payment_path(invoice)}']", text: /Record partial payment/
+    assert_select "[role=menu] button[data-copy-value-value]", text: /Copy secure link/
+    assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
+    assert_select "a", text: "Back to invoices", count: 0
   end
 
   test "draft invoices do not expose client links" do
@@ -94,7 +119,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     invoice = create_invoice
     assert invoice.issue!
     cash = @ledger.accounts.find_by!(name: "Cash")
-    assert invoice.record_payment!(payment_account_id: cash.id, received_on: Date.current, amount_kobo: 15_000)
+    assert invoice.record_payment!(deposit_account_id: cash.id, received_on: Date.current, amount_kobo: 15_000)
 
     get invoice_path(invoice)
 

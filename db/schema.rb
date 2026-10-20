@@ -509,11 +509,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
     t.text "address"
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
+    t.bigint "default_deposit_account_id"
     t.bigint "default_sales_account_id"
     t.string "name", null: false
     t.datetime "onboarding_completed_at"
     t.datetime "updated_at", null: false
     t.string "workspace_type", default: "personal", null: false
+    t.index ["default_deposit_account_id"], name: "index_workspaces_on_default_deposit_account_id"
     t.index ["default_sales_account_id"], name: "index_workspaces_on_default_sales_account_id"
   end
 
@@ -585,5 +587,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   add_foreign_key "sessions", "users"
   add_foreign_key "sessions", "workspaces"
   add_foreign_key "vendors", "workspaces"
+  add_foreign_key "workspaces", "accounts", column: "default_deposit_account_id"
   add_foreign_key "workspaces", "accounts", column: "default_sales_account_id"
 end

@@ -1,17 +1,13 @@
 module Invoices
   class IssuancesController < ApplicationController
     before_action :set_invoice
-    before_action :ensure_draft, only: %i[new create]
-
-    def new
-    end
+    before_action :ensure_draft
 
     def create
       if @invoice.issue!
-        redirect_out_of_frame invoice_path(@invoice), notice: "Invoice #{@invoice.invoice_number} sent."
+        redirect_to invoice_path(@invoice), notice: "Invoice #{@invoice.invoice_number} sent."
       else
-        @invoice.errors.add(:base, "Invoice cannot be sent.") if @invoice.errors.empty?
-        render :new, status: :unprocessable_content
+        redirect_to invoice_path(@invoice), alert: @invoice.errors.full_messages.to_sentence.presence || "Invoice cannot be sent."
       end
     end
 

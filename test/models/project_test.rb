@@ -67,7 +67,7 @@ class ProjectTest < ActiveSupport::TestCase
     assert_equal 75_000, summary.amount_owed_kobo
     assert_equal 0, summary.amount_received_kobo
 
-    assert invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 25_000),
+    assert invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 25_000),
       invoice.errors.full_messages.to_sentence
     summary = project.summary
     assert_equal 50_000, summary.amount_owed_kobo

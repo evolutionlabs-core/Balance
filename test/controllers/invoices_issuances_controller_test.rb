@@ -45,8 +45,8 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
       post invoice_issuance_path(@invoice)
     end
 
-    assert_response :unprocessable_content
-    assert_match /closed through/, response.body
+    assert_redirected_to invoice_path(@invoice)
+    assert_match "closed through", flash[:alert].to_s
     assert @invoice.reload.draft?
   end
 

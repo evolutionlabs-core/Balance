@@ -43,8 +43,12 @@ Rails.application.routes.draw do
   resource :workspace, only: %i[edit update]
 
   resources :invoices, only: %i[index new create show edit update] do
-    resource :issuance, only: %i[new create], controller: "invoices/issuances"
+    resource :issuance, only: %i[create], controller: "invoices/issuances"
     resource :payment, only: %i[new create], controller: "invoices/payments"
+    resource :settlement, only: %i[create], controller: "invoices/settlements"
+    resources :payments, only: [], controller: "invoices/payments" do
+      resource :reversal, only: %i[create], controller: "invoices/payment_reversals"
+    end
     resource :void, only: %i[new create], controller: "invoices/voids"
   end
   resources :vendors, only: %i[index new create show edit update]

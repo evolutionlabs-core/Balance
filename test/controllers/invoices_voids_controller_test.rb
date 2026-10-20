@@ -40,7 +40,7 @@ class Invoices::VoidsControllerTest < ActionDispatch::IntegrationTest
 
   test "voiding a sent invoice with an applied payment is refused" do
     @invoice.issue!
-    check = @invoice.record_payment!(payment_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
+    check = @invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 10_000)
 
 
     assert_no_difference "JournalEntry.count" do

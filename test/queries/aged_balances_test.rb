@@ -16,7 +16,7 @@ class AgedBalancesTest < ActiveSupport::TestCase
     send_invoice(@acme, naira: 1_000, due_date: 10.days.from_now.to_date)
     send_invoice(@acme, naira: 400, due_date: 45.days.ago.to_date)
     overdue = send_invoice(@zenith, naira: 300, due_date: 100.days.ago.to_date)
-    assert overdue.record_payment!(payment_account_id: @bank.id, received_on: Date.current, amount_kobo: 10_000)
+    assert overdue.record_payment!(deposit_account_id: @bank.id, received_on: Date.current, amount_kobo: 10_000)
 
     aging = AgedBalances.new(@workspace, side: :receivables)
 
@@ -33,7 +33,7 @@ class AgedBalancesTest < ActiveSupport::TestCase
 
   test "drops paid and voided invoices" do
     paid = send_invoice(@acme, naira: 500, due_date: Date.current)
-    assert paid.record_payment!(payment_account_id: @bank.id, received_on: Date.current, amount_kobo: 50_000)
+    assert paid.record_payment!(deposit_account_id: @bank.id, received_on: Date.current, amount_kobo: 50_000)
     assert send_invoice(@zenith, naira: 200, due_date: Date.current).void!
 
     aging = AgedBalances.new(@workspace, side: :receivables)

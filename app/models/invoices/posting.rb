@@ -28,7 +28,16 @@ module Invoices
       posted.present?
     end
 
-    def record_payment!(payment_account_id:, received_on:, amount_kobo:)
+    def mark_paid!
+      if workspace.default_deposit_account
+        record_payment!(deposit_account_id: workspace.default_deposit_account_id, received_on: Date.current, amount_kobo: balance_due_kobo)
+      else
+        errors.add(:base, "Choose a default deposit account in company settings before marking invoices as paid")
+        false
+      end
+    end
+
+    def record_payment!(deposit_account_id:, received_on:, amount_kobo:)
       recorded = Invoice.transaction do
         lock!
         payments.reset
@@ -37,9 +46,9 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        payment_account = workspace.payment_accounts.find_by(id: payment_account_id)
-        unless payment_account
-          errors.add(:base, "Payment account must be a cash or credit-card account in this workspace")
+        deposit_account = workspace.deposit_accounts.find_by(id: deposit_account_id)
+        unless deposit_account
+          errors.add(:base, "Deposit account must be a bank or cash account in this workspace")
           raise ActiveRecord::Rollback
         end
 
@@ -49,7 +58,7 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        entry = post_application(application, payment_account, received_on)
+        entry = post_application(application, deposit_account, received_on)
         application.update!(journal_entry_id: entry.id)
 
         payments.reset
@@ -59,6 +68,34 @@ module Invoices
 
       restore_status unless recorded
       recorded.present?
+    end
+
+    def reverse_payment!(payment)
+      reversed = Invoice.transaction do
+        lock!
+
+        if payment.reverses_invoice_payment_id? || payment.reversal_payment.present?
+          errors.add(:base, "This payment has already been reversed")
+          raise ActiveRecord::Rollback
+        end
+
+        reversal = payments.build(workspace: workspace, amount_kobo: payment.amount_kobo, reverses_invoice_payment: payment)
+        unless reversal.save
+          reversal.errors.full_messages.each { |message| errors.add(:base, message) }
+          raise ActiveRecord::Rollback
+        end
+
+        entry = reverse_in_ledger!(payment.journal_entry, on: Date.current, source_type: "InvoicePayment", source_id: reversal.id,
+          description: "Payment reversed for invoice #{invoice_number}")
+        reversal.update!(journal_entry_id: entry.id)
+
+        payments.reset
+        reopen! if may_reopen?
+        true
+      end
+
+      restore_status unless reversed
+      reversed.present?
     end
 
     def void!
@@ -132,12 +169,12 @@ module Invoices
         )
       end
 
-      def post_application(application, payment_account, received_on)
+      def post_application(application, deposit_account, received_on)
         record_in_ledger!(
           AccountingEngine::Builders::InvoicePayment,
           attributes: {
             received_on: received_on,
-            payment_account_id: payment_account.id,
+            deposit_account_id: deposit_account.id,
             amount_kobo: application.amount_kobo,
             customer: customer
           },
