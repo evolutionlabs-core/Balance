@@ -1,8 +1,10 @@
 class Expense < ApplicationRecord
+  include Expenses::Posting
+
   belongs_to :workspace
   belongs_to :payment_account, class_name: "Account"
-  belongs_to :journal_entry, optional: true
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense
+  has_one :journal_entry, -> { where(source_type: "Expense") }, foreign_key: "source_id", inverse_of: false
 
   accepts_nested_attributes_for :expense_lines, allow_destroy: true, reject_if: :all_blank
 
@@ -23,12 +25,6 @@ class Expense < ApplicationRecord
     super || calculated_total_kobo
   end
 
-  def possible_duplicates
-    workspace.expenses
-      .where(payment_date: payment_date, total_kobo: total_kobo)
-      .where.not(id: id)
-  end
-
   def category_label
     lines = expense_lines.reject(&:marked_for_destruction?)
     lines.map { |line| line.account.name }.to_sentence
@@ -41,25 +37,8 @@ class Expense < ApplicationRecord
     lines.map(&:description).to_sentence
   end
 
-  def journal_entry_draft
-    workspace.journal_entries.build(
-      entry_date: payment_date,
-      description: description,
-      journal_entry_lines_attributes: expense_lines.map do |line|
-        { account: line.account, debit_kobo: line.amount_kobo, credit_kobo: 0 }
-      end.push(account: payment_account, debit_kobo: 0, credit_kobo: total_kobo)
-    )
-  end
-
-  def post
-    Accounting::PostingService.call(source: self, entry_builder: -> {
-      expense_lines.lock.load
-      journal_entry_draft
-    })
-  end
-
-  def record_posting!(entry)
-    update!(journal_entry: entry, status: :posted)
+  def mark_posted!
+    update!(status: :posted)
   end
 
   private
@@ -85,7 +64,7 @@ class Expense < ApplicationRecord
 
     def payment_account_belongs_to_workspace
       return if payment_account.blank? || workspace.blank?
-      return if payment_account.workspace_id == workspace_id
+      return if payment_account.ledger.workspace_id == workspace_id
 
       errors.add(:payment_account, "must belong to the workspace")
     end
@@ -94,7 +73,7 @@ class Expense < ApplicationRecord
       return if payment_account.blank? || workspace.blank?
       return if workspace.payment_accounts.exists?(payment_account.id)
 
-      errors.add(:payment_account, "must be an asset or credit-card account")
+      errors.add(:payment_account, "must be a cash or credit-card account")
     end
 
     def has_category_lines

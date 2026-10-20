@@ -1,17 +1,18 @@
-<%= form_with model: journal_entry,
+<%= form_with model: entry_form,
     url: journal_entries_path,
+    scope: :entry,
     class: "flex min-h-0 flex-1 flex-col",
     data: { controller: "journal-entry-lines", action: "submit->journal-entry-lines#validate" } do |form| %>
   <%= render "shared/modal/header", title: "New journal entry" %>
 
   <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-    <%= render "shared/form_errors", record: journal_entry %>
+    <%= render "shared/form_errors", record: entry_form %>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-[0.8fr_1.6fr]">
       <div>
-        <%= form.label :entry_date, "Date", class: field_label_class %>
-        <%= form.text_field :entry_date,
-            value: journal_entry.entry_date || Date.current,
+        <%= form.label :effective_date, "Date", class: field_label_class %>
+        <%= form.text_field :effective_date,
+            value: entry_form.effective_date || Date.current,
             required: true,
             autocomplete: "off",
             class: "#{field_class} cursor-pointer",
@@ -37,13 +38,15 @@
       </div>
 
       <div data-journal-entry-lines-target="lines">
-        <%= form.fields_for :journal_entry_lines do |line_form| %>
-          <%= render "journal_entries/line_fields", form: line_form, protected: line_form.index.to_i < 2 %>
+        <% entry_form.lines.each_with_index do |_line, index| %>
+          <%= form.fields_for :lines, entry_form.lines[index], index: index do |line_form| %>
+            <%= render "journal_entries/line_fields", form: line_form, protected: index < 2 %>
+          <% end %>
         <% end %>
       </div>
 
       <template data-journal-entry-lines-target="template">
-        <%= form.fields_for :journal_entry_lines, JournalEntryLine.new, child_index: "__INDEX__" do |line_form| %>
+        <%= form.fields_for :lines, JournalEntries::ManualEntry::Line.new, child_index: "__INDEX__" do |line_form| %>
           <%= render "journal_entries/line_fields", form: line_form, protected: false %>
         <% end %>
       </template>

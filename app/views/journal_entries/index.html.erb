@@ -15,7 +15,7 @@
 
 <%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>
   <div class="relative min-w-0 flex-1">
-    <%= form.search_field :q, value: params[:q], placeholder: "Search descriptions", class: field_class %>
+    <%= form.search_field :q, value: params[:q], placeholder: "Search entries", class: field_class %>
   </div>
   <div class="relative sm:w-64">
     <%= form.text_field :range,
@@ -36,9 +36,8 @@
 <% if @journal_entries.empty? %>
   <%= render "shared/empty_state",
       icon: "icons/list.svg",
-      title: "No journal entries yet",
-      description: "Record your first entry — add a line for each account affected, with matching debits and credits.",
-      action: new_entry %>
+      title: "No entries yet",
+      description: "Entries recorded in your ledger appear here." %>
 <% else %>
   <%= render "journal_entries/table", journal_entries: @journal_entries %>
 <% end %>

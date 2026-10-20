@@ -73,7 +73,7 @@ class SidebarTest < ApplicationSystemTestCase
     assert_no_selector "#sidebar-panel", visible: true
 
     find('button[aria-label="Open navigation"]').click
-    find('button[aria-label="Close navigation"]').click
+    within("#sidebar-panel") { find('button[aria-label="Close navigation"]').click }
     assert_no_selector "#sidebar-panel", visible: true
     assert_equal "Open navigation", active_element_label
   end
@@ -208,7 +208,9 @@ class SidebarTest < ApplicationSystemTestCase
   test "collapsed desktop rail does not clip the account menu" do
     resize_to(1440, 900)
     visit overview_path
-    find('button[aria-label="Collapse sidebar"]').click if page.has_selector?('button[aria-label="Collapse sidebar"]')
+    find('button[aria-label="Collapse sidebar"]').click
+    assert_selector '[data-controller="sidebar"][data-rail="collapsed"]'
+    assert_selector 'button[aria-label="Expand sidebar"]'
 
     account_button.click
 

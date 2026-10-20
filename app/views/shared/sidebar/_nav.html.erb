@@ -1,14 +1,41 @@
 <li>
-  <% nav_classes = "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors #{active_nav?(item[:path]) ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}" %>
-  <% if item[:path] == overview_path && active_nav?(item[:path]) %>
-    <span title="<%= item[:text] %>" aria-current="page" class="<%= nav_classes %>">
+  <% if item[:children] %>
+    <% open = item[:children].any? { |child| active_nav?(child[:path]) } %>
+    <details class="group/nav-section lg:group-data-[rail=collapsed]/sidebar:hidden" <%= "open" if open %>>
+      <summary class="flex w-full cursor-pointer list-none items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 [&::-webkit-details-marker]:hidden">
+        <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
+        <span class="flex-1"><%= item[:text] %></span>
+        <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 flex-none text-neutral-400 transition-transform group-open/nav-section:rotate-90", aria: { hidden: true } %>
+      </summary>
+
+      <ul role="list" aria-label="<%= item[:text] %>" class="mt-1 flex flex-col gap-1 pl-9">
+        <% item[:children].each do |child| %>
+          <% child_active = active_nav?(child[:path]) %>
+          <li>
+            <%= link_to child[:text], child[:path], aria: ({ current: "page" } if child_active),
+                class: "flex w-full items-center rounded-md px-3 py-1.5 text-sm transition-colors #{child_active ? 'bg-neutral-100 font-medium text-neutral-900' : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900'}" %>
+          </li>
+        <% end %>
+      </ul>
+    </details>
+
+    <%= link_to item[:path], title: item[:text],
+        class: "hidden w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:group-data-[rail=collapsed]/sidebar:flex #{open ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}" do %>
       <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
-      <span class="lg:group-data-[rail=collapsed]/sidebar:hidden"><%= item[:text] %></span>
-    </span>
+    <% end %>
   <% else %>
-    <%= link_to item[:path], title: item[:text], aria: ({ current: "page" } if active_nav?(item[:path])), class: nav_classes do %>
-      <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
-      <span class="lg:group-data-[rail=collapsed]/sidebar:hidden"><%= item[:text] %></span>
+    <% active = active_nav?(item[:path]) %>
+    <% nav_classes = "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors #{active ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}" %>
+    <% if item[:path] == overview_path && active %>
+      <span title="<%= item[:text] %>" aria-current="page" class="<%= nav_classes %>">
+        <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
+        <span class="lg:group-data-[rail=collapsed]/sidebar:hidden"><%= item[:text] %></span>
+      </span>
+    <% else %>
+      <%= link_to item[:path], title: item[:text], aria: ({ current: "page" } if active), class: nav_classes do %>
+        <%= inline_svg_tag item[:svg], class: "h-4 w-4 flex-none" %>
+        <span class="lg:group-data-[rail=collapsed]/sidebar:hidden"><%= item[:text] %></span>
+      <% end %>
     <% end %>
   <% end %>
 </li>

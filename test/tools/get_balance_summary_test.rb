@@ -3,14 +3,15 @@ require "test_helper"
 class GetBalanceSummaryTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @cash = Account.for_role!(@workspace, :cash)
-    @expense = Account.for_role!(@workspace, :uncategorized_expense)
+    ledger = @workspace.provision_ledger!
+    @cash = ledger.accounts.find_by!(name: "Cash")
+    @expense = ledger.accounts.find_by!(name: "Groceries")
     post_journal_entry!(
       @workspace,
       debit_account: @expense,
       credit_account: @cash,
       amount_kobo: 250_000,
-      entry_date: Date.current
+      effective_date: Date.current
     )
   end
 
@@ -26,14 +27,13 @@ class GetBalanceSummaryTest < ActiveSupport::TestCase
 
   test "ignores entries from other workspaces" do
     other_workspace = workspaces(:bola_shop)
-    other_cash = Account.for_role!(other_workspace, :cash)
-    other_expense = Account.for_role!(other_workspace, :uncategorized_expense)
+    other_ledger = provision_business_ledger!(other_workspace)
     post_journal_entry!(
       other_workspace,
-      debit_account: other_expense,
-      credit_account: other_cash,
+      debit_account: other_ledger.accounts.find_by!(name: "Rent"),
+      credit_account: other_ledger.accounts.find_by!(name: "Cash"),
       amount_kobo: 500_000,
-      entry_date: Date.current
+      effective_date: Date.current
     )
 
     result = GetBalanceSummary.new(@workspace).execute

@@ -1,0 +1,16 @@
+<%= render "shared/modal" do %>
+  <%= form_with url: bill_void_path(@bill), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Void bill" %>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @bill %>
+      <% if @bill.open? %>
+        <p class="text-sm text-neutral-600">Voiding posts a reversal to your books, cancelling what this bill added to accounts payable. This cannot be undone.</p>
+      <% else %>
+        <p class="text-sm text-neutral-600">Void this draft bill? Voided bills cannot be changed.</p>
+      <% end %>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Void bill" %>
+  <% end %>
+<% end %>

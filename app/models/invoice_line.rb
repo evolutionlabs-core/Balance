@@ -11,9 +11,9 @@ class InvoiceLine < ApplicationRecord
 
   before_validation :calculate_amount
   before_validation :snapshot_income_account
-  before_create { throw(:abort) if invoice.persisted? && invoice.posted? }
-  before_update { throw(:abort) if invoice.posted? }
-  before_destroy { throw(:abort) if invoice.posted? }
+  before_create { throw(:abort) if invoice.persisted? && !invoice.draft? }
+  before_update { throw(:abort) if invoice.status_in_database != "draft" }
+  before_destroy { throw(:abort) if invoice.status_in_database != "draft" }
 
   def rate
     if rate_minor
@@ -58,7 +58,7 @@ class InvoiceLine < ApplicationRecord
 
     def account_belongs_to_workspace
       return if account.blank? || invoice.blank?
-      return if account.workspace_id == invoice.workspace_id
+      return if account.ledger.workspace_id == invoice.workspace_id
 
       errors.add(:account, "must belong to the workspace")
     end

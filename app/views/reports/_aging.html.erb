@@ -1,0 +1,74 @@
+<% content_for :title, title %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: title } ] %>
+<% end %>
+
+<%= render "shared/page_header",
+    title: title,
+    description: "#{description} As of #{Date.current.strftime("%B %-d, %Y")}." %>
+
+<% if aging.nil? %>
+  <%= render "shared/empty_state",
+      icon: "icons/gauge.svg",
+      title: "No accounts yet",
+      description: "This report appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <div class="mt-6 space-y-4">
+    <div class="overflow-x-auto rounded-xl border border-neutral-200">
+      <table class="w-full min-w-[42rem] text-sm">
+        <thead class="border-b border-neutral-200 bg-neutral-50 text-[11px] font-semibold tracking-wide text-neutral-500 uppercase">
+          <tr>
+            <th scope="col" class="px-4 py-2 text-left"><%= counterparty %></th>
+            <% AgedBalances::BUCKETS.each_value do |label| %>
+              <th scope="col" class="px-4 py-2 text-right"><%= label %></th>
+            <% end %>
+            <th scope="col" class="px-4 py-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neutral-100">
+          <% aging.rows.each do |row| %>
+            <tr>
+              <th scope="row" class="px-4 py-2.5 text-left font-medium text-neutral-900"><%= row.counterparty&.name || "Unassigned" %></th>
+              <% AgedBalances::BUCKETS.each_key do |bucket| %>
+                <td class="px-4 py-2.5 text-right tabular-nums <%= row.buckets[bucket].zero? ? "text-neutral-300" : "text-neutral-700" %>"><%= naira(row.buckets[bucket]) %></td>
+              <% end %>
+              <td class="px-4 py-2.5 text-right font-semibold tabular-nums text-neutral-950"><%= naira(row.total_kobo) %></td>
+            </tr>
+          <% end %>
+
+          <% if aging.rows.empty? %>
+            <tr><td colspan="<%= AgedBalances::BUCKETS.size + 2 %>" class="px-4 py-4 text-neutral-500"><%= empty %></td></tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t border-neutral-200 bg-neutral-50 font-semibold text-neutral-950">
+          <tr>
+            <th scope="row" class="px-4 py-3 text-left">Total</th>
+            <% aging.bucket_totals.each_value do |amount| %>
+              <td class="px-4 py-3 text-right tabular-nums"><%= naira(amount) %></td>
+            <% end %>
+            <td class="px-4 py-3 text-right tabular-nums"><%= naira(aging.total_kobo) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div id="tie-out" class="text-sm <%= aging.tied_out? ? "text-green-700" : "text-red-700" %>">
+      <p class="flex items-center gap-2">
+        <%= inline_svg_tag(aging.tied_out? ? "icons/check-circle.svg" : "icons/minus-circle.svg", class: "h-4 w-4 flex-none") %>
+        <% if aging.tied_out? %>
+          Ties out: <%= control_account %> holds <%= naira(aging.ledger_kobo) %>, matching <%= documents %>.
+        <% else %>
+          Out of balance: <%= control_account %> holds <%= naira(aging.ledger_kobo) %> but <%= documents %> total <%= naira(aging.total_kobo) %>.
+        <% end %>
+      </p>
+
+      <% unless aging.tied_out? %>
+        <ul class="mt-2 space-y-1 pl-6 text-neutral-700">
+          <% aging.unmatched_rows.each do |row| %>
+            <li><%= row.counterparty&.name || "Unassigned entries" %>: ledger <%= naira(row.ledger_kobo) %>, <%= documents %> <%= naira(row.total_kobo) %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
+  </div>
+<% end %>

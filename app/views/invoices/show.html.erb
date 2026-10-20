@@ -1,37 +1,17 @@
-<% content_for :title, @invoice.posted? ? "Invoice #{@invoice.invoice_number}" : "Invoice draft" %>
+<% content_for :title, @invoice.voided? ? "Invoice #{@invoice.invoice_number} (voided)" : "Invoice #{@invoice.invoice_number}" %>
 
 <%= content_for(:breadcrumb) do %>
   <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: @invoice.invoice_number.presence || "Invoice" } ] %>
 <% end %>
 
 <div class="mx-auto max-w-6xl">
-  <%= render "invoices/view_tabs", invoice: @invoice, active: :show %>
+  <div class="mb-6">
+    <%= render "shared/page_header",
+        title: "Invoice #{@invoice.invoice_number}",
+        description: safe_join([ invoice_status_badge(@invoice), @invoice.customer&.name ].compact, " "),
+        action: render("invoices/actions", invoice: @invoice) %>
+  </div>
 
   <%= render "invoices/document", invoice: @invoice %>
-
-  <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
-    <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
-    <div class="flex flex-wrap items-center gap-2">
-      <% unless @invoice.posted? %>
-        <%= link_to "Issue invoice", new_invoice_posting_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
-      <% else %>
-        <button type="button" data-controller="copy"
-            data-copy-value-value="<%= client_invoice_url(@invoice.generate_token_for(:client_view)) %>"
-            data-action="copy#copy" class="<%= secondary_button_class %>">
-          <span data-copy-target="defaultIcon" class="flex items-center gap-2">
-            <%= inline_svg_tag "icons/copy.svg", class: "h-4 w-4" %>
-            Copy secure link
-          </span>
-          <span hidden data-copy-target="doneIcon" class="flex items-center gap-2 text-green-700">
-            <%= inline_svg_tag "icons/check.svg", class: "h-4 w-4" %>
-            Link copied
-          </span>
-        </button>
-        <% if @invoice.balance_due_kobo.positive? %>
-          <%= link_to "Invoice paid", new_invoice_receipt_path(@invoice), class: secondary_button_class, data: { turbo_frame: "modal" } %>
-        <% end %>
-      <% end %>
-      <%= link_to "Download PDF", invoice_path(@invoice, format: :pdf), class: primary_button_class, data: { turbo: false } %>
-    </div>
-  </div>
+  <%= render "invoices/payments", invoice: @invoice %>
 </div>

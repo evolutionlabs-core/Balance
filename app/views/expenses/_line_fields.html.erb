@@ -1,7 +1,7 @@
 <div data-expense-lines-target="row" class="expense-line-columns grid gap-3 border-b border-neutral-200 py-4 sm:items-center sm:py-3">
   <span class="text-xs font-medium text-neutral-500 sm:hidden">Category</span>
   <%= render "shared/select_menu", form: form, attribute: :account_id,
-      options: expense_account_options(current_workspace.accounts.expense_accounts.ordered, form.object.account_id),
+      options: expense_account_options(current_workspace.expense_categories.ordered, form.object.account_id),
       prompt: "Select category", searchable: true,
       search_placeholder: "Search categories…", empty_message: "No categories found",
       select_data: {} %>

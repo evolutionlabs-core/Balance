@@ -8,8 +8,6 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     @user = users(:one)
     sign_in_as(@user)
     @customer = @workspace.customers.create!(name: "Site Customer", customer_type: "business", email: "site@example.com")
-    @bank = @workspace.accounts.create!(name: "Site Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @category = @workspace.accounts.create!(name: "Site Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
   end
 
   test "creates a project and redirects to its overview" do

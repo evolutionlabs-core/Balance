@@ -1,6 +1,6 @@
 <% account_options = grouped_options_for_select(
-     current_workspace.accounts.ordered.group_by(&:account_type).map { |type, accounts|
-       [ type.humanize, accounts.map { |account| [ account.name, account.id ] } ]
+     current_workspace.accounts.ordered.group_by(&:base_type).map { |base_type, accounts|
+       [ base_type.humanize, accounts.map { |account| [ account.name, account.id ] } ]
      },
      form.object.account_id
    ) %>
@@ -14,14 +14,14 @@
   <label class="text-xs font-medium text-neutral-500 sm:hidden">Debit</label>
   <label class="text-xs font-medium text-neutral-500 sm:hidden">Credit</label>
   <%= form.text_field :debit,
-      value: form.object.debit&.nonzero?,
+      value: form.object.debit,
       placeholder: "0.00",
       inputmode: "decimal",
       autocomplete: "off",
       class: "#{field_class} text-right tabular-nums",
       data: { journal_entry_lines_target: "debit", action: "input->journal-entry-lines#amountChanged" } %>
   <%= form.text_field :credit,
-      value: form.object.credit&.nonzero?,
+      value: form.object.credit,
       placeholder: "0.00",
       inputmode: "decimal",
       autocomplete: "off",

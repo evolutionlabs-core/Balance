@@ -1,15 +1,14 @@
 require "application_system_test_case"
 
 class InvoiceEditorTest < ApplicationSystemTestCase
-  test "creates edits and posts a free-form invoice" do
+  test "creates edits and sends a free-form invoice" do
     user = users(:one)
     user.update!(password: "password")
     workspace = workspaces(:ada_store)
-    income = workspace.accounts.create!(name: "Consulting income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    ledger = workspace.provision_ledger!
+    income = ledger.accounts.find_by!(name: "Other Income")
     workspace.update!(default_sales_account: income)
-    Account.for_role!(workspace, :receivable)
-    bank = Account.for_role!(workspace, :checking)
+    cash = ledger.accounts.find_by!(name: "Cash")
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
@@ -44,27 +43,26 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
 
-    click_on "Issue invoice"
-    within "#modal dialog" do
-      assert_text "Consulting"
-      assert_no_selector "select"
-      click_on "Issue invoice"
-    end
-    assert_text "Invoice #{invoice.invoice_number} issued."
-    assert invoice.reload.posted?
-    assert_equal income, invoice.invoice_lines.sole.account
-    assert_equal 15_000, invoice.journal_entry.journal_entry_lines.sum(:credit_kobo)
+    click_on "Send invoice"
+    assert_text "Invoice #{invoice.invoice_number} sent."
+    assert invoice.reload.sent?
+    assert_equal income.id, invoice.invoice_lines.sole.account_id
+    entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 15_000, entry.journal_entry_lines.sum(&:debit)
     assert_no_link "Edit"
 
-    click_on "Invoice paid"
-    within "#modal dialog" do
-      select bank.name, from: "Bank or Cash account"
-      click_on "Record payment"
-    end
-    assert_text "Payment recorded for invoice #{invoice.invoice_number}."
+    click_on "Mark as paid"
+    assert_text "₦150.00 received into Checking Account."
     assert_selector "dd", text: "NGN 0.00"
-    assert_no_link "Invoice paid"
+    assert_no_button "Mark as paid"
     assert_equal 0, invoice.reload.balance_due_kobo
+    assert invoice.reload.paid?
+
+    accept_confirm { click_on "Reverse" }
+    assert_text "Payment reversed. Invoice #{invoice.invoice_number} is open again."
+    assert_selector "td", text: "Reversed"
+    assert invoice.reload.sent?
+    assert_equal 15_000, invoice.balance_due_kobo
   end
 
   private

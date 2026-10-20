@@ -6,9 +6,9 @@ class Pdf::InvoiceTest < ActiveSupport::TestCase
     @user = users(:one)
     @customer = @workspace.customers.create!(name: "Original Customer", customer_type: "business",
       email: "original-customer@example.com", address: "1 Customer Road")
-    income_account = @workspace.accounts.create!(name: "PDF Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    @service = @workspace.services.create!(name: "PDF service", income_account: income_account)
+    @ledger = @workspace.provision_ledger!
+    @service = @workspace.services.create!(name: "PDF service",
+      income_account: @ledger.accounts.find_by!(name: "Other Income"))
   end
 
   test "renders saved party snapshots rather than current records" do

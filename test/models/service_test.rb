@@ -3,11 +3,11 @@ require "test_helper"
 class ServiceTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @income_account = @workspace.accounts.create!(name: "Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
   end
 
-  test "requires a unique name and income account" do
+  test "requires a unique name and an income account" do
     @workspace.services.create!(name: "Interior design", income_account: @income_account)
     duplicate = @workspace.services.build(name: "Interior design", income_account: @income_account)
     missing = @workspace.services.build
@@ -19,11 +19,10 @@ class ServiceTest < ActiveSupport::TestCase
     assert_includes missing.errors[:income_account], "must exist"
   end
 
-  test "rejects non-income and foreign workspace accounts" do
-    expense = @workspace.accounts.create!(name: "Service Expense", base_type: "expense",
-      account_type: "Personal Outflows", detail_type: "Transportation")
-    foreign = workspaces(:bola_shop).accounts.create!(name: "Foreign Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+  test "rejects non-income and foreign-workspace accounts" do
+    expense = @ledger.accounts.find_by!(name: "Groceries")
+    foreign_ledger = provision_business_ledger!(workspaces(:bola_shop))
+    foreign = foreign_ledger.accounts.find_by!(name: "Sales")
 
     service = @workspace.services.build(name: "Invalid", income_account: expense)
     assert_not service.valid?

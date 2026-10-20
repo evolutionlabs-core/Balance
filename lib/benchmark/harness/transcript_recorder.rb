@@ -88,8 +88,6 @@ module Llm
       end
 
       def normalise(value)
-        return normalise(value.content) if value.is_a?(RubyLLM::Tool::Halt)
-
         case value
         when Hash then value.to_h { |key, item| [ key.to_s, normalise(item) ] }
         when Array then value.map { |item| normalise(item) }

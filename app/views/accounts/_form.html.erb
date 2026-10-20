@@ -1,36 +1,37 @@
-<%= form_with model: account, data: {
-      controller: "account-taxonomy",
-      account_taxonomy_taxonomy_value: current_workspace.catalog.as_hash,
-      account_taxonomy_account_type_value: account.account_type,
-      account_taxonomy_detail_type_value: account.detail_type
-    } do |form| %>
+<%= form_with model: account, url: account.persisted? ? account_path(account) : accounts_path do |form| %>
   <%= render "shared/modal/header", title: account.persisted? ? "Edit account" : "New account" %>
 
   <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
     <%= render "shared/form_errors", record: account %>
 
     <div>
+      <%= form.label :code, class: field_label_class %>
+      <%= form.text_field :code, required: true, autofocus: true, placeholder: "1010", class: "#{field_class} font-mono" %>
+    </div>
+
+    <div>
       <%= form.label :name, class: field_label_class %>
-      <%= form.text_field :name, required: true, autofocus: true, placeholder: "Account name", class: field_class %>
-    </div>
-
-    <%= form.hidden_field :base_type, data: { account_taxonomy_target: "baseType" } %>
-
-    <div>
-      <%= form.label :account_type, "Account type", class: field_label_class %>
-      <%= render "shared/select_menu", form: form, attribute: :account_type,
-          options: catalog_grouped_options_for_select(current_workspace.catalog, account.account_type),
-          prompt: "Select account type",
-          select_data: { account_taxonomy_target: "accountType", action: "change->account-taxonomy#accountTypeChanged" },
-          searchable: true, search_placeholder: "Search account types…", empty_message: "No account types found" %>
+      <%= form.text_field :name, required: true, placeholder: "Account name", class: field_class %>
     </div>
 
     <div>
-      <%= form.label :detail_type, "Detail type", class: field_label_class %>
-      <%= render "shared/select_menu", form: form, attribute: :detail_type,
-          options: [], prompt: "Select detail type",
-          select_data: { account_taxonomy_target: "detailType" },
-          searchable: true, search_placeholder: "Search detail types…", empty_message: "No detail types found" %>
+      <%= form.label :base_type, "Type", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :base_type,
+          options: options_for_select(AccountSubtypes::SUBTYPES.keys.map { |type| [ type.humanize, type ] }, account.base_type),
+          prompt: "Select type",
+          select_data: {} %>
+    </div>
+
+    <div>
+      <%= form.label :subtype, "Subtype", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :subtype,
+          options: grouped_options_for_select(
+            AccountSubtypes::SUBTYPES.map { |type, subtypes| [ type.humanize, subtypes.map { |subtype| [ subtype.humanize, subtype ] } ] },
+            account.subtype
+          ),
+          prompt: "Select subtype",
+          select_data: {},
+          searchable: true, search_placeholder: "Search subtypes…", empty_message: "No subtypes found" %>
     </div>
 
     <div>

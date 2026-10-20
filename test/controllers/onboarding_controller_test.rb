@@ -6,27 +6,24 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
   end
 
-  test "provisions a personal NGN workspace with every core account" do
+  test "provisions a personal NGN workspace with its ledger chart" do
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
     assert_redirected_to onboarding_step_path(:details)
 
     assert_difference [ "Workspace.count", "Membership.count" ], 1 do
-      assert_difference "Account.count", AccountCatalogs::Personal.core.size do
-        patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money" }
-      end
+      patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money" }
     end
 
     workspace = @user.workspaces.last
     assert_equal "personal", workspace.workspace_type
     assert_equal "NGN", workspace.currency_code
     assert workspace.onboarding_completed_at?
-    assert_empty workspace.journal_entries
-    assert_equal AccountCatalogs::Personal.core.keys.map(&:to_s).sort,
-                 workspace.accounts.order(:role).pluck(:role)
+    assert workspace.ledger.accounts.exists?(key: "salary")
+    assert_equal 18, workspace.ledgers.sole.accounts.count
     assert_redirected_to overview_path
   end
 
-  test "posts a non-zero opening balance to checking and opening balance equity" do
+  test "posts a non-zero opening balance to the bank and opening balance equity through the engine" do
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
 
     assert_difference "JournalEntry.count", 1 do
@@ -37,30 +34,39 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     end
 
     workspace = @user.workspaces.last
-    entry = workspace.journal_entries.last
+    ledger = workspace.ledgers.sole
+    entry = JournalEntry.find_by!(source_type: "OpeningBalance", source_id: workspace.id)
+    bank = ledger.accounts.find_by!(code: "1020")
+    equity = ledger.accounts.find_by!(name: "Opening Balance Equity")
 
-    assert_equal "Opening balance", entry.description
-    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: Account.for_role!(workspace, :checking)).debit_kobo
-    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: Account.for_role!(workspace, :opening_balance)).credit_kobo
+    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: bank).debit
+    assert_equal 12_500_050, entry.journal_entry_lines.find_by!(account: equity).credit
+  end
+
+  test "provisions a business workspace with the standard SME chart" do
+    patch onboarding_step_path(:workspace_type), params: { workspace_type: "business" }
+    assert_redirected_to onboarding_step_path(:details)
+
+    assert_difference [ "Workspace.count", "Membership.count" ], 1 do
+      patch onboarding_step_path(:details), params: { workspace_name: "Nneka Limited" }
+    end
+
+    workspace = @user.workspaces.last
+    assert_equal "business", workspace.workspace_type
+    assert_equal "NGN", workspace.currency_code
+    assert workspace.ledger.accounts.exists?(key: "sales")
+    assert_equal 24, workspace.ledgers.sole.accounts.count
+    assert_redirected_to overview_path
   end
 
   test "rejects a negative opening balance" do
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
 
-    assert_no_difference "Workspace.count" do
+    assert_no_difference("Workspace.count") do
       patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money", opening_balance_naira: "-1" }
     end
 
     assert_response :unprocessable_content
     assert_select "body", /Opening balance must be zero or more/
-  end
-
-  test "business selection remains unavailable" do
-    assert_no_difference "Workspace.count" do
-      patch onboarding_step_path(:workspace_type), params: { workspace_type: "business" }
-    end
-
-    assert_response :unprocessable_content
-    assert_select "body", /coming soon/i
   end
 end

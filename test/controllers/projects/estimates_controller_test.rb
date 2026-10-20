@@ -9,8 +9,8 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
     @customer = @workspace.customers.create!(name: "Estimate Customer", customer_type: "business", email: "estimate@example.com")
     @project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
-    @income_account = @workspace.accounts.create!(name: "Estimate Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
     @service = @workspace.services.create!(name: "Hosting", income_account: @income_account)
   end
 
@@ -227,7 +227,7 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
   end
 
-  test "carries an estimate through to a posted ledger entry end to end" do
+  test "carries an estimate through to a posted journal entry end to end" do
     estimate = @project.estimates.create!(
       workspace: @workspace, user: @user, customer: @customer,
       line_items_attributes: { "0" => { service: @service, description: "Hosting", quantity: "12", rate: "5000" } }
@@ -244,19 +244,19 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_equal estimate, invoice.estimate
     assert_equal 12 * 500_000, invoice.total_minor
     assert invoice.draft?
-    assert_nil invoice.journal_entry
+    assert_empty JournalEntry.where(source_type: "Invoice")
 
-    receivable = Account.for_role!(@workspace, :receivable)
-    assert_difference("JournalEntry.count", 1) do
-      post invoice_posting_path(invoice)
+    receivable = @ledger.accounts.find_by!(subtype: "accounts_receivable")
+    assert_difference("JournalEntry.where(source_type: \"Invoice\").count", 1) do
+      post invoice_issuance_path(invoice)
     end
 
-    assert invoice.reload.posted?
-    entry = invoice.journal_entry
-    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:debit_kobo)
-    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:credit_kobo)
-    assert_equal [ receivable.id ], entry.journal_entry_lines.select { |line| line.debit_kobo.nonzero? }.map(&:account_id)
-    assert_equal [ @income_account.id ], entry.journal_entry_lines.select { |line| line.credit_kobo.nonzero? }.map(&:account_id).uniq
+    assert invoice.reload.sent?
+    entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:debit)
+    assert_equal 12 * 500_000, entry.journal_entry_lines.sum(&:credit)
+    assert_equal [ receivable.id ], entry.journal_entry_lines.select { |line| line.debit.positive? }.map(&:account_id)
+    assert_equal [ @income_account.id ], entry.journal_entry_lines.select { |line| line.credit.positive? }.map(&:account_id).uniq
   end
 
   test "rejects conversion of a non-approved estimate" do

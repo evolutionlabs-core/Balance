@@ -1,16 +1,17 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[edit update destroy]
+  before_action :set_ledger, only: %i[new create edit update]
+  before_action :set_account, only: %i[edit update]
 
   def index
-    @accounts = current_workspace.accounts.order(:name)
+    @accounts = Account.where(ledger: current_workspace.ledgers).order(:code)
   end
 
   def new
-    @account = current_workspace.accounts.build
+    @account = @ledger.accounts.build
   end
 
   def create
-    @account = current_workspace.accounts.build(account_params)
+    @account = @ledger.accounts.build(account_params)
 
     if @account.save
       redirect_out_of_frame accounts_path, notice: "Account created."
@@ -30,20 +31,16 @@ class AccountsController < ApplicationController
     end
   end
 
-  def destroy
-    if @account.destroy
-      redirect_to accounts_path, notice: "Account deleted."
-    else
-      redirect_to accounts_path, alert: @account.errors.full_messages.to_sentence.presence || "This account cannot be deleted."
-    end
-  end
-
   private
+    def set_ledger
+      @ledger = current_workspace.ledgers.sole
+    end
+
     def set_account
-      @account = current_workspace.accounts.find(params[:id])
+      @account = @ledger.accounts.where.not(created_by: "system").find(params[:id])
     end
 
     def account_params
-      params.expect(account: [ :name, :base_type, :account_type, :detail_type, :description ])
+      params.expect(account: [ :code, :name, :base_type, :subtype, :description ])
     end
 end

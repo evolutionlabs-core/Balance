@@ -1,7 +1,5 @@
 class AddInvoicePartyDetails < ActiveRecord::Migration[8.1]
   def change
-    add_column :contacts, :address, :text
-
     add_column :workspaces, :address, :text
 
     change_table :invoices, bulk: true do |t|

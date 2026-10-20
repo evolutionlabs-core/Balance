@@ -25,7 +25,7 @@ class Service < ApplicationRecord
   private
     def income_account_belongs_to_workspace
       return if income_account.blank? || workspace.blank?
-      return if income_account.workspace_id == workspace_id
+      return if income_account.ledger.workspace_id == workspace_id
 
       errors.add(:income_account, "must belong to the workspace")
     end

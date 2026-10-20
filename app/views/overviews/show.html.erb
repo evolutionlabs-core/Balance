@@ -23,7 +23,7 @@
     <div class="min-w-0 lg:col-span-2">
       <%= render "overviews/performance_charts", summary: @summary, days: @days %>
     </div>
-    <%= render "overviews/financial_position", summary: @summary %>
+    <%= render "overviews/financial_position", position: @position, receivables: @receivables, payables: @payables %>
   </div>
 
 </div>

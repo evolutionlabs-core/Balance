@@ -5,26 +5,25 @@ RubyLLM.configure do |config|
   config.openai_api_key = ENV.fetch("OPENAI_API_KEY", "lm-studio")
   config.default_model = ENV.fetch("OPENAI_MODEL", "qwen3.5-35b-a3b")
 
-  # Use the association-based acts_as API (recommended)
-  config.use_new_acts_as = true
-
-  # Custom model registry class name
-  config.model_registry_class = "Llm::Model"
+  # RubyLLM 2 defaults OpenAI to the Responses API. OpenAI-compatible local
+  # servers such as LM Studio speak Chat Completions.
+  config.openai_protocol = :chat_completions
 end
 
-# LM Studio occasionally splits an SSE error event so the data line arrives in a
-# separate chunk or is missing. Upstream assumes both lines arrive together and
-# crashes (nil.delete_prefix), turning a provider hiccup into a generic app
-# failure. Treat it as a provider error so ChatTurn's normal retry loop
-# handles it.
+# LM Studio occasionally sends an SSE error event with an empty data line.
+# Upstream logs the unparseable payload and carries on, so the turn ends with
+# an empty response instead of an error. Treat it as a provider error so
+# ChatTurn's normal retry loop handles it.
 module RubyLLM
-  module Streaming
-    def handle_error_chunk(chunk, env)
-      data_line = chunk.split("\n")[1]
-      error_data = data_line&.delete_prefix("data: ")
-      raise RubyLLM::Error, "Provider stream error: #{chunk.inspect}" if error_data.blank?
+  class Protocol
+    module Streaming
+      private
 
-      parse_error_from_json(error_data, env, "Failed to parse error chunk")
+      def handle_error_event(data, env)
+        raise RubyLLM::Error, "Provider stream error: #{data.inspect}" if data.blank?
+
+        parse_error_from_json(data, env, "Failed to parse error event")
+      end
     end
   end
 end

@@ -19,7 +19,7 @@
   <%= render "shared/empty_state",
       icon: "icons/banknote.svg",
       title: "No expenses yet",
-      description: "Record a paid expense and Balance will prepare the accounting entry for review.",
+      description: "Record a paid expense and Balance posts the accounting entry for you.",
       action: expense_actions %>
 <% else %>
   <div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
@@ -35,7 +35,7 @@
             <span><%= expense.payment_date.to_fs(:medium) %></span>
             <%= expense_status(expense) %>
           </div>
-          <%= link_to expense.draft? ? "Edit" : "View", expense.draft? ? edit_expense_path(expense) : expense_path(expense), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+          <%= link_to "View", expense_path(expense), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
         </div>
       </article>
     <% end %>
@@ -69,7 +69,7 @@
               <%= link_to naira(expense.total_kobo), expense_path(expense), class: "block px-4 py-4" %>
             </td>
             <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-              <%= link_to expense.draft? ? "Edit" : "View", expense.draft? ? edit_expense_path(expense) : expense_path(expense), class: "font-medium text-[#0f7082] hover:underline" %>
+              <%= link_to "View", expense_path(expense), class: "font-medium text-[#0f7082] hover:underline" %>
             </td>
           </tr>
         <% end %>

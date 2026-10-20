@@ -74,11 +74,12 @@ service merely to relay a controller call to a model.
 ## Accounting code
 
 Keep validation pure and persistence transactional. Never mix database writes
-into `Accounting::Engine`. Construct entries explicitly, validate them through
-the engine, and persist them through `Accounting::PostingService`.
+into `AccountingEngine::Validation`. Build an `AccountingEngine::Command` with a
+builder and post it with `AccountingEngine.post`; only `AccountingEngine::Writer` persists
+journal entries. Correct a posted entry by reversing it with
+`AccountingEngine.reverse`, never by editing it.
 
-Use integer kobo at persistence and API boundaries. Convert to decimal naira
-only for input parsing and display. A balanced entry may still be semantically
+A balanced entry may still be semantically
 wrong, so preserve account taxonomy and workspace checks.
 
 ## Asynchronous work

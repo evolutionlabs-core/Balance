@@ -1,5 +1,5 @@
 class Proposal < ApplicationRecord
-  TYPES = %w[account_creation journal_entry reversal_confirmation].freeze
+  TYPES = %w[account_creation entry reversal_confirmation].freeze
   STATUSES = %w[proposed confirming confirmed dismissed superseded].freeze
 
   belongs_to :workspace
@@ -14,8 +14,8 @@ class Proposal < ApplicationRecord
   scope :proposed, -> { where(status: "proposed") }
   scope :by_type, ->(type) { where(proposal_type: type) }
 
-  def journal_entry_proposal?
-    proposal_type == "journal_entry"
+  def entry_proposal?
+    proposal_type == "entry"
   end
 
   def account_creation_proposal?
@@ -23,23 +23,19 @@ class Proposal < ApplicationRecord
   end
 
   def reversal_proposal?
-    journal_entry_proposal? && data["reverses_journal_entry_id"].present?
+    entry_proposal? && data["reverses_journal_entry_id"].present?
   end
 
   def reversal_confirmation?
     proposal_type == "reversal_confirmation"
   end
 
-  def pending?
-    status == "proposed"
-  end
+  def pending? = status == "proposed"
 
-  def confirmed?
-    status == "confirmed"
-  end
+  def confirmed? = status == "confirmed"
 
   def description = data&.dig("description")
-  def entry_date = data&.dig("entry_date")
+  def effective_date = data&.dig("effective_date")
   def shape = data&.dig("shape")
   def needs_attention = data&.dig("needs_attention")
   def lines = data&.dig("lines") || []
@@ -54,7 +50,7 @@ class Proposal < ApplicationRecord
   end
 
   def complete?
-    return false if entry_date.blank?
+    return false if effective_date.blank?
     return false if lines.size < 2
     return false if lines.any? { |line| line["account_id"].blank? || line["amount_kobo"].to_i <= 0 }
 
@@ -62,16 +58,23 @@ class Proposal < ApplicationRecord
   end
 
   def confirm!(draft:)
+    @confirm_errors = nil
     with_lock do
-      return [ "Confirm the selected entry before reviewing its reversal proposal." ] unless journal_entry_proposal?
+      return [ "Confirm the selected entry before reviewing its reversal proposal." ] unless entry_proposal?
       return [] unless pending?
       return draft.errors if draft.invalid?
       return [] unless transition_to_confirming?
 
-      journal_entry = draft.build_journal_entry!
-      update!(status: "confirmed", journal_entry: journal_entry)
+      receipt = draft.post!(source_id: id)
+      unless receipt.success?
+        @confirm_errors = receipt.errors.map(&:to_s)
+        raise ActiveRecord::Rollback
+      end
+
+      update!(status: "confirmed", journal_entry: receipt.entry)
       nil
     end
+    @confirm_errors
   end
 
   def confirm_accounts!(draft:)

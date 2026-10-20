@@ -26,20 +26,39 @@ Rails.application.routes.draw do
   patch "onboarding/:step", to: "onboarding#update"
 
   resource :overview, only: %i[show]
-  resources :expenses, only: %i[index new create show edit update] do
-    resource :posting, only: %i[create], controller: "expense_postings"
-  end
+  get "reports/balance_sheet", to: "reports#balance_sheet", as: :balance_sheet
+  get "reports/income_statement", to: "reports#income_statement", as: :income_statement
+  get "reports/trial_balance", to: "reports#trial_balance", as: :trial_balance
+  get "reports/general_ledger", to: "reports#general_ledger", as: :general_ledger
+  get "reports/general_ledger/:account_id", to: "reports#general_ledger_account", as: :general_ledger_account
+  get "reports/aged_receivables", to: "reports#aged_receivables", as: :aged_receivables
+  get "reports/aged_payables", to: "reports#aged_payables", as: :aged_payables
+  resources :expenses, only: %i[index new create show]
 
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create]
-  resources :accounts, only: %i[index new create edit update destroy]
+  resources :accounts, path: "accounts", only: %i[index new create edit update]
   resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]
 
   resources :invoices, only: %i[index new create show edit update] do
-    resource :posting, only: %i[new create], controller: "invoice_postings"
-    resource :receipt, only: %i[new create], controller: "invoice_receipts"
+    resource :issuance, only: %i[create], controller: "invoices/issuances"
+    resource :payment, only: %i[new create], controller: "invoices/payments"
+    resource :settlement, only: %i[create], controller: "invoices/settlements"
+    resources :payments, only: [], controller: "invoices/payments" do
+      resource :reversal, only: %i[create], controller: "invoices/payment_reversals"
+    end
+    resource :void, only: %i[new create], controller: "invoices/voids"
+  end
+  resources :vendors, only: %i[index new create show edit update]
+  resources :bills, only: %i[index new create show edit update] do
+    resource :issuance, only: %i[new create], controller: "bills/issuances"
+    resource :payment, only: %i[new create], controller: "bills/payments"
+    resources :payments, only: [], controller: "bills/payments" do
+      resource :reversal, only: %i[create], controller: "bills/payment_reversals"
+    end
+    resource :void, only: %i[new create], controller: "bills/voids"
   end
   scope :invoice, module: :invoices, as: :invoice do
     resources :customers, only: %i[index new create show edit update]

@@ -4,16 +4,16 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @workspace = workspaces(:ada_store)
     sign_in_as(users(:one))
-    @income_account = @workspace.accounts.create!(name: "Services Controller Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
+    @ledger = @workspace.provision_ledger!
+    @income_account = @ledger.accounts.find_by!(name: "Other Income")
   end
 
   test "lists only current workspace services" do
     visible = @workspace.services.create!(name: "Visible service", income_account: @income_account)
-    other_workspace = workspaces(:bola_shop)
-    foreign_account = other_workspace.accounts.create!(name: "Other Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    other_workspace.services.create!(name: "Hidden service", income_account: foreign_account)
+    other_ledger = provision_business_ledger!(workspaces(:bola_shop))
+    workspaces(:bola_shop).services.create!(
+      name: "Hidden service", income_account: other_ledger.accounts.find_by!(name: "Sales")
+    )
 
     get services_path
 
@@ -58,10 +58,10 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "cannot update another workspace service" do
-    other_workspace = workspaces(:bola_shop)
-    foreign_account = other_workspace.accounts.create!(name: "Foreign Service Income", base_type: "income",
-      account_type: "Personal Inflows", detail_type: "Side Hustle / Freelance")
-    service = other_workspace.services.create!(name: "Foreign service", income_account: foreign_account)
+    other_ledger = provision_business_ledger!(workspaces(:bola_shop))
+    service = other_ledger.workspace.services.create!(
+      name: "Foreign service", income_account: other_ledger.accounts.find_by!(name: "Sales")
+    )
 
     patch service_path(service), params: { service: { name: "Hijacked" } }
 

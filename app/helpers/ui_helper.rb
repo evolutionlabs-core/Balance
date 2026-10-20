@@ -4,7 +4,7 @@ module UiHelper
   BUTTON_SIZES = {
     sm: "px-2.5 py-1.5 text-xs",
     compact: "min-h-0 px-2.5 py-1.5 text-sm",
-    md: "min-h-11 px-3 py-2 text-sm"
+    md: "min-h-0 px-3 py-2 text-sm"
   }.freeze
 
   STATUS_BADGE_TONES = {

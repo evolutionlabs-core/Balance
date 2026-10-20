@@ -1,5 +1,5 @@
 <% usage = ChatUsage.new(llm_chat) %>
-<% model = llm_chat.llm_model %>
+<% model = llm_chat.model %>
 
 <div data-controller="menu" class="relative">
   <button type="button" data-menu-target="button" data-action="menu#toggle" class="<%= icon_button_class %>">
@@ -68,7 +68,7 @@
       <% if model %>
         <div class="flex items-baseline justify-between gap-3 text-sm">
           <dt class="flex-none text-neutral-500">Provider</dt>
-          <dd class="min-w-0 truncate font-medium text-neutral-900"><%= model.provider_class&.name || model.provider %></dd>
+          <dd class="min-w-0 truncate font-medium text-neutral-900"><%= model.provider_class&.display_name || model.provider %></dd>
         </div>
 
         <div class="flex items-baseline justify-between gap-3 text-sm">
@@ -85,7 +85,7 @@
           <dt class="flex-none text-neutral-500">Per 1M tokens</dt>
           <dd class="font-medium tabular-nums text-neutral-900">
             <% if usage.priced? %>
-              <%= number_to_currency model.input_price_per_million %> in · <%= number_to_currency model.output_price_per_million %> out
+              <%= number_to_currency model.price(:input) %> in · <%= number_to_currency model.price(:output) %> out
             <% else %>
               <%= blank_cell %>
             <% end %>

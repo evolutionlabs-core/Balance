@@ -27,7 +27,7 @@
       <div class="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] <%= "border-t border-neutral-100" if index.positive? %>">
         <div class="min-w-0">
           <p class="truncate text-sm font-semibold text-neutral-950"><%= account["name"] %></p>
-          <p class="mt-1 truncate text-xs text-neutral-500"><%= account["account_type"] %> · <%= account["detail_type"] %></p>
+          <p class="mt-1 truncate text-xs text-neutral-500"><%= account["subtype"].to_s.titleize %></p>
         </div>
         <span class="h-fit w-fit rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600"><%= account["base_type"].to_s.titleize %></span>
       </div>
