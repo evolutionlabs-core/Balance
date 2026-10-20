@@ -8,7 +8,7 @@ on:
 
 jobs:
   claude:
-    if: contains(github.event.comment.body, '@claude')
+    if: github.event.comment.user.login == 'VickTor61' && contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
