@@ -96,7 +96,13 @@ test:
 # Hosts like Railway provide a single DATABASE_URL. Rails merges it into the
 # primary config; the cache, queue and cable databases live on the same server
 # under the same name with a suffix, which db:prepare creates on first boot.
-<% sibling_url = ->(suffix) { ENV["DATABASE_URL"]&.sub(%r{/([^/?]+)(?=\?|\z)}) { "/#{$1}_#{suffix}" } } %>
+<% sibling_url = lambda do |suffix|
+  uri = URI.parse(ENV["DATABASE_URL"].to_s)
+  next if uri.path.to_s.delete_prefix("/").empty?
+
+  uri.path += "_#{suffix}"
+  uri.to_s
+end %>
 production:
   primary: &primary_production
     <<: *default
