@@ -13,7 +13,8 @@
     <% navigation_sections.each do |section| %>
       <div>
         <% if section[:label] %>
-          <p class="px-3 pb-1 text-xs font-medium text-neutral-500 lg:group-data-[rail=collapsed]/sidebar:hidden"><%= section[:label] %></p>
+          <p class="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase lg:group-data-[rail=collapsed]/sidebar:hidden"><%= section[:label] %></p>
+          <hr class="mx-3 mb-2 hidden border-neutral-200 lg:group-data-[rail=collapsed]/sidebar:block">
         <% end %>
 
         <ul role="list" class="flex flex-col gap-1">
@@ -22,6 +23,16 @@
       </div>
     <% end %>
   </nav>
+
+  <% if FeedbackReport.enabled? %>
+    <div class="px-3">
+      <%= link_to new_feedback_path, title: "Send feedback", data: { turbo_frame: "modal" },
+          class: "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900" do %>
+        <%= inline_svg_tag "icons/message-circle.svg", class: "h-4 w-4 flex-none", aria: { hidden: true } %>
+        <span class="lg:group-data-[rail=collapsed]/sidebar:hidden">Send feedback</span>
+      <% end %>
+    </div>
+  <% end %>
 
   <div data-controller="menu" data-menu-match-trigger-width-value="true" data-action="keydown->menu#dismiss" class="relative mt-2 px-3">
     <button type="button" data-menu-target="button" data-action="menu#toggle" aria-expanded="false" aria-controls="account-menu" aria-label="Account settings for <%= Current.user.full_name %>" title="<%= Current.user.full_name %>" class="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-100 lg:group-data-[rail=collapsed]/sidebar:justify-center lg:group-data-[rail=collapsed]/sidebar:px-0">

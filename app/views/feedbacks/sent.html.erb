@@ -1,0 +1,12 @@
+<%= render "shared/modal" do %>
+  <div class="flex flex-col items-center px-6 pt-8 pb-6 text-center">
+    <span class="flex h-11 w-11 items-center justify-center rounded-full bg-[#0f7082]/10 text-[#0f7082]">
+      <%= inline_svg_tag "icons/check.svg", class: "h-5 w-5", aria: { hidden: true } %>
+    </span>
+    <h2 class="mt-4 text-base font-medium text-neutral-900">Thanks, we got it</h2>
+    <p class="mt-1 text-sm text-neutral-500">
+      <%= @report.kind == "bug" ? "We'll look into it and fix it as soon as we can." : "We'll consider it for an upcoming update." %>
+    </p>
+    <button type="button" data-action="modal#close" class="mt-6 <%= secondary_button_class %>">Done</button>
+  </div>
+<% end %>
