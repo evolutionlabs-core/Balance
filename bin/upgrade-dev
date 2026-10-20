@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+# Moves a local development setup from the pre-engine version of Balance to the
+# current one. The ledger and AI migrations were rewritten rather than added
+# to, so an existing database cannot be migrated forward: this script drops the
+# development and test databases and rebuilds them from db/*schema.rb.
+#
+#   bin/upgrade-dev            ask before deleting anything
+#   bin/upgrade-dev --seed     also load the demo workspace (bin/rails demo:seed)
+#   bin/upgrade-dev --yes      skip the confirmation prompt
+#   bin/upgrade-dev --dry-run  print the steps without running them
+#
+# Docker: stop the app first, then run it in a one-off container:
+#   docker compose stop web-dev
+#   docker compose run --rm web-dev bin/upgrade-dev --seed
+#   docker compose up --build web-dev
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+DRY_RUN = ARGV.include?("--dry-run")
+ENV["RAILS_ENV"] = "development"
+
+def step(title)
+  puts "\n== #{title} =="
+end
+
+def run!(*command)
+  puts "   $ #{command.join(" ")}"
+  system(*command, exception: true) unless DRY_RUN
+end
+
+def confirm!
+  return if ARGV.include?("--yes") || DRY_RUN
+
+  puts <<~WARNING
+
+    This permanently deletes ALL local data in the development and test
+    databases (users, workspaces, invoices, journal entries, chats) and
+    rebuilds them on the new schema. Production is not touched.
+
+  WARNING
+  print "Type rebuild to continue: "
+  abort "Stopped. Nothing was changed." unless $stdin.gets.to_s.strip == "rebuild"
+end
+
+def server_running?
+  require "socket"
+  Socket.tcp("127.0.0.1", 3000, connect_timeout: 1) { true }
+rescue StandardError
+  false
+end
+
+FileUtils.chdir APP_ROOT do
+  puts "Balance: upgrade local development to the accounting engine version#{" (dry run)" if DRY_RUN}"
+
+  if server_running? && !DRY_RUN
+    abort "\nA server is running on port 3000. Stop bin/dev (or `docker compose stop web-dev`) first: " \
+          "the databases can't be dropped while it holds connections."
+  end
+
+  confirm!
+
+  step "Installing gems"
+  run!("bash", "-c", "bundle check || bundle install")
+
+  step "Dropping and recreating the development and test databases"
+  run!("bin/rails", "db:drop", "db:create")
+
+  step "Loading the new schema (primary, queue and cable)"
+  run!("bin/rails", "db:schema:load")
+  run!("bin/rails", "db:test:prepare")
+
+  step "Clearing logs, caches and temporary files"
+  run!("bin/rails", "log:clear", "tmp:clear")
+
+  if ARGV.include?("--seed")
+    step "Loading the demo workspace"
+    run!("bin/rails", "demo:seed")
+  end
+
+  puts <<~DONE
+
+    Done. Start the app with bin/dev (or `docker compose up --build web-dev`).
+    #{ARGV.include?("--seed") ? "Sign in as demo@balance.test; the password is in lib/tasks/demo.rake." : "Sign up for a new account, or rerun with --seed for a demo workspace."}
+  DONE
+end
