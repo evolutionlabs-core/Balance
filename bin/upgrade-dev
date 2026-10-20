@@ -11,6 +11,7 @@
 #
 # Docker: stop the app first, then run it in a one-off container:
 #   docker compose stop web-dev
+#   docker compose build web-dev
 #   docker compose run --rm web-dev bin/upgrade-dev --seed
 #   docker compose up --build web-dev
 require "fileutils"
@@ -67,7 +68,9 @@ FileUtils.chdir APP_ROOT do
 
   step "Loading the new schema (primary, queue and cable)"
   run!("bin/rails", "db:schema:load")
-  run!("bin/rails", "db:test:prepare")
+  # Under Docker, DATABASE_URL points at the compose Postgres and there is no
+  # test database to prepare; tests run on the host.
+  run!("bin/rails", "db:test:prepare") unless ENV["DATABASE_URL"]
 
   step "Clearing logs, caches and temporary files"
   run!("bin/rails", "log:clear", "tmp:clear")
