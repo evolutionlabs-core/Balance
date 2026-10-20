@@ -2,7 +2,7 @@ class ListJournalEntries < RubyLLM::Tool
   description "List recorded journal entries in this workspace. Entries the assistant recorded from chat have source \"Entry\". " \
               "reverses_journal_entry_id is present only when the entry is itself a reversal; reversed is true once an entry has been reversed."
 
-  params do
+  parameters do
     integer :limit, required: false, description: "maximum number of entries to return, from 1 to 20; defaults to 10"
     string :from_date, required: false, description: "optional inclusive ISO date filter (YYYY-MM-DD)"
     string :to_date, required: false, description: "optional inclusive ISO date filter (YYYY-MM-DD)"

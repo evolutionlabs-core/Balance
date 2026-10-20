@@ -37,8 +37,7 @@ class Llm::TitleGenerator
     # A bare RubyLLM chat, so titling never lands in the conversation the user sees
     # or picks up the ledger tools.
     def ask(prompt)
-      chat = RubyLLM.chat(model: @llm_chat.llm_model&.model_id || RubyLLM.config.default_model)
-      chat.with_temperature(0.2).ask(format(INSTRUCTIONS, prompt: prompt.to_s.truncate(500))).content
+      @llm_chat.detached_llm_chat.with_temperature(0.2).ask(format(INSTRUCTIONS, prompt: prompt.to_s.truncate(500))).content
     end
 
     def sanitize(raw)

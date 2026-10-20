@@ -1,7 +1,7 @@
 class LedgerAgent < RubyLLM::Agent
   chat_model "Llm::Chat"
 
-  instructions
+  instructions { prompt("instructions") }
 
   tools do
     [
@@ -20,7 +20,7 @@ class LedgerAgent < RubyLLM::Agent
 
   thinking effort: :medium
 
-  params do
-    { max_tokens: 2_000, seed: 42 }
-  end
+  max_output_tokens 2_000
+
+  provider_options seed: 42
 end

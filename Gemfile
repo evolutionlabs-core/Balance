@@ -53,7 +53,9 @@ gem "thruster", require: false
 gem "dotenv-rails"
 
 # Unified LLM client with tool-calling, used against a local LM Studio server [https://rubyllm.com]
-gem "ruby_llm"
+gem "ruby_llm", "~> 2.1"
+# RubyLLM 2.1 allows JSON 3; Rails before 8.1.4 needs JSON 2.
+gem "json", "< 3"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

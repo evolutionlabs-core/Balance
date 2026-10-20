@@ -1,7 +1,9 @@
 class Llm::Message < ApplicationRecord
   self.table_name = "llm_messages"
 
-  acts_as_message chat: :llm_chat, chat_class: "Llm::Chat", tool_calls: :llm_tool_calls, tool_call_class: "Llm::ToolCall", tool_calls_foreign_key: :llm_message_id, model: :llm_model, model_class: "Llm::Model"
+  acts_as_message chat: :llm_chat, chat_class: "Llm::Chat", chat_foreign_key: :llm_chat_id
+
+  has_many :llm_tool_calls, -> { order(:created_at, :id) }, as: :message, class_name: "Llm::ToolCall"
 
   has_one :llm_turn, class_name: "Llm::Turn", foreign_key: :user_message_id, dependent: :destroy
   belongs_to :response_turn, class_name: "Llm::Turn", foreign_key: :llm_turn_id, optional: true

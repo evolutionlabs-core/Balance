@@ -6,8 +6,7 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
     @ledger = @workspace.provision_ledger!
     @cash = @ledger.accounts.find_by!(name: "Cash")
     @groceries = @ledger.accounts.find_by!(name: "Groceries")
-    @model = Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model")
-    @chat = Llm::Chat.create!(workspace: @workspace, llm_model: @model, title: "Test chat")
+    @chat = Llm::Chat.create!(workspace: @workspace, model: ruby_llm_models(:default), title: "Test chat")
   end
 
   test "returns recorded entries from the current workspace" do
@@ -46,7 +45,7 @@ class ListJournalEntriesTest < ActiveSupport::TestCase
   test "does not return entries from other workspaces" do
     other_workspace = workspaces(:bola_shop)
     other_ledger = provision_business_ledger!(other_workspace)
-    other_chat = Llm::Chat.create!(workspace: other_workspace, llm_model: @model, title: "Other")
+    other_chat = Llm::Chat.create!(workspace: other_workspace, model: ruby_llm_models(:default), title: "Other")
     record_entry(workspaces_chat: other_chat)
 
     assert_empty ListJournalEntries.new(@workspace).execute

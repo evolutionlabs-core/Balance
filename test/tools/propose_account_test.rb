@@ -12,11 +12,10 @@ class ProposeAccountTest < ActiveSupport::TestCase
       @result = propose_rent
     end
 
-    assert_instance_of RubyLLM::Tool::Halt, @result
-    assert @result.content[:proposal]
-    assert_equal "account_creation", @result.content[:proposed_action]
-    assert_equal "Rent & Housing", @result.content.dig(:entry_data, "accounts", 0, "name")
-    assert_equal "housing", @result.content.dig(:entry_data, "accounts", 0, "subtype")
+    assert @result[:proposal]
+    assert_equal "account_creation", @result[:proposed_action]
+    assert_equal "Rent & Housing", @result.dig(:entry_data, "accounts", 0, "name")
+    assert_equal "housing", @result.dig(:entry_data, "accounts", 0, "subtype")
   end
 
   test "validates the ledger taxonomy before presenting a proposal" do

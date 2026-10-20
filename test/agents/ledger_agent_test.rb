@@ -5,7 +5,7 @@ class LedgerAgentTest < ActiveSupport::TestCase
     @workspace = workspaces(:ada_store)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Prompt test"),
+      model: ruby_llm_models(:default),
       title: "Prompt test"
     )
   end
@@ -25,6 +25,11 @@ class LedgerAgentTest < ActiveSupport::TestCase
   end
 
   test "uses medium reasoning effort for transaction interpretation" do
-    assert_equal :medium, LedgerAgent.thinking[:effort]
+    agent = LedgerAgent.new(chat: @chat)
+
+    assert_equal :medium, agent.thinking[:effort]
+    assert_equal 0.2, agent.temperature
+    assert_equal 2_000, agent.max_output_tokens
+    assert_equal({ seed: 42 }, agent.provider_options)
   end
 end

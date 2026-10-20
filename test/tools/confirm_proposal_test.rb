@@ -8,7 +8,7 @@ class ConfirmProposalTest < ActiveSupport::TestCase
     @groceries = @ledger.accounts.find_by!(name: "Groceries")
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Confirmation test"),
+      model: ruby_llm_models(:default),
       title: "Confirmation test"
     )
     @proposal = @chat.proposals.create!(

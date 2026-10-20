@@ -6,13 +6,11 @@ class ProposeEntryTest < ActiveSupport::TestCase
     @ledger = @workspace.provision_ledger!
     @cash = @ledger.accounts.find_by!(name: "Cash")
     @groceries = @ledger.accounts.find_by!(name: "Groceries")
-    @model = Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model")
     @chat = stub_llm_chat(workspace: @workspace, prompt: "Paid ₦2,500 cash for supplies")
   end
 
   test "proposes a balanced entry using existing account IDs" do
     result = execute_tool
-    result = result.content
 
     assert result[:proposal]
     assert_equal "entry", result[:proposed_action]
@@ -53,7 +51,7 @@ class ProposeEntryTest < ActiveSupport::TestCase
 
   test "requires every account created for the resumed transaction" do
     tax = @ledger.accounts.create!(name: "Tax Expense", base_type: "expense", subtype: "other_expense", code: "9510", created_by: "admin")
-    chat = Llm::Chat.create!(workspace: @workspace, llm_model: @model, title: "Resumed transaction")
+    chat = Llm::Chat.create!(workspace: @workspace, model: ruby_llm_models(:default), title: "Resumed transaction")
     chat.proposals.create!(
       workspace: @workspace,
       proposal_type: "account_creation",
@@ -88,7 +86,8 @@ class ProposeEntryTest < ActiveSupport::TestCase
       ]
     )
 
-    assert_instance_of RubyLLM::Tool::Halt, corrected
+    assert corrected[:proposal]
+    assert_equal "entry", corrected[:proposed_action]
   end
 
   private

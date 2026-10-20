@@ -8,11 +8,6 @@ class Llm::ChatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates a chat from a prompt" do
-    Llm::Model.find_or_create_by!(provider: "openai", model_id: RubyLLM.config.default_model) do |model|
-      model.name = RubyLLM.config.default_model
-    end
-    RubyLLM.models.load_from_database!
-
     assert_difference "Llm::Chat.count", 1 do
       post chats_path, params: { llm_chat: { prompt: "I sold shoes for 5000 naira cash" } }
     end
@@ -20,21 +15,14 @@ class Llm::ChatsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to chat_path(Llm::Chat.last)
   end
 
-  test "registers an unknown model on demand instead of raising ModelNotFoundError" do
-    Llm::Model.where(model_id: "some-local-model").delete_all
-
-    refresh = lambda {
-      Llm::Model.create!(provider: "openai", model_id: "some-local-model", name: "Some Local Model")
-      RubyLLM.models.load_from_database!
-    }
-    Llm::Model.stub :refresh!, refresh do
-      assert_difference [ "Llm::Chat.count", "Llm::Model.count" ], 1 do
-        post chats_path, params: { llm_chat: { prompt: "hello there", model: "some-local-model" } }
-      end
+  test "accepts a local model missing from the registry as an OpenAI-compatible model" do
+    assert_difference [ "Llm::Chat.count", "RubyLLM::ActiveRecord::Model.count" ], 1 do
+      post chats_path, params: { llm_chat: { prompt: "hello there", model: "some-local-model" } }
     end
 
     assert_redirected_to chat_path(Llm::Chat.last)
-    assert_equal "some-local-model", Llm::Chat.last.llm_model.model_id
+    assert_equal "some-local-model", Llm::Chat.last.model.model_id
+    assert_equal "openai", Llm::Chat.last.model.provider
   end
 
   test "renders index with an alert when the prompt is blank" do

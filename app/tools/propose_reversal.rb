@@ -4,8 +4,8 @@ class ProposeReversal < RubyLLM::Tool
               "The user confirms the exact entry on the card, then reviews a separate immutable reversal proposal. " \
               "This tool never records or changes an entry."
 
-  params do
-    integer :entry_id, description: "recorded entry ID returned by list_journal_entries"
+  parameters do
+    integer :entry_id, description: "posted journal entry ID returned by list_journal_entries"
     boolean :use_original_date, required: false,
                                 description: "true only when the user explicitly requests the original entry date"
   end
@@ -20,12 +20,12 @@ class ProposeReversal < RubyLLM::Tool
     return { error: "That entry has already been reversed." } if entry.reversed?
     return { error: "That entry is itself a reversal." } if entry.reverses_entry_id?
 
-    halt({
+    {
       proposal: true,
       proposed_action: "reversal_confirmation",
       entry_data: Llm::ReversalConfirmation.entry_data(entry, use_original_date: use_original_date),
-      message: "Confirm the selected entry on the card. Nothing has been reversed or recorded."
-    })
+      message: "Confirm the selected entry on the card. Nothing has been reversed or posted."
+    }
   end
 
   private

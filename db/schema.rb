@@ -298,79 +298,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   end
 
   create_table "llm_chats", force: :cascade do |t|
+    t.boolean "cancelled", default: false, null: false
     t.datetime "created_at", null: false
-    t.bigint "llm_model_id"
+    t.bigint "ruby_llm_model_id"
     t.string "title"
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.bigint "workspace_id", null: false
-    t.index ["llm_model_id"], name: "index_llm_chats_on_llm_model_id"
+    t.index ["ruby_llm_model_id"], name: "index_llm_chats_on_ruby_llm_model_id"
     t.index ["uuid"], name: "index_llm_chats_on_uuid", unique: true
     t.index ["workspace_id"], name: "index_llm_chats_on_workspace_id"
   end
 
   create_table "llm_messages", force: :cascade do |t|
-    t.integer "cache_creation_tokens"
-    t.integer "cached_tokens"
+    t.string "cache_ttl"
+    t.boolean "cache_until_here", default: false, null: false
+    t.jsonb "citations"
     t.text "content"
-    t.json "content_raw"
     t.datetime "created_at", null: false
-    t.integer "input_tokens"
+    t.string "finish_reason"
     t.boolean "internal", default: false, null: false
     t.bigint "llm_chat_id", null: false
-    t.bigint "llm_model_id"
-    t.bigint "llm_tool_call_id"
     t.bigint "llm_turn_id"
-    t.integer "output_tokens"
+    t.jsonb "raw_content"
+    t.jsonb "raw_reasoning"
     t.string "role", null: false
+    t.jsonb "server_tool_calls"
     t.datetime "summarized_at"
     t.text "thinking_signature"
     t.text "thinking_text"
-    t.integer "thinking_tokens"
     t.datetime "updated_at", null: false
     t.index ["llm_chat_id", "internal"], name: "index_llm_messages_on_llm_chat_id_and_internal"
     t.index ["llm_chat_id"], name: "index_llm_messages_on_llm_chat_id"
-    t.index ["llm_model_id"], name: "index_llm_messages_on_llm_model_id"
-    t.index ["llm_tool_call_id"], name: "index_llm_messages_on_llm_tool_call_id"
     t.index ["llm_turn_id"], name: "index_llm_messages_on_llm_turn_id"
     t.index ["role"], name: "index_llm_messages_on_role"
-  end
-
-  create_table "llm_models", force: :cascade do |t|
-    t.jsonb "capabilities", default: []
-    t.integer "context_window"
-    t.datetime "created_at", null: false
-    t.string "family"
-    t.date "knowledge_cutoff"
-    t.integer "max_output_tokens"
-    t.jsonb "metadata", default: {}
-    t.jsonb "modalities", default: {}
-    t.datetime "model_created_at"
-    t.string "model_id", null: false
-    t.string "name", null: false
-    t.jsonb "pricing", default: {}
-    t.string "provider", null: false
-    t.datetime "updated_at", null: false
-    t.index ["capabilities"], name: "index_llm_models_on_capabilities", using: :gin
-    t.index ["family"], name: "index_llm_models_on_family"
-    t.index ["modalities"], name: "index_llm_models_on_modalities", using: :gin
-    t.index ["provider", "model_id"], name: "index_llm_models_on_provider_and_model_id", unique: true
-    t.index ["provider"], name: "index_llm_models_on_provider"
-  end
-
-  create_table "llm_tool_calls", force: :cascade do |t|
-    t.jsonb "arguments", default: {}
-    t.datetime "created_at", null: false
-    t.bigint "llm_message_id", null: false
-    t.string "name", null: false
-    t.text "thought_signature"
-    t.string "tool_call_id", null: false
-    t.jsonb "trace_output", default: {}, null: false
-    t.string "trace_status"
-    t.datetime "updated_at", null: false
-    t.index ["llm_message_id"], name: "index_llm_tool_calls_on_llm_message_id"
-    t.index ["name"], name: "index_llm_tool_calls_on_name"
-    t.index ["tool_call_id"], name: "index_llm_tool_calls_on_tool_call_id", unique: true
   end
 
   create_table "llm_turns", force: :cascade do |t|
@@ -456,6 +417,124 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
     t.index ["llm_message_id"], name: "index_proposals_on_llm_message_id"
     t.index ["workspace_id", "status"], name: "index_proposals_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_proposals_on_workspace_id"
+  end
+
+  create_table "ruby_llm_batches", force: :cascade do |t|
+    t.string "batch_protocol"
+    t.jsonb "chat_ids", default: []
+    t.string "chat_type"
+    t.boolean "completed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.string "provider", null: false
+    t.string "provider_batch_id", null: false
+    t.string "raw_status"
+    t.jsonb "reported_cost"
+    t.jsonb "request_counts"
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "provider_batch_id"], name: "index_ruby_llm_batches_on_provider_and_provider_batch_id", unique: true
+    t.index ["status"], name: "index_ruby_llm_batches_on_status"
+  end
+
+  create_table "ruby_llm_mcp_credentials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "data"
+    t.string "key", null: false
+    t.bigint "owner_id"
+    t.string "owner_type"
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_ruby_llm_mcp_credentials_on_key", unique: true
+    t.index ["owner_type", "owner_id"], name: "index_ruby_llm_mcp_credentials_on_owner"
+  end
+
+  create_table "ruby_llm_models", force: :cascade do |t|
+    t.jsonb "capabilities", default: []
+    t.integer "context_window"
+    t.datetime "created_at", null: false
+    t.string "family"
+    t.date "knowledge_cutoff"
+    t.integer "max_output_tokens"
+    t.jsonb "metadata", default: {}
+    t.jsonb "modalities", default: {}
+    t.datetime "model_created_at"
+    t.string "model_id", null: false
+    t.string "name", null: false
+    t.jsonb "pricing", default: {}
+    t.string "provider", null: false
+    t.datetime "unlisted_at"
+    t.datetime "updated_at", null: false
+    t.index ["capabilities"], name: "index_ruby_llm_models_on_capabilities", using: :gin
+    t.index ["family"], name: "index_ruby_llm_models_on_family"
+    t.index ["modalities"], name: "index_ruby_llm_models_on_modalities", using: :gin
+    t.index ["provider", "model_id"], name: "index_ruby_llm_models_on_provider_and_model_id", unique: true
+    t.index ["provider"], name: "index_ruby_llm_models_on_provider"
+  end
+
+  create_table "ruby_llm_provider_files", force: :cascade do |t|
+    t.string "account", null: false
+    t.string "blob_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at"
+    t.text "file_id", null: false
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.index ["blob_key", "provider", "account"], name: "index_ruby_llm_provider_files_uniqueness", unique: true
+  end
+
+  create_table "ruby_llm_tool_calls", force: :cascade do |t|
+    t.string "approval"
+    t.jsonb "arguments", default: {}
+    t.datetime "created_at", null: false
+    t.jsonb "mcp_result"
+    t.jsonb "mcp_state"
+    t.bigint "message_id", null: false
+    t.string "message_type", null: false
+    t.string "name", null: false
+    t.boolean "remote", default: false, null: false
+    t.bigint "result_id"
+    t.string "result_type"
+    t.text "thought_signature"
+    t.string "tool_call_id", null: false
+    t.jsonb "trace_output", default: {}, null: false
+    t.string "trace_status"
+    t.datetime "updated_at", null: false
+    t.index ["message_type", "message_id"], name: "index_ruby_llm_tool_calls_on_message_type_and_message_id"
+    t.index ["name"], name: "index_ruby_llm_tool_calls_on_name"
+    t.index ["result_type", "result_id"], name: "index_ruby_llm_tool_calls_on_result_type_and_result_id"
+    t.index ["tool_call_id"], name: "index_ruby_llm_tool_calls_on_tool_call_id", unique: true
+  end
+
+  create_table "ruby_llm_usages", force: :cascade do |t|
+    t.decimal "cache_read_cost", precision: 16, scale: 10
+    t.integer "cache_read_tokens"
+    t.decimal "cache_write_cost", precision: 16, scale: 10
+    t.integer "cache_write_tokens"
+    t.bigint "chat_id"
+    t.string "chat_type"
+    t.datetime "created_at", null: false
+    t.decimal "input_cost", precision: 16, scale: 10
+    t.integer "input_tokens"
+    t.bigint "message_id"
+    t.string "message_type"
+    t.string "model", null: false
+    t.string "operation", null: false
+    t.decimal "output_cost", precision: 16, scale: 10
+    t.integer "output_tokens"
+    t.bigint "owner_id"
+    t.string "owner_type"
+    t.string "provider", null: false
+    t.jsonb "server_tool_use"
+    t.string "status", null: false
+    t.decimal "thinking_cost", precision: 16, scale: 10
+    t.integer "thinking_tokens"
+    t.decimal "total_cost", precision: 16, scale: 10
+    t.datetime "updated_at", null: false
+    t.index ["chat_type", "chat_id"], name: "index_ruby_llm_usages_on_chat_type_and_chat_id"
+    t.index ["message_type", "message_id"], name: "index_ruby_llm_usages_on_message_type_and_message_id"
+    t.index ["owner_type", "owner_id"], name: "index_ruby_llm_usages_on_owner_type_and_owner_id"
+    t.index ["status"], name: "index_ruby_llm_usages_on_status"
+    t.check_constraint "operation::text = ANY (ARRAY['chat'::text, 'embedding'::text, 'moderation'::text, 'image'::text, 'speech'::text, 'transcription'::text, 'ocr'::text, 'rerank'::text, 'judgment'::text, 'video'::text, 'research'::text])"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])"
   end
 
   create_table "services", force: :cascade do |t|
@@ -562,13 +641,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   add_foreign_key "ledgers", "users", column: "closed_by_id"
   add_foreign_key "ledgers", "workspaces"
   add_foreign_key "llm_activities", "llm_chats"
-  add_foreign_key "llm_chats", "llm_models"
+  add_foreign_key "llm_chats", "ruby_llm_models"
   add_foreign_key "llm_chats", "workspaces"
   add_foreign_key "llm_messages", "llm_chats"
-  add_foreign_key "llm_messages", "llm_models"
-  add_foreign_key "llm_messages", "llm_tool_calls"
   add_foreign_key "llm_messages", "llm_turns"
-  add_foreign_key "llm_tool_calls", "llm_messages"
   add_foreign_key "llm_turns", "llm_chats"
   add_foreign_key "llm_turns", "llm_messages", column: "user_message_id"
   add_foreign_key "memberships", "users"

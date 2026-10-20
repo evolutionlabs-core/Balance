@@ -5,7 +5,7 @@ class ProposeEntry < RubyLLM::Tool
               "and assets received, and credit income, liabilities incurred, equity increases, and assets paid out. " \
               "Before calling, sum the proposed line amounts and verify that total debits exactly equal total credits."
 
-  params do
+  parameters do
     string :description, description: "short, clear description of the transaction"
     string :effective_date, required: false,
                             description: "ISO date (YYYY-MM-DD) the transaction happened; defaults to today"
@@ -44,12 +44,12 @@ class ProposeEntry < RubyLLM::Tool
 
     return { error: draft.errors.join(", ") } if draft.invalid?
 
-    halt({
+    {
       proposal: true,
       proposed_action: "entry",
       entry_data: draft.data,
-      message: "Entry proposal created for review."
-    })
+      message: "Journal-entry proposal created for review."
+    }
   end
 
   private

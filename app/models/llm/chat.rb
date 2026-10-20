@@ -15,7 +15,7 @@ class Llm::Chat < ApplicationRecord
 
   attr_accessor :active_turn
 
-  acts_as_chat messages: :llm_messages, message_class: "Llm::Message", messages_foreign_key: :llm_chat_id, model: :llm_model, model_class: "Llm::Model"
+  acts_as_chat messages: :llm_messages, message_class: "Llm::Message", messages_foreign_key: :llm_chat_id
 
   def to_param
     uuid
@@ -52,7 +52,7 @@ class Llm::Chat < ApplicationRecord
 
     visible_tools = %w[list_accounts list_journal_entries get_balance_summary check_proposal_status confirm_proposal]
     proposal_tools = scope.where(name: %w[propose_entry propose_account propose_reversal])
-      .where(llm_message_id: proposals.where.not(llm_message_id: nil).select(:llm_message_id))
+      .where(message_id: proposals.where.not(llm_message_id: nil).select(:llm_message_id))
 
     scope.where(name: visible_tools).or(proposal_tools)
       .order(:created_at, :id)
@@ -85,6 +85,12 @@ class Llm::Chat < ApplicationRecord
     llm_messages.order(:created_at, :id).to_a
   end
 
+  # A bare RubyLLM chat on this chat's model, outside the persisted
+  # conversation and without the ledger tools.
+  def detached_llm_chat
+    RubyLLM.chat(model: model_id || RubyLLM.config.default_model, provider: (provider || "openai").to_sym, assume_model_exists: true)
+  end
+
   def derive_title_from(prompt)
     truncated = prompt.to_s.squish.delete_suffix(".").truncate(60, separator: " ", omission: "…")
     self.title = truncated.present? ? truncated[0].upcase + truncated[1..] : "New chat"
@@ -105,16 +111,49 @@ class Llm::Chat < ApplicationRecord
 
   private
 
+  # Models served locally through LM Studio are usually missing from
+  # RubyLLM's registry, so accept them as OpenAI-compatible models.
+  def resolve_model
+    super
+  rescue RubyLLM::ModelNotFoundError
+    self.provider ||= "openai"
+    self.assume_model_exists = true
+    super
+  end
+
+  def build_llm_chat
+    self.assume_model_exists = true if model && !registered_model?
+    super
+  end
+
+  def registered_model?
+    RubyLLM.models.find(model.model_id, provider: model.provider)
+    true
+  rescue RubyLLM::ModelNotFoundError
+    false
+  end
+
   # RubyLLM replaces every system message with the new instructions on each
   # agent setup, which would destroy the compaction summary.
-  def replace_persisted_system_instructions(instructions)
+  def replace_persisted_system_instructions(instructions, cache_until_here: false)
     current = unsummarized.where(role: "system").order(:id).first
 
     if current
       current.update!(content: instructions) if current.content != instructions
     else
-      llm_messages.create!(role: "system", content: instructions)
+      llm_messages.create!(role: "system", content: instructions, cache_until_here: cache_until_here.present?)
     end
+    llm_messages.reset
+  end
+
+  # RubyLLM sends every persisted message as history. Drop the messages
+  # folded into a summary, merge the system messages, and mark the request
+  # the current turn answers.
+  def sync_messages(chat = @chat)
+    super
+    chat.messages = order_messages_for_llm(llm_messages.to_a)
+    reapply_runtime_instructions(chat)
+    chat
   end
 
   def order_messages_for_llm(messages)
