@@ -9,7 +9,7 @@
       <fieldset class="grid grid-cols-2 gap-2">
         <legend class="sr-only">What kind of feedback?</legend>
         <% FeedbackReport::KINDS.each do |kind, label| %>
-          <label class="flex cursor-pointer items-center justify-center rounded-md border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 has-checked:border-[#0f7082] has-checked:bg-[#0f7082]/5 has-checked:text-[#0f7082]">
+          <label class="flex cursor-pointer items-center justify-center rounded-md border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 has-checked:border-balance-teal-700 has-checked:bg-balance-teal-700/5 has-checked:text-balance-teal-700">
             <%= form.radio_button :kind, kind, class: "sr-only" %>
             <%= label %>
           </label>

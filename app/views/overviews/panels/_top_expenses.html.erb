@@ -16,7 +16,7 @@
             library: { cutout: "68%" } %>
         <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           <span class="text-xs text-neutral-500"><%= overview.t("top_expenses.total") %></span>
-          <span class="mt-0.5 max-w-[8.5rem] break-words text-sm font-semibold tabular-nums text-neutral-950"><%= overview_money(overview, total) %></span>
+          <span class="mt-0.5 max-w-[8.5rem] break-words text-sm font-semibold tabular-nums text-neutral-950"><%= money(total, overview.workspace.currency_code) %></span>
         </div>
       </div>
 
@@ -26,7 +26,7 @@
             <span class="size-2.5 flex-none rounded-sm" style="background-color: <%= color %>" aria-hidden="true"></span>
             <span class="min-w-0 flex-1 truncate text-neutral-700"><%= slice.label %></span>
             <span class="w-10 flex-none text-right text-xs tabular-nums text-neutral-500"><%= overview_share(slice.amount_kobo, total) %></span>
-            <span class="flex-none text-right font-medium tabular-nums text-neutral-950"><%= overview_money(overview, slice.amount_kobo) %></span>
+            <span class="flex-none text-right font-medium tabular-nums text-neutral-950"><%= money(slice.amount_kobo, overview.workspace.currency_code) %></span>
           </li>
         <% end %>
       </ul>

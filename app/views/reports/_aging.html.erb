@@ -24,7 +24,7 @@
          [ "Overdue", overdue, overdue.positive? ? "text-red-700" : "text-neutral-950", "" ] ].each do |label, amount, tone, span| %>
       <div class="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 <%= span %>">
         <p class="text-sm font-medium text-neutral-500"><%= label %></p>
-        <p class="mt-2 text-lg font-semibold tracking-tight tabular-nums lg:text-2xl <%= tone %>"><%= aging_money(amount) %></p>
+        <p class="mt-2 text-lg font-semibold tracking-tight tabular-nums lg:text-2xl <%= tone %>"><%= money(amount) %></p>
       </div>
     <% end %>
   </div>
@@ -45,7 +45,7 @@
               <span class="size-2 flex-none rounded-full" style="background-color: <%= style[:color] %>" aria-hidden="true"></span>
               <%= style[:label] %>
             </dt>
-            <dd class="font-medium tabular-nums <%= totals[bucket].zero? ? "text-neutral-400" : "text-neutral-900" %> sm:mt-1 sm:pl-3.5"><%= aging_money(totals[bucket]) %></dd>
+            <dd class="font-medium tabular-nums <%= totals[bucket].zero? ? "text-neutral-400" : "text-neutral-900" %> sm:mt-1 sm:pl-3.5"><%= money(totals[bucket]) %></dd>
           </div>
         <% end %>
       </dl>
@@ -63,12 +63,12 @@
           <article class="py-4">
             <div class="flex items-start justify-between gap-4">
               <span class="min-w-0 flex-1 truncate text-sm font-medium text-neutral-950"><%= row.counterparty&.name || "Unassigned" %></span>
-              <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= aging_money(row.total_kobo) %></span>
+              <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= money(row.total_kobo) %></span>
             </div>
             <div class="mt-2 flex items-center justify-between gap-3 text-xs text-neutral-500">
               <%= aging_bucket_label(oldest) %>
               <% if row.counterparty %>
-                <%= link_to "View", polymorphic_path(row.counterparty), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+                <%= link_to "View", polymorphic_path(row.counterparty), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700" %>
               <% end %>
             </div>
           </article>
@@ -79,10 +79,10 @@
         <table class="min-w-full">
           <thead class="bg-white">
             <tr>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500"><%= counterparty %></th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Overdue by</th>
+              <th scope="col" class="<%= table_header_class %>"><%= counterparty %></th>
+              <th scope="col" class="<%= table_header_class %>">Overdue by</th>
               <% [ "Overdue", "Total" ].each do |label| %>
-                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500"><%= label %></th>
+                <th scope="col" class="<%= table_header_class(align: :right) %>"><%= label %></th>
               <% end %>
               <th scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
             </tr>
@@ -93,11 +93,11 @@
               <tr class="border-t border-neutral-200 transition-colors hover:bg-neutral-50">
                 <th scope="row" class="px-4 py-4 text-left text-sm font-medium whitespace-nowrap text-neutral-900"><%= row.counterparty&.name || "Unassigned" %></th>
                 <td class="px-4 py-4 text-sm whitespace-nowrap text-neutral-600"><%= aging_bucket_label(aging_oldest_bucket(row)) %></td>
-                <td class="px-4 py-4 text-right text-sm tabular-nums whitespace-nowrap <%= overdue_amount.zero? ? "text-neutral-300" : "text-neutral-900" %>"><%= overdue_amount.zero? ? "—" : aging_money(overdue_amount) %></td>
-                <td class="px-4 py-4 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= aging_money(row.total_kobo) %></td>
+                <td class="px-4 py-4 text-right text-sm tabular-nums whitespace-nowrap <%= overdue_amount.zero? ? "text-neutral-300" : "text-neutral-900" %>"><%= overdue_amount.zero? ? "—" : money(overdue_amount) %></td>
+                <td class="px-4 py-4 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= money(row.total_kobo) %></td>
                 <td class="px-4 py-4 text-right text-sm">
                   <% if row.counterparty %>
-                    <%= link_to "View", polymorphic_path(row.counterparty), class: "font-medium text-[#0f7082] hover:underline" %>
+                    <%= link_to "View", polymorphic_path(row.counterparty), class: "font-medium text-balance-teal-700 hover:underline" %>
                   <% end %>
                 </td>
               </tr>
@@ -111,10 +111,10 @@
   <% unless aging.tied_out? %>
     <div id="tie-out" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
       <p class="font-medium">Doesn't match your books</p>
-      <p class="mt-1"><%= control_account %> <%= aging_money(aging.ledger_kobo) %> · <%= documents.capitalize %> <%= aging_money(aging.total_kobo) %></p>
+      <p class="mt-1"><%= control_account %> <%= money(aging.ledger_kobo) %> · <%= documents.capitalize %> <%= money(aging.total_kobo) %></p>
       <ul class="mt-2 list-disc space-y-1 pl-5">
         <% aging.unmatched_rows.each do |row| %>
-          <li><%= row.counterparty&.name || "No #{counterparty.downcase}" %>: books <%= aging_money(row.ledger_kobo) %>, <%= documents %> <%= aging_money(row.total_kobo) %></li>
+          <li><%= row.counterparty&.name || "No #{counterparty.downcase}" %>: books <%= money(row.ledger_kobo) %>, <%= documents %> <%= money(row.total_kobo) %></li>
         <% end %>
       </ul>
     </div>

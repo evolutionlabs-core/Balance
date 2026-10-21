@@ -1,7 +1,7 @@
 module OverviewsHelper
   CHART_SERIES_COLORS = %w[#0d9488 #6366f1 #d97706 #e11d48 #0284c7 #65a30d].freeze
   CHART_REST_COLOR = "#a3a3a3".freeze
-  CHART_CASH_COLOR = "#0f7082".freeze
+  CHART_CASH_COLOR = UiHelper::BRAND_COLOR
   INCOME_COLOR, EXPENSE_COLOR = CHART_SERIES_COLORS.first(2)
   CURRENT_COLOR = CHART_SERIES_COLORS.first
   OVERDUE_COLOR = CHART_SERIES_COLORS.third
@@ -25,7 +25,7 @@ module OverviewsHelper
 
   def overview_kpi_basis(overview, kpi, moment)
     basis = kpi.basis_kobo
-    amount = overview_money(overview, basis.abs)
+    amount = money(basis.abs, overview.workspace.currency_code)
 
     if basis.zero?
       overview.t("kpis.change.was_zero", when: moment)
@@ -52,10 +52,6 @@ module OverviewsHelper
         ])
       end
     end
-  end
-
-  def overview_money(overview, kobo)
-    number_to_currency(BigDecimal(kobo) / 100, unit: currency_symbol(overview.workspace.currency_code), precision: 2)
   end
 
   def overview_chart_money_options(overview)

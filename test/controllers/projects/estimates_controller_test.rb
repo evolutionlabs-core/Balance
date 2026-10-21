@@ -100,7 +100,7 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: "ESTIMATE"
     assert_select "tbody#estimate_lines tr", minimum: 2
     assert_select "nav[aria-label='Estimate views']", count: 0
-    assert_select "th", text: "Rate (NGN)", count: 0
+    assert_select "th", text: "Rate (NGN)"
     assert_select "p", text: /Add everything the client should approve/, count: 0
     assert_select "a", text: "Edit company"
     assert_select "select[name*='[service_id]'][required]", count: 0

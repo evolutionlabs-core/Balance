@@ -64,6 +64,19 @@ class BillsControllerTest < ActionDispatch::IntegrationTest
     assert_match "500.0", response.body
   end
 
+  test "each saved line carries its id and destroy flag inside its removable row" do
+    bill = create_bill
+
+    get edit_bill_path(bill)
+
+    line = bill.bill_lines.sole
+    assert_select "[data-amount-lines-target='lines'] [data-amount-lines-target='row']", count: 1 do
+      assert_select "input[type='hidden'][name$='[id]'][value='#{line.id}']"
+      assert_select "input[type='hidden'][name$='[_destroy]']"
+    end
+    assert_select "input[name$='[id]']", count: 1
+  end
+
   test "updating a draft changes one line and removes another" do
     bill = create_bill
     utilities = @ledger.accounts.find_by!(key: "utilities")

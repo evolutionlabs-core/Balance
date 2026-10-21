@@ -12,26 +12,26 @@ class ExpenseLineEditorTest < ApplicationSystemTestCase
 
     visit new_expense_path
 
-    assert_selector "[data-expense-lines-target='row']", count: 1
+    assert_selector "[data-amount-lines-target='row']", count: 1
     amount_inputs.first.set("100.00")
-    assert_selector "[data-expense-lines-target='total']", text: "100.00"
+    assert_selector "[data-amount-lines-target='total']", text: "100.00"
 
     click_on "Add category"
-    assert_selector "[data-expense-lines-target='row']", count: 2
+    assert_selector "[data-amount-lines-target='row']", count: 2
     amount_inputs.last.set("250.50")
-    assert_selector "[data-expense-lines-target='total']", text: "350.50"
+    assert_selector "[data-amount-lines-target='total']", text: "350.50"
 
-    within all("[data-expense-lines-target='row']").first do
+    within all("[data-amount-lines-target='row']").first do
       click_on "Remove category"
     end
 
-    assert_selector "[data-expense-lines-target='row']", count: 1
-    assert_selector "[data-expense-lines-target='total']", text: "250.50"
+    assert_selector "[data-amount-lines-target='row']", count: 1
+    assert_selector "[data-amount-lines-target='total']", text: "250.50"
     assert_field type: "hidden", with: "0", name: /\[position\]/
   end
 
   private
     def amount_inputs
-      all("[data-expense-lines-target='amount']")
+      all("[data-amount-lines-target='amount']")
     end
 end

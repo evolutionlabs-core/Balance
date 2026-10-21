@@ -5,5 +5,5 @@
     <p class="mt-1 whitespace-pre-line text-sm text-neutral-600"><%= estimate.business_address.presence || project.workspace.address %></p>
   <% end %>
   <%= link_to "Edit company", edit_project_project_estimate_workspace_path(project, estimate_id: (estimate.id if estimate.persisted?)),
-      class: "mt-4 inline-block text-sm font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+      class: "mt-4 inline-block text-sm font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" } %>
 <% end %>

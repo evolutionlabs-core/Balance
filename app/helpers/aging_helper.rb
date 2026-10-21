@@ -7,10 +7,6 @@ module AgingHelper
     over_90: { label: "90+ days", color: "#262626" }
   }.freeze
 
-  def aging_money(kobo)
-    number_to_currency(BigDecimal(kobo) / 100, unit: currency_symbol(current_workspace.currency_code), precision: 2)
-  end
-
   def aging_oldest_bucket(row)
     AGING_BUCKETS.keys.reverse.find { |bucket| row.buckets[bucket].positive? } || :current
   end

@@ -1,14 +1,20 @@
-<div class="mt-4 overflow-x-auto rounded-md border border-neutral-200">
-  <table class="min-w-full divide-y divide-neutral-200">
-    <thead class="bg-neutral-50">
+<% frame_class = local_assigns.fetch(:frame_class, "mt-4") %>
+<div class="<%= frame_class %> overflow-x-auto border-y border-neutral-200">
+  <table class="min-w-full">
+    <thead class="<%= local_assigns[:sticky] ? "sticky top-0 z-10 " : "" %>bg-white">
       <tr>
-        <% Array(columns).each do |column| %>
-          <th scope="col" class="px-4 py-2.5 text-left text-sm font-normal whitespace-nowrap text-neutral-500 <%= column[:class] %>"><%= column[:label] %></th>
+        <% columns.each do |column| %>
+          <th scope="col" class="<%= table_header_class(align: column.fetch(:align, :left)) %> <%= column[:class] %>">
+            <% if column[:label].present? %>
+              <%= column[:label] %>
+            <% else %>
+              <span class="sr-only"><%= column.fetch(:sr_label, "Actions") %></span>
+            <% end %>
+          </th>
         <% end %>
       </tr>
     </thead>
-
-    <tbody class="divide-y divide-neutral-200 bg-white">
+    <tbody class="bg-white">
       <%= yield %>
     </tbody>
   </table>

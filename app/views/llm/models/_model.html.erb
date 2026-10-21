@@ -4,10 +4,10 @@
 <% output = model.price(:output) %>
 <% persisted_id = persisted_ids[[ model.provider.to_s, model_id.to_s ]] %>
 
-<tr id="model_<%= [ model.provider, model_id ].join("_").parameterize(separator: "_") %>" class="transition-colors hover:bg-neutral-50">
+<tr id="model_<%= [ model.provider, model_id ].join("_").parameterize(separator: "_") %>" class="<%= table_row_class %>">
   <td class="<%= table_cell_class %> whitespace-nowrap"><%= model.provider_class&.display_name || model.provider %></td>
 
-  <td class="px-4 py-3 text-sm font-medium text-neutral-900">
+  <td class="<%= table_cell_class(strong: true) %>">
     <% if persisted_id %>
       <%= link_to name, model_path(persisted_id), class: "hover:underline", data: { turbo_frame: "modal" } %>
     <% else %>
@@ -21,7 +21,7 @@
     <%= input && output ? "#{number_to_currency(input)} / #{number_to_currency(output)}" : blank_cell %>
   </td>
 
-  <td class="px-4 py-3 text-right text-sm whitespace-nowrap">
+  <td class="<%= table_cell_class(align: :right) %> whitespace-nowrap">
     <%= link_to "Start an agent", chats_path(model: model_id), class: "font-medium text-neutral-900 hover:underline" %>
   </td>
 </tr>

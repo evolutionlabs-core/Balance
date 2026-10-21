@@ -81,6 +81,14 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='select-menu'][data-select-menu-search-in-trigger-value='true'] input[role='combobox']", count: 3
   end
 
+  test "added lines get their own index in the posted params" do
+    get new_journal_entry_path
+
+    assert_response :success
+    assert_select "template input[name='entry[lines][__INDEX__][debit]']"
+    assert_select "template input[name='entry[lines][__INDEX__][credit]']"
+  end
+
   test "records a manual entry through the ledger engine" do
     cash = @ledger.accounts.find_by!(name: "Cash")
     groceries = @ledger.accounts.find_by!(name: "Groceries")

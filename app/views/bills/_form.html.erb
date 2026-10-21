@@ -1,4 +1,4 @@
-<%= form_with model: bill, class: "space-y-8", data: { controller: "expense-lines" } do |form| %>
+<%= form_with model: bill, class: "space-y-8", data: { controller: "amount-lines" } do |form| %>
   <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="text-2xl font-semibold tracking-tight text-neutral-950"><%= bill.persisted? ? "Edit bill" : "New bill" %></h1>
@@ -6,7 +6,7 @@
     </div>
     <div class="sm:text-right">
       <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950">₦<span data-expense-lines-target="total"><%= format("%.2f", BigDecimal(bill.total_kobo) / 100) %></span></p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= currency_symbol(bill.currency_code) %><span data-amount-lines-target="total"><%= minor_amount(bill.total_kobo) %></span></p>
     </div>
   </div>
 
@@ -43,26 +43,30 @@
   </div>
 
   <section>
-    <div class="expense-line-columns hidden gap-3 border-b border-neutral-200 pb-2 sm:grid">
+    <div class="amount-line-columns hidden gap-3 border-b border-neutral-200 pb-2 sm:grid">
       <span class="text-xs font-medium text-neutral-500">Account</span>
       <span class="text-xs font-medium text-neutral-500">Description</span>
       <span class="text-right text-xs font-medium text-neutral-500">Amount</span>
       <span></span>
     </div>
 
-    <div data-expense-lines-target="lines">
-      <%= form.fields_for :bill_lines do |line_form| %>
-        <%= render "bills/line_fields", form: line_form %>
+    <div data-amount-lines-target="lines">
+      <%= form.fields_for :bill_lines, include_id: false do |line_form| %>
+        <%= render "shared/amount_line_fields", form: line_form, account_label: "Account",
+            account_options: bill_line_account_options(current_workspace, line_form.object.account_id),
+            description_placeholder: "What was billed?", remove_label: "Remove line" %>
       <% end %>
     </div>
 
-    <template data-expense-lines-target="template">
+    <template data-amount-lines-target="template">
       <%= form.fields_for :bill_lines, BillLine.new, child_index: "__INDEX__" do |line_form| %>
-        <%= render "bills/line_fields", form: line_form %>
+        <%= render "shared/amount_line_fields", form: line_form, account_label: "Account",
+            account_options: bill_line_account_options(current_workspace, line_form.object.account_id),
+            description_placeholder: "What was billed?", remove_label: "Remove line" %>
       <% end %>
     </template>
 
-    <button type="button" data-action="expense-lines#addLine" class="mt-3 <%= secondary_button_class(size: :sm) %>">
+    <button type="button" data-action="amount-lines#addLine" class="mt-3 <%= secondary_button_class(size: :sm) %>">
       <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add line
     </button>
   </section>

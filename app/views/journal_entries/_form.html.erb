@@ -46,7 +46,7 @@
       </div>
 
       <template data-journal-entry-lines-target="template">
-        <%= form.fields_for :lines, JournalEntries::ManualEntry::Line.new, child_index: "__INDEX__" do |line_form| %>
+        <%= form.fields_for :lines, JournalEntries::ManualEntry::Line.new, index: "__INDEX__" do |line_form| %>
           <%= render "journal_entries/line_fields", form: line_form, protected: false %>
         <% end %>
       </template>

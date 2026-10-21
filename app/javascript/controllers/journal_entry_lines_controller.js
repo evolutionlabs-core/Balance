@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { formatAmount, parseAmount } from "lib/money"
+import { appendRow, removeRow, visibleRows } from "lib/line_rows"
 
 export default class extends Controller {
   static targets = ["lines", "template", "row", "account", "debit", "credit", "debitTotal", "creditTotal", "difference", "status", "submit"]
@@ -8,25 +10,15 @@ export default class extends Controller {
   }
 
   addLine() {
-    const index = Date.now()
-    const html = this.templateTarget.innerHTML.replaceAll("__INDEX__", index)
-    this.linesTarget.insertAdjacentHTML("beforeend", html)
+    appendRow(this.linesTarget, this.templateTarget)
     this.recalculate()
   }
 
   removeLine(event) {
-    const row = event.target.closest("[data-journal-entry-lines-target='row']")
+    const row = event.currentTarget.closest("[data-journal-entry-lines-target='row']")
     if (row.dataset.protected === "true") return
 
-    const destroyInput = row.querySelector("input[name*='_destroy']")
-
-    if (destroyInput) {
-      destroyInput.value = "1"
-      row.hidden = true
-    } else {
-      row.remove()
-    }
-
+    removeRow(row)
     this.recalculate()
   }
 
@@ -41,16 +33,16 @@ export default class extends Controller {
   }
 
   recalculate() {
-    const activeRows = this.rowTargets.filter((row) => !row.hidden)
+    const activeRows = visibleRows(this.rowTargets)
     const debitTotal = activeRows.reduce((total, row) => total + this.amount(row.querySelector("[data-journal-entry-lines-target='debit']")), 0)
     const creditTotal = activeRows.reduce((total, row) => total + this.amount(row.querySelector("[data-journal-entry-lines-target='credit']")), 0)
     const difference = debitTotal - creditTotal
     const complete = activeRows.length >= 2 && activeRows.every((row) => this.rowComplete(row))
     const balanced = debitTotal > 0 && Math.abs(difference) < 0.005
 
-    this.debitTotalTarget.textContent = this.format(debitTotal)
-    this.creditTotalTarget.textContent = this.format(creditTotal)
-    this.differenceTarget.textContent = this.format(Math.abs(difference))
+    this.debitTotalTarget.textContent = formatAmount(debitTotal)
+    this.creditTotalTarget.textContent = formatAmount(creditTotal)
+    this.differenceTarget.textContent = formatAmount(Math.abs(difference))
     this.differenceTarget.classList.toggle("text-red-600", Math.abs(difference) >= 0.005)
     this.submitTarget.disabled = !(complete && balanced)
     this.statusTarget.textContent = complete && balanced
@@ -75,10 +67,6 @@ export default class extends Controller {
   }
 
   amount(input) {
-    return parseFloat(input?.value.replaceAll(",", "")) || 0
-  }
-
-  format(value) {
-    return new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+    return parseAmount(input?.value)
   }
 }

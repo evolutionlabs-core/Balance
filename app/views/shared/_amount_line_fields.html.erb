@@ -1,0 +1,30 @@
+<% plural = account_label.downcase.pluralize %>
+<div data-amount-lines-target="row" class="amount-line-columns grid gap-3 border-b border-neutral-200 py-4 sm:items-center sm:py-3">
+  <span class="text-xs font-medium text-neutral-500 sm:hidden"><%= account_label %></span>
+  <%= render "shared/select_menu", form: form, attribute: :account_id,
+      options: account_options, prompt: "Select #{account_label.downcase}", searchable: true,
+      search_placeholder: "Search #{plural}…", empty_message: "No #{plural} found",
+      select_data: {} %>
+  <span class="text-xs font-medium text-neutral-500 sm:hidden">Description</span>
+  <%= form.text_field :description,
+      required: true,
+      placeholder: description_placeholder,
+      autocomplete: "off",
+      class: field_class %>
+  <span class="text-xs font-medium text-neutral-500 sm:hidden">Amount</span>
+  <%= form.text_field :amount,
+      value: form.object.amount,
+      required: true,
+      placeholder: "0.00",
+      inputmode: "decimal",
+      autocomplete: "off",
+      class: "#{field_class} text-right tabular-nums",
+      data: { amount_lines_target: "amount", action: "input->amount-lines#recalculate" } %>
+  <%= form.hidden_field :id if form.object.persisted? %>
+  <%= form.hidden_field :position, value: form.object.position, data: { amount_lines_target: "position" } %>
+  <%= form.hidden_field :_destroy %>
+  <button type="button" data-action="amount-lines#removeLine" class="justify-self-end sm:justify-self-center <%= icon_button_class %>">
+    <span class="sr-only"><%= remove_label %></span>
+    <%= inline_svg_tag "icons/trash.svg", class: "h-4 w-4" %>
+  </button>
+</div>
