@@ -33,9 +33,8 @@ class BillLineEditorTest < ApplicationSystemTestCase
       addEventListener("error", (event) => log("error " + event.message))
       addEventListener("unhandledrejection", (event) => log("rejection " + event.reason))
       document.addEventListener("click", (event) => log("click " + event.target.tagName + "." + (event.target.className?.baseVal ?? event.target.className).slice(0, 40) + " in " + (event.target.closest("button")?.dataset.action || "-")), true)
-      const controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector("[data-controller~=amount-lines]"), "amount-lines")
-      const original = controller?.removeLine?.bind(controller)
-      if (controller) controller.removeLine = (event) => { log("removeLine " + event.currentTarget?.tagName); try { original(event) } catch (error) { log("threw " + error.message) } }
+      new MutationObserver((records) => records.forEach((record) => log("attr " + record.attributeName + "=" + record.target.getAttribute(record.attributeName) + " on " + (record.target.dataset.amountLinesTarget || record.target.name || record.target.tagName)))).observe(document.querySelector("[data-amount-lines-target=lines]"), { attributes: true, subtree: true, attributeFilter: ["hidden", "value"] })
+      document.addEventListener("turbo:before-morph-element", () => log("before-morph-element"), true)
       new MutationObserver((records) => records.forEach((record) => record.removedNodes.length && log("removed " + [...record.removedNodes].map((node) => node.nodeName).join(",")))).observe(document.body, { childList: true, subtree: true })
     JS
     puts "BEFORE: stimulus=#{page.evaluate_script("!!window.Stimulus && !!Stimulus.getControllerForElementAndIdentifier(document.querySelector('[data-controller~=amount-lines]'), 'amount-lines')")} nav=#{page.evaluate_script("performance.getEntriesByType('navigation')[0]?.type")}"
