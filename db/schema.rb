@@ -623,6 +623,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
     t.string "currency_code", default: "NGN", null: false
     t.bigint "default_deposit_account_id"
     t.bigint "default_sales_account_id"
+    t.integer "fiscal_year_start_month", default: 1, null: false
     t.string "name", null: false
     t.datetime "onboarding_completed_at"
     t.datetime "updated_at", null: false

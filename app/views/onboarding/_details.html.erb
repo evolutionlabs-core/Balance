@@ -22,6 +22,12 @@
   </div>
 
   <div>
+    <%= label_tag :fiscal_year_start_month, "Financial year starts in", class: field_label_class %>
+    <%= select_tag :fiscal_year_start_month, options_for_select(FinancialYear::MONTHS, @onboarding_data.fetch("fiscal_year_start_month", 1)), class: field_class %>
+    <p class="mt-1.5 text-sm text-neutral-500">Reports for "this year" and your yearly profit follow this. Most people use January.</p>
+  </div>
+
+  <div>
     <%= label_tag :opening_balance, "Opening bank balance", class: field_label_class %>
     <%= number_field_tag :opening_balance, @onboarding_data.fetch("opening_balance", "0"), min: 0, step: 0.01, class: field_class, inputmode: "decimal" %>
     <p class="mt-1.5 text-sm text-neutral-500">What is in your bank account today. Leave it at 0 if you are starting fresh.</p>

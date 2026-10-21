@@ -69,6 +69,18 @@ class AccountingEngine::FinancialStatementsTest < ActiveSupport::TestCase
     assert_equal [ 470_000 ], @statement.total(:net)
   end
 
+  test "current year earnings start at the financial year, not January" do
+    @workspace.update!(fiscal_year_start_month: 4)
+    as_of = Date.new(2026, 10, 21)
+    post({ "bank" => 400_000 }, credit: "sales", on: Date.new(2026, 3, 31))
+    post({ "bank" => 100_000 }, credit: "sales", on: Date.new(2026, 4, 1))
+
+    balance_sheet(dates: [ [ "now", as_of ] ])
+
+    assert_equal [ 400_000 ], line("Retained Earnings").amounts
+    assert_equal [ 100_000 ], line("Current year earnings").amounts
+  end
+
   test "cash flow splits cash movement into operating, investing and financing and reconciles to cash" do
     post({ "bank" => 500_000 }, credit: "owner_contributions", on: Date.current.prev_month)
     post({ "bank" => 300_000 }, credit: "sales")

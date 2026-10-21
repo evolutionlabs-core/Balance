@@ -14,28 +14,30 @@ class ReportPeriod
     "none" => "No comparison"
   }.freeze
 
-  def self.income_statement(key, today: Date.current)
+  def self.income_statement(key, today: Date.current, year_start_month: 1)
     key = INCOME_STATEMENT.key?(key) ? key : "this_month"
-    current, previous = income_statement_ranges(key, today)
+    current, previous = income_statement_ranges(key, today, year_start_month)
     [ key, [ column(current), column(previous) ] ]
   end
 
-  def self.balance_sheet(as_of, comparison)
+  def self.balance_sheet(as_of, comparison, year_start_month: 1)
     comparison = BALANCE_SHEET_COMPARISONS.key?(comparison) ? comparison : "previous_month"
     dates = [ as_of ]
     dates << as_of.beginning_of_month - 1 if comparison == "previous_month"
-    dates << as_of.beginning_of_year - 1 if comparison == "previous_year"
+    dates << FinancialYear.start_for(as_of, year_start_month) - 1 if comparison == "previous_year"
     [ comparison, dates.map { |date| [ date.strftime("%b %-d, %Y"), date ] } ]
   end
 
-  def self.income_statement_ranges(key, today)
+  def self.income_statement_ranges(key, today, year_start_month)
+    year = FinancialYear.range_for(today, year_start_month)
+
     case key
     when "this_month" then [ today.beginning_of_month..today, today.prev_month.all_month ]
     when "last_month" then [ today.prev_month.all_month, (today.prev_month - 1.month).all_month ]
     when "this_quarter" then [ today.beginning_of_quarter..today, today.prev_quarter.all_quarter ]
     when "last_quarter" then [ today.prev_quarter.all_quarter, (today.prev_quarter - 3.months).all_quarter ]
-    when "this_year" then [ today.beginning_of_year..today, today.prev_year.beginning_of_year..today.prev_year ]
-    when "last_year" then [ today.prev_year.all_year, (today.prev_year - 1.year).all_year ]
+    when "this_year" then [ year.begin..today, year.begin.prev_year..today.prev_year ]
+    when "last_year" then [ year.begin.prev_year..(year.begin - 1), year.begin.prev_year(2)..(year.begin.prev_year - 1) ]
     end
   end
   private_class_method :income_statement_ranges

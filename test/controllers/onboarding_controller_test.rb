@@ -91,4 +91,11 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "body", /Choose a currency for your workspace/
   end
+
+  test "stores the month the financial year starts" do
+    patch onboarding_step_path(:workspace_type), params: { workspace_type: "business" }
+    patch onboarding_step_path(:details), params: { workspace_name: "April Books", currency_code: "NGN", fiscal_year_start_month: "4" }
+
+    assert_equal 4, @user.workspaces.last.fiscal_year_start_month
+  end
 end

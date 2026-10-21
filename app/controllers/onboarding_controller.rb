@@ -37,8 +37,10 @@ class OnboardingController < ApplicationController
       return render_error("Enter a name for your workspace.") if name.blank?
       onboarding_data["workspace_name"] = name
       onboarding_data["currency_code"] = params[:currency_code].to_s
+      onboarding_data["fiscal_year_start_month"] = params.fetch(:fiscal_year_start_month, 1).to_i
       onboarding_data["opening_balance"] = params[:opening_balance].presence || "0"
       return render_error("Choose a currency for your workspace.") unless Currency.codes.include?(onboarding_data["currency_code"])
+      return render_error("Choose the month your financial year starts.") unless (1..12).cover?(onboarding_data["fiscal_year_start_month"])
 
       opening_balance_kobo = parse_opening_balance(onboarding_data["opening_balance"])
       return render_error("Opening balance must be zero or more.") unless opening_balance_kobo
@@ -48,6 +50,7 @@ class OnboardingController < ApplicationController
         name: name,
         workspace_type: onboarding_data.fetch("workspace_type"),
         currency_code: onboarding_data["currency_code"],
+        fiscal_year_start_month: onboarding_data["fiscal_year_start_month"],
         opening_balance_kobo: opening_balance_kobo
       )
 

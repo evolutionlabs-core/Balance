@@ -3,12 +3,13 @@ module Workspaces
     extend ActiveSupport::Concern
 
     class_methods do
-      def create_for_user!(user:, name:, workspace_type:, currency_code:, opening_balance_kobo: 0)
+      def create_for_user!(user:, name:, workspace_type:, currency_code:, fiscal_year_start_month: 1, opening_balance_kobo: 0)
         Workspace.transaction do
           workspace = create!(
             name: name,
             workspace_type: workspace_type,
             currency_code: currency_code,
+            fiscal_year_start_month: fiscal_year_start_month,
             onboarding_completed_at: Time.current
           )
           workspace.memberships.create!(user: user, role: :owner)
