@@ -1,0 +1,5 @@
+<%= render "shared/mobile_card", title: bill.vendor.name, url: bill_path(bill),
+    trailing: mobile_card_amount(money(bill.total_kobo, bill.currency_code)),
+    meta: [ ("##{bill.bill_number}" if bill.bill_number.present?), ("Due #{bill.due_date.strftime("%b %-d, %Y")}" if bill.due_date) ].compact.join(" · "),
+    footer: safe_join([ bill_status_badge(bill), (tag.span("#{money(bill.balance_due_kobo, bill.currency_code)} due") if bill.open?) ].compact),
+    action: link_to("View", bill_path(bill), class: mobile_card_action_class) %>

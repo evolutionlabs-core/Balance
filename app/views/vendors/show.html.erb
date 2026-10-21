@@ -31,7 +31,10 @@
 </dl>
 
 <% if @bills.any? %>
-  <%= render layout: "shared/table", locals: { frame_class: "mt-6", columns: bill_table_columns } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-6" } do %>
+    <%= render partial: "bills/bill_card", collection: @bills, as: :bill %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-6 hidden sm:block", columns: bill_table_columns } do %>
     <%= render partial: "bills/bill", collection: @bills %>
   <% end %>
 <% end %>

@@ -20,7 +20,13 @@
       description: "Create a project to combine fixed-price work, hourly work, and expenses.",
       action: new_project %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [ { label: "Name" }, { label: "Customer" }, { label: "Actions", align: :right } ] } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @projects.each do |project| %>
+      <%= render "shared/mobile_card", title: project.name, url: project_path(project), meta: project.customer.name,
+          action: link_to("Edit", edit_project_path(project), class: mobile_card_action_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{project.name}" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Name" }, { label: "Customer" }, { label: "Actions", align: :right } ] } do %>
     <% @projects.each do |project| %>
       <tr id="<%= dom_id(project) %>" class="<%= table_row_class %>">
         <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">

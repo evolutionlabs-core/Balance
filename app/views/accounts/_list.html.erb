@@ -1,6 +1,6 @@
-<div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+<%= render layout: "shared/mobile_list" do %>
   <%= render partial: "account_card", collection: accounts, as: :account %>
-</div>
+<% end %>
 <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", sticky: true, columns: [
       { label: "Code" }, { label: "Name" }, { label: "Type" }, { label: "Subtype" }, { label: "", sr_label: "System", align: :right, class: "w-12" }
     ] } do %>

@@ -19,7 +19,16 @@
       description: "Create a service before adding billable work to an estimate or invoice.",
       action: new_service %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @services.each do |service| %>
+      <%= render "shared/mobile_card", title: service.name,
+          trailing: status_badge(service.active? ? "Active" : "Inactive", tone: service.active? ? :success : :neutral),
+          meta: service.description,
+          footer: [ service.income_account.name, (minor_currency(service.default_rate_minor, current_workspace.currency_code) if service.default_rate_minor) ].compact.join(" · "),
+          action: link_to("Edit", edit_service_path(service), class: mobile_card_action_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{service.name}" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
         { label: "Service" }, { label: "Income account" }, { label: "Default rate", align: :right }, { label: "Status" }, { label: "Actions", align: :right, class: "w-20" }
       ] } do %>
     <% @services.each do |service| %>

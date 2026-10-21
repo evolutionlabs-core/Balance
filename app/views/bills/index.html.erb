@@ -20,7 +20,10 @@
       description: "Record a vendor bill as a draft, then enter it to add it to accounts payable.",
       action: bill_actions %>
 <% else %>
-  <%= render layout: "shared/table", locals: { frame_class: "mt-4", columns: bill_table_columns } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <%= render partial: "bills/bill_card", collection: @bills, as: :bill %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: bill_table_columns } do %>
     <%= render @bills %>
   <% end %>
 <% end %>

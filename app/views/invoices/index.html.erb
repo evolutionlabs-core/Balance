@@ -20,25 +20,19 @@
       description: "Create an invoice draft for a customer and preview it before sending.",
       action: invoice_actions %>
 <% else %>
-  <div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+  <%= render layout: "shared/mobile_list" do %>
     <% @invoices.each do |invoice| %>
-      <article class="py-4">
-        <div class="flex items-start justify-between gap-4">
-          <%= link_to invoice.customer&.name || blank_cell, invoice_path(invoice), class: "min-w-0 flex-1 truncate text-sm font-medium text-neutral-950" %>
-          <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= minor_currency(invoice.total_minor, invoice.currency_code) %></span>
-        </div>
-        <div class="mt-2 flex items-center justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-2 text-xs text-neutral-500">
-            <%= invoice_status_badge(invoice) %>
-            <span class="truncate"><%= invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell %></span>
-            <span aria-hidden="true">·</span>
-            <span class="truncate">Due <%= invoice.due_date&.strftime("%b %-d") || blank_cell %></span>
-          </div>
-          <%= link_to "Edit", edit_invoice_path(invoice), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700" %>
-        </div>
-      </article>
+      <%= render "shared/mobile_card", title: invoice.customer&.name || blank_cell, url: invoice_path(invoice),
+          trailing: mobile_card_amount(minor_currency(invoice.total_minor, invoice.currency_code)),
+          footer: safe_join([
+            invoice_status_badge(invoice),
+            tag.span(invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell, class: "truncate"),
+            tag.span("·", aria: { hidden: true }),
+            tag.span(safe_join([ "Due ", invoice.due_date&.strftime("%b %-d") || blank_cell ]), class: "truncate")
+          ]),
+          action: (link_to("Edit", edit_invoice_path(invoice), class: mobile_card_action_class) if invoice.draft?) %>
     <% end %>
-  </div>
+  <% end %>
   <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
         { label: "Customer" }, { label: "Amount", align: :right }, { label: "Status" }, { label: "Date" }, { label: "Due date" }, { label: "Actions", align: :right }
       ] } do %>

@@ -20,7 +20,15 @@
       description: "Add a vendor once, then record the bills they send you.",
       action: new_vendor %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @vendors.each do |vendor| %>
+      <%= render "shared/mobile_card", title: vendor.name, url: vendor_path(vendor),
+          trailing: status_badge(vendor.active? ? "Active" : "Inactive", tone: vendor.active? ? :success : :warning),
+          meta: [ vendor.email.presence, vendor.phone.presence ].compact.join(" · "),
+          action: link_to("Edit", edit_vendor_path(vendor), class: mobile_card_action_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{vendor.name}" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
         { label: "Name" }, { label: "Email" }, { label: "Phone" }, { label: "Status" }, { label: "Actions", align: :right }
       ] } do %>
     <% @vendors.each do |vendor| %>

@@ -9,7 +9,16 @@
       description: "Track the work to be done.",
       action: link_to("Add task", new_project_project_task_path(@project), class: primary_button_class(size: :sm), data: { turbo_frame: "modal" }) %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [ { label: "Task" }, { label: "Status" }, { label: "", align: :right } ] } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @tasks.each do |task| %>
+      <%= render "shared/mobile_card", title: task.title, meta: task.description, footer: task.status.humanize,
+          action: safe_join([
+            link_to("Log time", new_project_project_time_entry_path(@project, task_id: task.id), class: mobile_card_action_class, data: { turbo_frame: "modal" }),
+            link_to("Edit", edit_project_project_task_path(@project, task), class: mobile_card_action_class, data: { turbo_frame: "modal" })
+          ]) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Task" }, { label: "Status" }, { label: "", align: :right } ] } do %>
     <% @tasks.each do |task| %>
       <tr class="<%= table_row_class %>">
         <td class="<%= table_cell_class(strong: true) %> max-w-72 break-words">

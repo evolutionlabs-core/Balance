@@ -1,4 +1,4 @@
-<div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+<%= render layout: "shared/mobile_list" do %>
   <% journal_entries.each do |entry| %>
     <% debit_lines = entry.journal_entry_lines.select { |line| line.debit.positive? } %>
     <% split = entry.journal_entry_lines.size > 2 || entry.description.to_s.length > 80 %>
@@ -42,7 +42,7 @@
       <% end %>
     </article>
   <% end %>
-</div>
+<% end %>
 
 <div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
   <table class="min-w-full">

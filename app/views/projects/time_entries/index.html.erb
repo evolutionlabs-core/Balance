@@ -9,7 +9,14 @@
       description: "Log dated work against a task, or on its own.",
       action: link_to("Log time", new_project_project_time_entry_path(@project), class: primary_button_class(size: :sm), data: { turbo_frame: "modal" }) %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [ { label: "Date" }, { label: "Work performed" }, { label: "Task" }, { label: "Hours", align: :right }, { label: "", align: :right } ] } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @time_entries.each do |entry| %>
+      <%= render "shared/mobile_card", title: entry.description, trailing: mobile_card_amount("#{entry.hours} h"),
+          meta: [ entry.occurred_on.strftime("%b %-d, %Y"), entry.task&.title ].compact.join(" · "),
+          action: link_to("Edit", edit_project_project_time_entry_path(@project, entry), class: mobile_card_action_class, data: { turbo_frame: "modal" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Date" }, { label: "Work performed" }, { label: "Task" }, { label: "Hours", align: :right }, { label: "", align: :right } ] } do %>
     <% @time_entries.each do |entry| %>
       <tr class="<%= table_row_class %>">
         <td class="<%= table_cell_class %> whitespace-nowrap"><%= entry.occurred_on.strftime("%b %-d, %Y") %></td>

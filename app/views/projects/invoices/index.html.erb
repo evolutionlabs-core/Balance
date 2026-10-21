@@ -11,7 +11,16 @@
       title: "No invoices yet",
       description: "Approved estimates converted to invoices will appear here." %>
 <% else %>
-  <%= render layout: "shared/table", locals: { columns: [ { label: "Invoice" }, { label: "Total", align: :right }, { label: "Status" }, { label: "Date" }, { label: "Due date" }, { label: "", align: :right } ] } do %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @invoices.each do |invoice| %>
+      <%= render "shared/mobile_card", title: invoice.invoice_number.presence || blank_cell, url: invoice_path(invoice),
+          trailing: mobile_card_amount(minor_currency(invoice.total_minor, invoice.currency_code)),
+          meta: [ invoice.issue_date&.strftime("%b %-d, %Y"), ("Due #{invoice.due_date.strftime("%b %-d")}" if invoice.due_date) ].compact.join(" · "),
+          footer: invoice_status_badge(invoice),
+          action: (link_to("Edit", edit_invoice_path(invoice), class: mobile_card_action_class) if invoice.draft?) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Invoice" }, { label: "Total", align: :right }, { label: "Status" }, { label: "Date" }, { label: "Due date" }, { label: "", align: :right } ] } do %>
     <% @invoices.each do |invoice| %>
       <tr class="<%= table_row_class %>">
         <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">

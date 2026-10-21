@@ -82,6 +82,14 @@ module UiHelper
     end
   end
 
+  def mobile_card_amount(amount)
+    tag.span(amount, class: "shrink-0 text-sm font-semibold tabular-nums text-neutral-950")
+  end
+
+  def mobile_card_action_class
+    "flex min-h-11 items-center px-1 text-sm font-medium text-balance-teal-700"
+  end
+
   def table_cell_link_class
     "block px-4 py-4"
   end
