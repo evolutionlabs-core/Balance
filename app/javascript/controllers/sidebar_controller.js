@@ -64,8 +64,7 @@ export default class extends Controller {
     this.trigger = null
   }
 
-  closeOnNavigate() {
-    const event = arguments[0]
+  closeOnNavigate(event) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     const link = event.target.closest("a[href]")
     if (!link) return
@@ -179,5 +178,4 @@ export default class extends Controller {
       first.focus()
     }
   }
-
 }

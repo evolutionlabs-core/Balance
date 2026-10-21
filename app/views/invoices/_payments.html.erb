@@ -2,37 +2,25 @@
 <% if received.any? %>
   <section class="mt-6" aria-labelledby="payments-heading">
     <h2 id="payments-heading" class="text-base font-semibold text-neutral-950">Payments</h2>
-    <div class="mt-3 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-      <table class="w-full min-w-[32rem] text-sm">
-        <thead class="border-b border-neutral-200 bg-neutral-50 text-xs text-neutral-500">
-          <tr>
-            <th scope="col" class="px-4 py-2 text-left font-medium">Date</th>
-            <th scope="col" class="px-4 py-2 text-left font-medium">Deposited to</th>
-            <th scope="col" class="px-4 py-2 text-right font-medium">Amount</th>
-            <th scope="col" class="px-4 py-2"><span class="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-neutral-100">
-          <% received.each do |payment| %>
-            <% entry = payment.journal_entry %>
-            <% reversed = payment.reversal_payment.present? %>
-            <tr class="<%= "text-neutral-400" if reversed %>">
-              <td class="px-4 py-3 whitespace-nowrap"><%= entry.effective_date.strftime("%b %-d, %Y") %></td>
-              <td class="px-4 py-3"><%= entry.journal_entry_lines.find { |line| line.debit.positive? }.account.name %></td>
-              <td class="px-4 py-3 text-right tabular-nums <%= reversed ? "line-through" : "text-neutral-950" %>"><%= money(payment.amount_kobo, invoice.currency_code) %></td>
-              <td class="px-4 py-3 text-right">
-                <% if reversed %>
-                  <span class="text-xs">Reversed</span>
-                <% elsif !invoice.voided? %>
-                  <%= button_to "Reverse", invoice_payment_reversal_path(invoice, payment), method: :post,
-                      class: "cursor-pointer bg-transparent text-sm font-medium text-red-700 hover:underline",
-                      form: { data: { turbo_confirm: "Reverse this #{money(payment.amount_kobo, invoice.currency_code)} payment? The invoice balance goes back up by the same amount." } } %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+    <%= render layout: "shared/table", locals: { frame_class: "mt-3", columns: [ { label: "Date" }, { label: "Deposited to" }, { label: "Amount", align: :right }, { label: "", align: :right } ] } do %>
+      <% received.each do |payment| %>
+        <% entry = payment.journal_entry %>
+        <% reversed = payment.reversal_payment.present? %>
+        <tr class="<%= table_row_class %>">
+          <td class="<%= table_cell_class(muted: reversed) %> whitespace-nowrap"><%= entry.effective_date.strftime("%b %-d, %Y") %></td>
+          <td class="<%= table_cell_class(muted: reversed) %>"><%= entry.journal_entry_lines.find { |line| line.debit.positive? }.account.name %></td>
+          <td class="<%= table_cell_class(align: :right, strong: true, muted: reversed) %> tabular-nums <%= "line-through" if reversed %>"><%= money(payment.amount_kobo, invoice.currency_code) %></td>
+          <td class="<%= table_cell_class(align: :right, muted: reversed) %>">
+            <% if reversed %>
+              <span class="text-xs">Reversed</span>
+            <% elsif !invoice.voided? %>
+              <%= button_to "Reverse", invoice_payment_reversal_path(invoice, payment), method: :post,
+                  class: "cursor-pointer bg-transparent text-sm font-medium text-red-700 hover:underline",
+                  form: { data: { turbo_confirm: "Reverse this #{money(payment.amount_kobo, invoice.currency_code)} payment? The invoice balance goes back up by the same amount." } } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
   </section>
 <% end %>

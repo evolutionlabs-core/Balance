@@ -10,7 +10,7 @@
     action: button_to("Refresh list", model_catalog_path, method: :patch, class: secondary_button_class(size: :compact)) %>
 
 <% if @llm_models.any? %>
-  <%= render layout: "shared/table", locals: { columns: [ { label: "Provider" }, { label: "Model" }, { label: "Context window" }, { label: "Per 1M tokens (in / out)" }, { label: "", class: "w-24" } ] } do %>
+  <%= render layout: "shared/table", locals: { columns: [ { label: "Provider" }, { label: "Model" }, { label: "Context window" }, { label: "Per 1M tokens (in / out)" }, { label: "", align: :right, class: "w-24" } ] } do %>
     <%= render partial: "llm/models/model", collection: @llm_models, as: :model, locals: { persisted_ids: @persisted_ids } %>
   <% end %>
 <% else %>

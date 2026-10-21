@@ -40,40 +40,25 @@
       </article>
     <% end %>
   </div>
-  <div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
-    <table class="min-w-full">
-      <thead class="bg-white">
-        <tr>
-          <% [ "Date", "Description", "Payment account", "Category", "Status" ].each do |label| %>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500"><%= label %></th>
-          <% end %>
-          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Amount</th>
-          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="bg-white">
-        <% @expenses.each do |expense| %>
-          <tr id="<%= dom_id(expense) %>" class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50">
-            <td data-label="Date" class="p-0 text-sm whitespace-nowrap text-neutral-600">
-              <%= link_to expense.payment_date.to_fs(:medium), expense_path(expense), class: "block px-4 py-4" %>
-            </td>
-            <% [ [ "Description", expense.description ], [ "Payment", expense.payment_account.name ], [ "Category", expense.category_label ] ].each do |label, value| %>
-              <td data-label="<%= label %>" class="p-0 text-sm whitespace-nowrap text-neutral-600">
-                <%= link_to value, expense_path(expense), class: "block px-4 py-4" %>
-              </td>
-            <% end %>
-            <td data-label="Status" class="p-0 text-sm whitespace-nowrap">
-              <%= link_to expense_path(expense), class: "block px-4 py-4" do %><%= expense_status(expense) %><% end %>
-            </td>
-            <td data-label="Amount" class="p-0 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900">
-              <%= link_to money(expense.total_kobo), expense_path(expense), class: "block px-4 py-4" %>
-            </td>
-            <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-              <%= link_to "View", expense_path(expense), class: "font-medium text-balance-teal-700 hover:underline" %>
-            </td>
-          </tr>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "Date" }, { label: "Description" }, { label: "Payment account" }, { label: "Category" }, { label: "Status" },
+        { label: "Amount", align: :right }, { label: "Actions", align: :right }
+      ] } do %>
+    <% @expenses.each do |expense| %>
+      <tr id="<%= dom_id(expense) %>" class="<%= table_row_class %>">
+        <% [ expense.payment_date.to_fs(:medium), expense.description, expense.payment_account.name, expense.category_label ].each do |value| %>
+          <td class="<%= table_cell_class(link: true) %> whitespace-nowrap"><%= link_to value, expense_path(expense), class: table_cell_link_class %></td>
         <% end %>
-      </tbody>
-    </table>
-  </div>
+        <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+          <%= link_to expense_path(expense), class: table_cell_link_class do %><%= expense_status(expense) %><% end %>
+        </td>
+        <td class="<%= table_cell_class(align: :right, strong: true, link: true) %> tabular-nums whitespace-nowrap">
+          <%= link_to money(expense.total_kobo), expense_path(expense), class: table_cell_link_class %>
+        </td>
+        <td class="<%= table_cell_class(align: :right) %>">
+          <%= link_to "View", expense_path(expense), class: "font-medium text-balance-teal-700 hover:underline" %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
 <% end %>

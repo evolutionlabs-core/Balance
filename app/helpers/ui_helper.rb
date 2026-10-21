@@ -15,6 +15,8 @@ module UiHelper
     neutral: "border-neutral-200 bg-neutral-50 text-neutral-600"
   }.freeze
 
+  TABLE_ALIGNMENTS = { left: "text-left", right: "text-right", center: "text-center" }.freeze
+
   CURRENCY_SYMBOLS = { "NGN" => "₦" }.freeze
 
   def primary_button_class(size: :md)
@@ -53,8 +55,35 @@ module UiHelper
     tag.span(label, class: "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium #{STATUS_BADGE_TONES.fetch(tone)}")
   end
 
-  def table_cell_class
-    "px-4 py-3 text-sm text-neutral-500"
+  def table_header_class(align: :left, compact: false)
+    "px-4 #{compact ? "py-2.5" : "py-3"} #{TABLE_ALIGNMENTS.fetch(align)} text-xs font-medium text-neutral-500"
+  end
+
+  def table_row_class
+    "border-t border-neutral-200 transition-colors hover:bg-neutral-50"
+  end
+
+  def table_cell_class(align: :left, strong: false, link: false, muted: false)
+    [
+      link ? "p-0" : "px-4 py-4",
+      "text-sm",
+      TABLE_ALIGNMENTS.fetch(align),
+      table_cell_tone(strong:, muted:)
+    ].join(" ")
+  end
+
+  def table_cell_tone(strong:, muted:)
+    if muted
+      "text-neutral-400"
+    elsif strong
+      "font-medium text-neutral-900"
+    else
+      "text-neutral-600"
+    end
+  end
+
+  def table_cell_link_class
+    "block px-4 py-4"
   end
 
   def currency_symbol(currency_code)

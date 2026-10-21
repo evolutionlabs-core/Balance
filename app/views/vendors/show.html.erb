@@ -31,12 +31,7 @@
 </dl>
 
 <% if @bills.any? %>
-  <div class="mt-6 overflow-x-auto border-y border-neutral-200">
-    <table class="min-w-full">
-      <%= render "bills/table_head" %>
-      <tbody class="bg-white">
-        <%= render partial: "bills/bill", collection: @bills %>
-      </tbody>
-    </table>
-  </div>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-6", columns: bill_table_columns } do %>
+    <%= render partial: "bills/bill", collection: @bills %>
+  <% end %>
 <% end %>

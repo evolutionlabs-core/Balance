@@ -35,42 +35,24 @@
       </article>
     <% end %>
   </div>
-  <div class="mt-4 hidden overflow-x-auto border-y border-neutral-200 sm:block">
-    <table class="min-w-full">
-      <thead class="bg-white">
-        <tr>
-          <% [ "Name", "Type", "Email", "Phone", "Status" ].each do |label| %>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500"><%= label %></th>
-          <% end %>
-          <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="bg-white">
-        <% @customers.each do |customer| %>
-          <tr id="<%= dom_id(customer) %>" class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50">
-            <td class="p-0 text-sm font-medium whitespace-nowrap text-neutral-900">
-              <%= link_to customer.name, customer_path(customer), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-sm text-neutral-600">
-              <%= link_to customer.customer_type.humanize, customer_path(customer), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-sm text-neutral-600">
-              <%= link_to customer.email.presence || blank_cell, customer_path(customer), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-sm text-neutral-600">
-              <%= link_to customer.phone.presence || blank_cell, customer_path(customer), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-sm">
-              <%= link_to customer_path(customer), class: "block px-4 py-4" do %>
-                <%= customer_status(customer) %>
-              <% end %>
-            </td>
-            <td class="px-4 py-4 text-right text-sm">
-              <%= link_to "Edit", edit_customer_path(customer), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
-            </td>
-          </tr>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "Name" }, { label: "Type" }, { label: "Email" }, { label: "Phone" }, { label: "Status" }, { label: "Actions", align: :right }
+      ] } do %>
+    <% @customers.each do |customer| %>
+      <tr id="<%= dom_id(customer) %>" class="<%= table_row_class %>">
+        <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+          <%= link_to customer.name, customer_path(customer), class: table_cell_link_class %>
+        </td>
+        <% [ customer.customer_type.humanize, customer.email.presence || blank_cell, customer.phone.presence || blank_cell ].each do |value| %>
+          <td class="<%= table_cell_class(link: true) %>"><%= link_to value, customer_path(customer), class: table_cell_link_class %></td>
         <% end %>
-      </tbody>
-    </table>
-  </div>
+        <td class="<%= table_cell_class(link: true) %>">
+          <%= link_to customer_path(customer), class: table_cell_link_class do %><%= customer_status(customer) %><% end %>
+        </td>
+        <td class="<%= table_cell_class(align: :right) %>">
+          <%= link_to "Edit", edit_customer_path(customer), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
 <% end %>

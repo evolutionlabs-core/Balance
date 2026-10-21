@@ -13,6 +13,13 @@ module BillsHelper
     end
   end
 
+  def bill_table_columns
+    [
+      { label: "Vendor" }, { label: "Bill" }, { label: "Total", align: :right }, { label: "Balance due", align: :right },
+      { label: "Status" }, { label: "Due date" }
+    ]
+  end
+
   def bill_line_account_options(workspace, selected = nil)
     accounts = workspace.accounts.where(active: true).ordered.select { |account| BillLine.eligible_account?(account) }
     expense_account_options(accounts, selected)
