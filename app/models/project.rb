@@ -1,4 +1,5 @@
 class Project < ApplicationRecord
+  include WorkspaceCurrency
   belongs_to :workspace
   belongs_to :customer
   has_many :estimates, dependent: :destroy
@@ -7,7 +8,6 @@ class Project < ApplicationRecord
   has_many :invoices, dependent: :nullify
 
   validates :name, presence: true
-  validates :currency_code, inclusion: { in: %w[NGN] }
   validates :cost_budget_kobo, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validate :customer_belongs_to_workspace
 

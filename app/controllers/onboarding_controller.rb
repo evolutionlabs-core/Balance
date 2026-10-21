@@ -36,16 +36,18 @@ class OnboardingController < ApplicationController
       name = params[:workspace_name].to_s.strip
       return render_error("Enter a name for your workspace.") if name.blank?
       onboarding_data["workspace_name"] = name
-      onboarding_data["opening_balance_naira"] = params[:opening_balance_naira].presence || "0"
+      onboarding_data["currency_code"] = params[:currency_code].to_s
+      onboarding_data["opening_balance"] = params[:opening_balance].presence || "0"
+      return render_error("Choose a currency for your workspace.") unless Currency.codes.include?(onboarding_data["currency_code"])
 
-      opening_balance_kobo = parse_opening_balance(onboarding_data["opening_balance_naira"])
+      opening_balance_kobo = parse_opening_balance(onboarding_data["opening_balance"])
       return render_error("Opening balance must be zero or more.") unless opening_balance_kobo
 
       workspace = Workspace.create_for_user!(
         user: Current.user,
         name: name,
         workspace_type: onboarding_data.fetch("workspace_type"),
-        currency_code: "NGN",
+        currency_code: onboarding_data["currency_code"],
         opening_balance_kobo: opening_balance_kobo
       )
 

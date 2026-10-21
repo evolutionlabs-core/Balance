@@ -1,4 +1,5 @@
 class Bill < ApplicationRecord
+  include WorkspaceCurrency
   include AASM
   include Bills::Posting
 

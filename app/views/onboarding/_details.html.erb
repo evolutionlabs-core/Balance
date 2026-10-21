@@ -16,22 +16,15 @@
   </div>
 
   <div>
-    <%= label_tag :opening_balance_naira, "Opening balance", class: field_label_class %>
-    <div class="relative mt-1">
-      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-neutral-500">₦</span>
-      <%= number_field_tag :opening_balance_naira, @onboarding_data.fetch("opening_balance_naira", "0"), min: 0, step: 0.01, class: "#{field_class} pl-8", inputmode: "decimal" %>
-    </div>
-    <p class="mt-1.5 text-sm text-neutral-500">Your starting bank balance. Leave this at ₦0 if you are starting fresh.</p>
+    <%= label_tag :currency_code, "Currency", class: field_label_class %>
+    <%= select_tag :currency_code, options_for_select(Currency.options, @onboarding_data.fetch("currency_code", "NGN")), class: field_class %>
+    <p class="mt-1.5 text-sm text-neutral-500">Every amount in this workspace is recorded in this currency. It can't be changed later.</p>
   </div>
 
-  <div class="border-y border-neutral-200 py-5">
-    <div class="flex items-center justify-between gap-6">
-      <div>
-        <p class="text-sm font-medium text-neutral-900">Base currency</p>
-        <p class="mt-1 text-sm text-neutral-500">All amounts are recorded in naira and stored in kobo.</p>
-      </div>
-      <span class="font-mono text-sm font-medium text-neutral-900">NGN · ₦</span>
-    </div>
+  <div>
+    <%= label_tag :opening_balance, "Opening bank balance", class: field_label_class %>
+    <%= number_field_tag :opening_balance, @onboarding_data.fetch("opening_balance", "0"), min: 0, step: 0.01, class: field_class, inputmode: "decimal" %>
+    <p class="mt-1.5 text-sm text-neutral-500">What is in your bank account today. Leave it at 0 if you are starting fresh.</p>
   </div>
 
   <div class="flex items-center justify-between pt-2">

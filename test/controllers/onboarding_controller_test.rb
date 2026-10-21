@@ -11,7 +11,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to onboarding_step_path(:details)
 
     assert_difference [ "Workspace.count", "Membership.count" ], 1 do
-      patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money" }
+      patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money", currency_code: "NGN" }
     end
 
     workspace = @user.workspaces.last
@@ -29,7 +29,8 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_difference "JournalEntry.count", 1 do
       patch onboarding_step_path(:details), params: {
         workspace_name: "Nneka's Money",
-        opening_balance_naira: "125000.50"
+        currency_code: "NGN",
+        opening_balance: "125000.50"
       }
     end
 
@@ -48,7 +49,7 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to onboarding_step_path(:details)
 
     assert_difference [ "Workspace.count", "Membership.count" ], 1 do
-      patch onboarding_step_path(:details), params: { workspace_name: "Nneka Limited" }
+      patch onboarding_step_path(:details), params: { workspace_name: "Nneka Limited", currency_code: "NGN" }
     end
 
     workspace = @user.workspaces.last
@@ -63,10 +64,31 @@ class OnboardingControllerTest < ActionDispatch::IntegrationTest
     patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
 
     assert_no_difference("Workspace.count") do
-      patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money", opening_balance_naira: "-1" }
+      patch onboarding_step_path(:details), params: { workspace_name: "Nneka's Money", currency_code: "NGN", opening_balance: "-1" }
     end
 
     assert_response :unprocessable_content
     assert_select "body", /Opening balance must be zero or more/
+  end
+
+  test "creates a workspace in the chosen currency, ledger included" do
+    patch onboarding_step_path(:workspace_type), params: { workspace_type: "business" }
+    patch onboarding_step_path(:details), params: { workspace_name: "Accra Studio", currency_code: "GHS", opening_balance: "500" }
+
+    workspace = @user.workspaces.last
+    assert_equal "GHS", workspace.currency_code
+    assert_equal "GHS", workspace.ledger.currency_code
+    assert_equal 50_000, JournalEntry.find_by!(source_type: "OpeningBalance", source_id: workspace.id).journal_entry_lines.sum(:debit)
+  end
+
+  test "rejects an unsupported currency" do
+    patch onboarding_step_path(:workspace_type), params: { workspace_type: "personal" }
+
+    assert_no_difference "Workspace.count" do
+      patch onboarding_step_path(:details), params: { workspace_name: "Tokyo", currency_code: "JPY" }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "body", /Choose a currency for your workspace/
   end
 end

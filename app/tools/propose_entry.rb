@@ -1,7 +1,7 @@
 class ProposeEntry < RubyLLM::Tool
   description "Propose a balanced entry you will prepare for the user to review before it is recorded through the ledger engine. " \
               "Every required account must already exist in the ledger chart. This creates a reviewable proposal only; " \
-              "it never records anything. Amounts are in naira. For ordinary transactions, debit expenses " \
+              "it never records anything. Amounts are in the workspace currency. For ordinary transactions, debit expenses " \
               "and assets received, and credit income, liabilities incurred, equity increases, and assets paid out. " \
               "Before calling, sum the proposed line amounts and verify that total debits exactly equal total credits."
 
@@ -13,7 +13,7 @@ class ProposeEntry < RubyLLM::Tool
       object do
         number :account_id, description: "account ID returned by list_accounts"
         string :side, enum: %w[debit credit], description: "whether this line is a debit or credit"
-        string :amount_naira, description: "positive amount in naira as a decimal string, e.g. \"4550.50\""
+        string :amount_naira, description: "positive amount in the workspace currency as a decimal string, e.g. \"4550.50\""
       end
     end
   end

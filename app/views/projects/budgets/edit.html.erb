@@ -6,7 +6,7 @@
       <%= render "shared/form_errors", record: @project %>
 
       <div>
-        <%= form.label :cost_budget, "Budget amount (NGN)", class: field_label_class %>
+        <%= form.label :cost_budget, "Budget amount (#{@project.currency_code})", class: field_label_class %>
         <%= form.number_field :cost_budget, min: 0, step: 0.01, placeholder: "Enter budget amount", required: true, class: field_class %>
       </div>
     </div>

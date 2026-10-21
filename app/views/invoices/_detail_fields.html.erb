@@ -9,8 +9,6 @@
           data: { controller: "date-picker", date_picker_allow_future_value: true } %>
     </div>
     <div class="sm:col-span-2">
-      <%= form.label :currency_code, "Currency", class: field_label_class %>
-      <%= render "shared/select_menu", form: form, attribute: :currency_code,
-          options: options_for_select([ [ "Nigerian naira (NGN)", "NGN" ] ], form.object.currency_code),
-          prompt: "Select currency", form_id: "new_invoice_form", select_data: {} %>
+      <p class="<%= field_label_class %>">Currency</p>
+      <p class="text-sm text-neutral-900"><%= Currency.label(form.object.currency_code) %></p>
     </div>

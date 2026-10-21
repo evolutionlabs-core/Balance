@@ -1,4 +1,5 @@
 class Estimate < ApplicationRecord
+  include WorkspaceCurrency
   include AASM
 
   class InvalidClientReview < StandardError; end
@@ -26,7 +27,6 @@ class Estimate < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
   validates :client_decision, inclusion: { in: CLIENT_DECISIONS }, allow_nil: true
-  validates :currency_code, inclusion: { in: %w[NGN] }
   validate :customer_belongs_to_workspace
   validate :project_belongs_to_workspace
   validate :project_matches_customer
