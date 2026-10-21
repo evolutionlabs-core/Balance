@@ -13,11 +13,25 @@
     description: "Your chart of accounts.",
     action: new_account %>
 
-<% if @accounts.empty? %>
+<%= form_with url: accounts_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row sm:items-center" do |form| %>
+  <%= form.hidden_field :archived, value: "1" if @archived %>
+  <div class="relative min-w-0 flex-1">
+    <%= form.search_field :q, value: params[:q], placeholder: "Search by name or code", aria: { label: "Search accounts" }, class: field_class %>
+  </div>
+  <%= form.submit "Search", class: secondary_button_class %>
+  <%= link_to @archived ? "Active accounts" : "Archived", accounts_path(archived: (@archived ? nil : "1")), class: ghost_button_class %>
+<% end %>
+
+<% if current_workspace.ledgers.none? %>
   <%= render "shared/empty_state",
       icon: "icons/wallet.svg",
       title: "No accounts yet",
       description: "Accounts appear here once your chart of accounts is provisioned." %>
+<% elsif @accounts.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/wallet.svg",
+      title: @archived ? "No archived accounts" : "No accounts found",
+      description: @archived ? "Accounts you archive appear here and can be restored." : "Try a different name or code." %>
 <% else %>
-  <%= render "list", accounts: @accounts %>
+  <%= render "list", accounts: @accounts, balances: @balances %>
 <% end %>

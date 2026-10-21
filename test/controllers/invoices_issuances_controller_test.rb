@@ -37,17 +37,30 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sending by email issues the invoice and emails the customer" do
-    assert_enqueued_email_with InvoiceMailer, :issued, params: ->(params) {
-      params[:invoice] == @invoice && params[:to] == "billing@acme.example" && params[:subject] == "Your invoice"
-    } do
+    assert_emails 1 do
       post invoice_issuance_path(@invoice), params: { delivery: {
         send_email: "1", to: "billing@acme.example", subject: "Your invoice", message: "Thanks!"
       } }
     end
 
+    mail = ActionMailer::Base.deliveries.last
+    assert_equal [ "billing@acme.example" ], mail.to
+    assert_equal "Your invoice", mail.subject
     assert_redirected_to invoice_path(@invoice)
     assert @invoice.reload.sent?
     assert_equal "Invoice #{@invoice.invoice_number} sent to billing@acme.example.", flash[:notice]
+  end
+
+  test "an email that fails to send leaves the invoice a draft and the books untouched" do
+    InvoiceMailer.stub(:with, ->(**) { raise Errno::ECONNREFUSED }) do
+      assert_no_difference -> { JournalEntry.count } do
+        post invoice_issuance_path(@invoice), params: { delivery: { send_email: "1", to: "billing@acme.example", subject: "Hi" } }
+      end
+    end
+
+    assert_redirected_to invoice_path(@invoice)
+    assert_match "The email couldn't be sent", flash[:alert].to_s
+    assert @invoice.reload.draft?
   end
 
   test "sending by email needs a valid address and keeps the draft" do
@@ -59,6 +72,15 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=tab][aria-selected=true]", text: /Email view/
     assert_select "form#invoice-delivery input[name='delivery[to]'][value='not-an-email']"
     assert @invoice.reload.draft?
+  end
+
+  test "sharing the link issues the invoice without emailing" do
+    assert_no_enqueued_emails do
+      post invoice_issuance_path(@invoice), params: { delivery: { send_email: "0", via: "share" } }
+    end
+
+    assert @invoice.reload.sent?
+    assert_equal "Invoice #{@invoice.invoice_number} shared.", flash[:notice]
   end
 
   test "marking as sent issues without emailing" do

@@ -15,7 +15,7 @@ class ListAccounts < RubyLLM::Tool
   end
 
   def execute(purpose:)
-    existing = ledger.accounts.ordered.to_a
+    existing = ledger.accounts.active.ordered.to_a
     existing_names = existing.map(&:name).map(&:downcase)
 
     {

@@ -25,7 +25,7 @@
         <div>
           <%= form.label :to, "Send to", class: field_label_class %>
           <%= form.email_field :to, class: field_class, autocomplete: "off",
-              data: { invoice_review_target: "recipient", action: "input->invoice-review#confirmation" } %>
+              data: { invoice_review_target: "recipient" } %>
         </div>
         <div>
           <%= form.label :subject, class: field_label_class %>

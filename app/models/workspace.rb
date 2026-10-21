@@ -33,19 +33,19 @@ class Workspace < ApplicationRecord
   end
 
   def payment_accounts
-    accounts.where(subtype: %w[cash credit_card])
+    accounts.active.where(subtype: %w[cash credit_card])
   end
 
   def deposit_accounts
-    accounts.where(subtype: "cash")
+    accounts.active.where(subtype: "cash")
   end
 
   def income_accounts
-    accounts.where(base_type: "income")
+    accounts.active.where(base_type: "income")
   end
 
   def expense_categories
-    accounts.where(base_type: "expense")
+    accounts.active.where(base_type: "expense")
   end
 
   def owned_by?(user)
