@@ -12,11 +12,11 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
-    assert_selector "tr.invoice-line", count: 2
+    assert_selector "tr.line-item", count: 2
     fill_in "Customer", with: "Invoice"
     find("[role='option']", text: customer.name).click
     assert_selector "input[name='invoice[customer_id]'][value='#{customer.id}']", visible: :all
-    within all("tr.invoice-line").first do
+    within all("tr.line-item").first do
       find("input[name$='[description]']").set("Consulting")
       find("input[name$='[quantity]']").set("2")
       find("input[name$='[rate]']").set("150")
@@ -24,17 +24,17 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     find("h2", text: "Product or service").click
     assert_selector "#invoice_total", text: "NGN 300.00"
     fill_in "invoice_bill_to_email", with: "custom@example.com"
-    within all("tr.invoice-line").last do
+    within all("tr.line-item").last do
       click_on "Remove line"
     end
-    assert_selector "tr.invoice-line", count: 1
+    assert_selector "tr.line-item", count: 1
     click_on "Save and preview"
 
     assert_current_path %r{\A/invoices/\d+\z}
     invoice = workspace.invoices.reload.sole
     assert_equal [ 30_000, customer, "custom@example.com" ], [ invoice.total_minor, invoice.customer, invoice.bill_to_email ]
     visit edit_invoice_path(invoice)
-    within "tr.invoice-line" do
+    within "tr.line-item" do
       find("input[name$='[rate]']").set("75")
     end
     find("h2", text: "Product or service").click

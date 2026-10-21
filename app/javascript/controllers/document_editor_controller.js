@@ -2,16 +2,13 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
 export default class extends Controller {
-  static targets = ["form", "amount"]
+  static targets = ["form", "amount", "total"]
 
   calculateTotals() {
     const total = this.amountTargets.reduce((sum, input) => sum + (Number.parseFloat(input.value) || 0), 0)
     const formatted = `NGN ${total.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-    for (const id of ["estimate_subtotal", "estimate_total", "estimate_balance_due", "invoice_subtotal", "invoice_total", "invoice_balance_due"]) {
-      const output = this.element.querySelector(`#${id}`)
-      if (output) output.textContent = formatted
-    }
+    this.totalTargets.forEach((output) => { output.textContent = formatted })
   }
 
   async saveAndShow(event) {

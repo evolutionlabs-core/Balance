@@ -54,15 +54,15 @@
 }
 
 @layer components {
-  :is(.invoice-lines, .estimate-lines) {
+  .line-items {
     counter-reset: line-item;
   }
 
-  :is(.invoice-line, .estimate-line) {
+  .line-item {
     counter-increment: line-item;
   }
 
-  :is(.invoice-line-number, .estimate-line-number)::before {
+  .line-item-number::before {
     content: counter(line-item);
   }
 
@@ -240,37 +240,37 @@
       font-size: 16px;
     }
 
-    :is(.invoice-line-editor, .invoice-preview-lines),
-    :is(.invoice-line-editor, .invoice-preview-lines) :is(tbody, tr, td) {
+    :is(.line-item-editor, .invoice-preview-lines),
+    :is(.line-item-editor, .invoice-preview-lines) :is(tbody, tr, td) {
       display: block;
       width: 100%;
     }
 
-    :is(.invoice-line-editor, .invoice-preview-lines) thead {
+    :is(.line-item-editor, .invoice-preview-lines) thead {
       display: none;
     }
 
-    .invoice-line-editor tr {
+    .line-item-editor tr {
       padding-block: 0.75rem;
       border-top: 1px solid #e5e5e5;
     }
 
-    .invoice-line-editor .invoice-line-number {
+    .line-item-editor .line-item-number {
       display: none;
     }
 
-    .invoice-line-editor td {
+    .line-item-editor td {
       padding-inline: 0;
     }
 
-    .invoice-line-editor td:nth-of-type(4),
-    .invoice-line-editor td:nth-of-type(5) {
+    .line-item-editor td:nth-of-type(4),
+    .line-item-editor td:nth-of-type(5) {
       display: inline-block;
       width: calc(50% - 0.25rem);
       vertical-align: top;
     }
 
-    .invoice-line-editor td:nth-of-type(5) {
+    .line-item-editor td:nth-of-type(5) {
       margin-left: 0.5rem;
     }
 
