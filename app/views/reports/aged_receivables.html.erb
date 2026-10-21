@@ -1,4 +1,4 @@
-<%= render "aging", title: "Aged receivables", aging: @aging,
-    description: "What customers owe you on sent invoices, by how long it is past due.",
-    counterparty: "Customer", control_account: "Accounts Receivable", documents: "sent invoices",
+<%= render "aging", title: "Owed to you", aging: @aging, total_label: "Total owed to you",
+    description: "Money customers still owe on invoices you've sent, grouped by how late it is. Also called aged receivables.",
+    counterparty: "Customer", control_account: "Accounts Receivable", documents: "invoices",
     empty: "No customer owes you anything right now." %>

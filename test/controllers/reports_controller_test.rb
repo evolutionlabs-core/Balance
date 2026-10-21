@@ -120,8 +120,8 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     get aged_receivables_path
 
     assert_response :success
-    assert_select "h1", /Aged receivables/
-    assert_select "#tie-out", /Ties out: Accounts Receivable holds/
+    assert_select "h1", "Owed to you"
+    assert_select "#tie-out", /Matches your books: Accounts Receivable is/
   end
 
   test "aged payables is only for business workspaces" do
@@ -148,7 +148,9 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
     get aged_payables_path
 
     assert_response :success
-    assert_select "tbody th", text: "Lagos Landlords"
-    assert_select "#tie-out", /Ties out: Accounts Payable holds ₦750.00/
+    assert_select "h1", "You owe"
+    assert_select "tbody th a[href='#{vendor_path(vendor)}']", text: "Lagos Landlords"
+    assert_select "tbody td", text: "—", count: 4
+    assert_select "#tie-out", /Matches your books: Accounts Payable is ₦750.00/
   end
 end
