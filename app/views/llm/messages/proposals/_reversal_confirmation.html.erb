@@ -7,7 +7,7 @@
       <h3 class="mt-0.5 text-sm font-semibold text-neutral-950"><%= proposal.description %></h3>
       <p class="mt-0.5 text-xs text-neutral-500">Entry #<%= proposal.data.fetch("source_journal_entry_id") %> · <%= proposal.effective_date.to_date.strftime("%B %-d, %Y") %></p>
     </div>
-    <p class="flex-none text-lg font-semibold tracking-tight tabular-nums text-neutral-950"><%= naira(proposal.total_debit_kobo) %></p>
+    <p class="flex-none text-lg font-semibold tracking-tight tabular-nums text-neutral-950"><%= money(proposal.total_debit_kobo, proposal.workspace.currency_code) %></p>
   </div>
 
   <% if errors.present? %>
@@ -19,7 +19,7 @@
       <div class="grid grid-cols-[3.5rem_minmax(0,1fr)_6.25rem] items-center gap-1.5 px-4 py-2 text-[13px]">
         <span class="text-xs font-medium text-neutral-500"><%= line.fetch("side").titleize %></span>
         <span class="text-neutral-900"><%= line.fetch("account_name") %></span>
-        <span class="text-right tabular-nums text-neutral-900"><%= naira(line.fetch("amount_kobo")) %></span>
+        <span class="text-right tabular-nums text-neutral-900"><%= money(line.fetch("amount_kobo"), proposal.workspace.currency_code) %></span>
       </div>
     <% end %>
   </div>

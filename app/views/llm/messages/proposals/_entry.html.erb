@@ -17,7 +17,7 @@
       <h3 class="mt-0.5 truncate text-sm font-semibold text-neutral-950"><%= proposal.description %></h3>
       <p class="mt-0.5 text-xs text-neutral-500"><%= proposal.effective_date.to_date.strftime("%B %-d, %Y") %></p>
     </div>
-    <p class="flex-none text-lg font-semibold tracking-tight tabular-nums text-neutral-950"><%= naira(proposal.total_debit_kobo) %></p>
+    <p class="flex-none text-lg font-semibold tracking-tight tabular-nums text-neutral-950"><%= money(proposal.total_debit_kobo, proposal.workspace.currency_code) %></p>
   </div>
 
   <% unless editable %>
@@ -54,7 +54,7 @@
               <span class="w-fit rounded px-1.5 py-0.5 text-[11px] font-semibold <%= line["side"] == "debit" ? "bg-[#e9f5f6] text-[#0f7082]" : "bg-neutral-100 text-neutral-600" %>"><%= line["side"] == "debit" ? "Debit" : "Credit" %></span>
               <% if reversal %>
                 <span class="truncate px-1.5 py-1 text-[13px] text-neutral-900"><%= accounts.find { |account| account.id.to_s == line["account_id"].to_s }&.name %></span>
-                <span class="px-1.5 py-1 text-right text-[13px] tabular-nums text-neutral-900"><%= naira(line["amount_kobo"]) %></span>
+                <span class="px-1.5 py-1 text-right text-[13px] tabular-nums text-neutral-900"><%= money(line["amount_kobo"], proposal.workspace.currency_code) %></span>
               <% else %>
                 <%= fields_for "proposal[lines][#{index}]" do |line_form| %>
                   <%= render "shared/select_menu", form: line_form, attribute: :account_id,
@@ -70,8 +70,8 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-neutral-50 px-4 py-2 text-[11px]">
-          <div><span class="text-neutral-500">Total debits</span><strong class="ml-2 font-semibold tabular-nums text-neutral-900"><%= naira(proposal.total_debit_kobo) %></strong></div>
-          <div class="text-right"><span class="text-neutral-500">Total credits</span><strong class="ml-2 font-semibold tabular-nums text-neutral-900"><%= naira(proposal.total_credit_kobo) %></strong></div>
+          <div><span class="text-neutral-500">Total debits</span><strong class="ml-2 font-semibold tabular-nums text-neutral-900"><%= money(proposal.total_debit_kobo, proposal.workspace.currency_code) %></strong></div>
+          <div class="text-right"><span class="text-neutral-500">Total credits</span><strong class="ml-2 font-semibold tabular-nums text-neutral-900"><%= money(proposal.total_credit_kobo, proposal.workspace.currency_code) %></strong></div>
         </div>
       </div>
 
@@ -87,7 +87,7 @@
       <div class="flex items-center justify-between gap-2 border-t border-neutral-200 bg-neutral-50 px-4 py-2.5">
         <p class="flex min-w-0 items-center gap-1.5 text-xs font-medium <%= balanced ? "text-green-700" : "text-red-600" %>">
           <%= inline_svg_tag(balanced ? "icons/check-circle.svg" : "icons/minus-circle.svg", class: "h-4 w-4 flex-none") %>
-          <span><%= balanced ? "Balanced" : "Off by #{naira((proposal.total_debit_kobo - proposal.total_credit_kobo).abs)}" %></span>
+          <span><%= balanced ? "Balanced" : "Off by #{money((proposal.total_debit_kobo - proposal.total_credit_kobo).abs, proposal.workspace.currency_code)}" %></span>
         </p>
         <div class="flex flex-none items-center gap-1.5">
           <button type="submit" formaction="<%= chat_proposal_dismissal_path(proposal.llm_chat, proposal) %>" class="<%= ghost_button_class(size: :sm) %>">Dismiss</button>

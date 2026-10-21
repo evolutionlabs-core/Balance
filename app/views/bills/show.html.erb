@@ -15,7 +15,7 @@
     </div>
     <div class="sm:text-right">
       <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Balance due</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= naira(@bill.open? ? @bill.balance_due_kobo : 0) %></p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@bill.open? ? @bill.balance_due_kobo : 0, @bill.currency_code) %></p>
     </div>
   </div>
 
@@ -23,8 +23,8 @@
     <% [
          [ "Bill date", @bill.bill_date&.strftime("%b %-d, %Y") || blank_cell ],
          [ "Due date", @bill.due_date&.strftime("%b %-d, %Y") || blank_cell ],
-         [ "Total", naira(@bill.total_kobo) ],
-         [ "Paid", naira(@bill.applied_amount_kobo) ]
+         [ "Total", money(@bill.total_kobo, @bill.currency_code) ],
+         [ "Paid", money(@bill.applied_amount_kobo, @bill.currency_code) ]
        ].each do |label, value| %>
       <div class="bg-white px-4 py-3">
         <dt class="text-xs font-medium text-neutral-500"><%= label %></dt>
@@ -51,7 +51,7 @@
           <tr class="border-t border-neutral-200">
             <td class="px-4 py-3 text-sm text-neutral-900"><%= line.account.name %></td>
             <td class="px-4 py-3 text-sm text-neutral-600"><%= line.description %></td>
-            <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= naira(line.amount_kobo) %></td>
+            <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= money(line.amount_kobo, @bill.currency_code) %></td>
           </tr>
         <% end %>
       </tbody>

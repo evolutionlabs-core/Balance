@@ -5,7 +5,7 @@
       <% rows.each do |row| %>
         <li class="flex items-center justify-between gap-4 py-3 text-sm">
           <span class="truncate text-neutral-700"><%= row.label %></span>
-          <span class="font-medium tabular-nums whitespace-nowrap text-neutral-950"><%= naira(row.amount_kobo) %></span>
+          <span class="font-medium tabular-nums whitespace-nowrap text-neutral-950"><%= money(row.amount_kobo) %></span>
         </li>
       <% end %>
     </ol>

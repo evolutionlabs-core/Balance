@@ -6,7 +6,7 @@
     </div>
     <div class="sm:text-right">
       <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950">₦<span data-expense-lines-target="total"><%= format("%.2f", BigDecimal(bill.total_kobo) / 100) %></span></p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= currency_symbol(bill.currency_code) %><span data-expense-lines-target="total"><%= minor_amount(bill.total_kobo) %></span></p>
     </div>
   </div>
 

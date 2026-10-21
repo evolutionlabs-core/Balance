@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-6xl" data-controller="document-editor form">
+<div class="mx-auto max-w-6xl" data-controller="document-editor form" data-document-editor-currency-value="<%= estimate.currency_code %>">
   <% if estimate.persisted? %>
     <%= form_with model: estimate, url: project_project_estimate_calculation_path(project), method: :post, id: "new_estimate_form",
         data: { document_editor_target: "form", save_url: project_estimate_path(estimate), save_method: "patch" } do %>

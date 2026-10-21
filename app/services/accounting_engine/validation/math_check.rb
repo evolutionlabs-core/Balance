@@ -7,13 +7,13 @@ module AccountingEngine::Validation
       if debits == credits
         []
       else
-        [ error(:match, "Total debits (#{naira(debits)}) must equal total credits (#{naira(credits)})") ]
+        [ error(:match, "Total debits (#{amount(debits)}) must equal total credits (#{amount(credits)})") ]
       end
     end
 
     class << self
       private
-        def naira(kobo)
+        def amount(kobo)
           format("%.2f", BigDecimal(kobo) / 100)
         end
 

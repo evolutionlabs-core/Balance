@@ -59,8 +59,8 @@ module UiHelper
     CURRENCY_SYMBOLS.fetch(currency_code, "#{currency_code} ")
   end
 
-  def naira(kobo)
-    number_to_currency(BigDecimal(kobo) / 100, unit: "₦", precision: 2)
+  def money(minor, currency_code = current_workspace.currency_code)
+    number_to_currency(BigDecimal(minor || 0) / 100, unit: currency_symbol(currency_code), precision: 2)
   end
 
   def minor_currency(amount, currency_code)

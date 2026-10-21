@@ -18,7 +18,7 @@
         <li class="flex items-center gap-3 py-3">
           <%= link_to row.account.name, general_ledger_account_path(row.account), class: "min-w-0 flex-1 truncate text-sm font-medium text-neutral-900 hover:underline" %>
           <span class="flex-none text-right text-sm tabular-nums <%= row.amount_kobo.negative? ? "text-red-700" : "text-neutral-950" %>">
-            <span class="font-semibold"><%= overview_money(overview, row.amount_kobo.abs) %></span>
+            <span class="font-semibold"><%= money(row.amount_kobo.abs, overview.workspace.currency_code) %></span>
             <% if liability && row.amount_kobo.positive? %>
               <span class="text-xs text-neutral-500"><%= overview.t("accounts.owed") %></span>
             <% end %>

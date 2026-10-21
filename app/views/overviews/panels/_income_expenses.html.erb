@@ -17,7 +17,7 @@
           <span class="size-2.5 rounded-sm" style="background-color: <%= color %>" aria-hidden="true"></span>
           <%= overview.t("income_expenses.#{key}") %>
         </dt>
-        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-neutral-950"><%= overview_money(overview, amount) %></dd>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-neutral-950"><%= money(amount, overview.workspace.currency_code) %></dd>
       </div>
     <% end %>
   </dl>

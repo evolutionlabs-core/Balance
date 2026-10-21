@@ -44,12 +44,12 @@
 <% else %>
   <section class="mt-6 border-b border-neutral-200 pb-6">
     <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total expenses</p>
-    <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= naira(@report.total_kobo) %></p>
+    <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@report.total_kobo) %></p>
     <div class="mt-5 h-64">
       <%= column_chart monthly_totals.transform_values { |amount| amount / 100.0 },
           height: "250px",
           colors: [ "#0f7082" ],
-          prefix: "₦",
+          prefix: currency_symbol(current_workspace.currency_code),
           thousands: ",",
           legend: false %>
     </div>
@@ -72,7 +72,7 @@
           height: "270px",
           curve: false,
           points: false,
-          prefix: "₦",
+          prefix: currency_symbol(current_workspace.currency_code),
           thousands: "," %>
     </div>
   </section>
@@ -99,8 +99,8 @@
                 <td class="px-4 py-3 text-sm text-neutral-600"><%= finding.expense.payment_date.to_fs(:medium) %></td>
                 <td class="px-4 py-3 text-sm font-medium text-neutral-900"><%= link_to finding.expense.description, expense_path(finding.expense), class: "hover:underline" %></td>
                 <td class="px-4 py-3 text-sm text-neutral-600"><%= finding.category %></td>
-                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= naira(finding.amount_kobo) %></td>
-                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-500"><%= naira(finding.average_kobo) %></td>
+                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= money(finding.amount_kobo) %></td>
+                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-500"><%= money(finding.average_kobo) %></td>
               </tr>
             <% end %>
           </tbody>

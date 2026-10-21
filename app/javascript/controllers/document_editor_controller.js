@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
+import { formatAmount, parseAmount } from "lib/money"
 
 export default class extends Controller {
   static targets = ["form", "amount", "total"]
+  static values = { currency: String }
 
   calculateTotals() {
-    const total = this.amountTargets.reduce((sum, input) => sum + (Number.parseFloat(input.value) || 0), 0)
-    const formatted = `NGN ${total.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const total = this.amountTargets.reduce((sum, input) => sum + parseAmount(input.value), 0)
+    const formatted = `${this.currencyValue} ${formatAmount(total)}`
 
     this.totalTargets.forEach((output) => { output.textContent = formatted })
   }

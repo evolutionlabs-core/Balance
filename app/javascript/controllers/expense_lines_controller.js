@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { formatAmount, parseAmount } from "lib/money"
 
 export default class extends Controller {
   static targets = ["lines", "template", "row", "amount", "position", "destroy", "total"]
@@ -32,10 +33,10 @@ export default class extends Controller {
   recalculate() {
     const total = this.visibleRows.reduce((sum, row) => {
       const input = row.querySelector("[data-expense-lines-target='amount']")
-      return sum + this.parseAmount(input.value)
+      return sum + parseAmount(input.value)
     }, 0)
 
-    this.totalTarget.textContent = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
+    this.totalTarget.textContent = formatAmount(total)
   }
 
   reindex() {
@@ -46,10 +47,5 @@ export default class extends Controller {
 
   get visibleRows() {
     return this.rowTargets.filter((row) => !row.hidden)
-  }
-
-  parseAmount(value) {
-    const amount = Number.parseFloat(value.replaceAll(",", ""))
-    return Number.isFinite(amount) ? amount : 0
   }
 }

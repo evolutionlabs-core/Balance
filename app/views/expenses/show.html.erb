@@ -13,7 +13,7 @@
         <%= @expense.payment_date.to_fs(:long) %> · Paid from <%= @expense.payment_account.name %>
       </p>
     </div>
-    <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= naira(@expense.total_kobo) %></p>
+    <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@expense.total_kobo) %></p>
   </div>
 
   <% if @expense.memo.present? %>
@@ -41,7 +41,7 @@
             <tr class="border-t border-neutral-200">
               <td class="px-4 py-3 text-sm font-medium text-neutral-900"><%= line.account.name %></td>
               <td class="px-4 py-3 text-sm text-neutral-600"><%= line.description %></td>
-              <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= naira(line.amount_kobo) %></td>
+              <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-900"><%= money(line.amount_kobo) %></td>
             </tr>
           <% end %>
         </tbody>
@@ -65,8 +65,8 @@
             <% @journal_entry.journal_entry_lines.each do |line| %>
               <tr class="border-t border-neutral-200">
                 <td class="px-4 py-3 text-sm font-medium text-neutral-900"><%= line.account.name %></td>
-                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600"><%= line.debit.positive? ? naira(line.debit) : blank_cell %></td>
-                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600"><%= line.credit.positive? ? naira(line.credit) : blank_cell %></td>
+                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600"><%= line.debit.positive? ? money(line.debit) : blank_cell %></td>
+                <td class="px-4 py-3 text-right text-sm tabular-nums text-neutral-600"><%= line.credit.positive? ? money(line.credit) : blank_cell %></td>
               </tr>
             <% end %>
           </tbody>

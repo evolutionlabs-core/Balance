@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-6xl" data-controller="document-editor form">
+<div class="mx-auto max-w-6xl" data-controller="document-editor form" data-document-editor-currency-value="<%= invoice.currency_code %>">
   <% if invoice.persisted? %>
     <%= form_with model: invoice, url: invoice_calculation_path, method: :post, id: "new_invoice_form",
         data: { document_editor_target: "form", save_url: invoice_path(invoice), save_method: "patch" } do %>

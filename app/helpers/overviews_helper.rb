@@ -25,7 +25,7 @@ module OverviewsHelper
 
   def overview_kpi_basis(overview, kpi, moment)
     basis = kpi.basis_kobo
-    amount = overview_money(overview, basis.abs)
+    amount = money(basis.abs, overview.workspace.currency_code)
 
     if basis.zero?
       overview.t("kpis.change.was_zero", when: moment)
@@ -52,10 +52,6 @@ module OverviewsHelper
         ])
       end
     end
-  end
-
-  def overview_money(overview, kobo)
-    number_to_currency(BigDecimal(kobo) / 100, unit: currency_symbol(overview.workspace.currency_code), precision: 2)
   end
 
   def overview_chart_money_options(overview)

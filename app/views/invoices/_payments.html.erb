@@ -19,14 +19,14 @@
             <tr class="<%= "text-neutral-400" if reversed %>">
               <td class="px-4 py-3 whitespace-nowrap"><%= entry.effective_date.strftime("%b %-d, %Y") %></td>
               <td class="px-4 py-3"><%= entry.journal_entry_lines.find { |line| line.debit.positive? }.account.name %></td>
-              <td class="px-4 py-3 text-right tabular-nums <%= reversed ? "line-through" : "text-neutral-950" %>"><%= naira(payment.amount_kobo) %></td>
+              <td class="px-4 py-3 text-right tabular-nums <%= reversed ? "line-through" : "text-neutral-950" %>"><%= money(payment.amount_kobo, invoice.currency_code) %></td>
               <td class="px-4 py-3 text-right">
                 <% if reversed %>
                   <span class="text-xs">Reversed</span>
                 <% elsif !invoice.voided? %>
                   <%= button_to "Reverse", invoice_payment_reversal_path(invoice, payment), method: :post,
                       class: "cursor-pointer bg-transparent text-sm font-medium text-red-700 hover:underline",
-                      form: { data: { turbo_confirm: "Reverse this #{naira(payment.amount_kobo)} payment? The invoice balance goes back up by the same amount." } } %>
+                      form: { data: { turbo_confirm: "Reverse this #{money(payment.amount_kobo, invoice.currency_code)} payment? The invoice balance goes back up by the same amount." } } %>
                 <% end %>
               </td>
             </tr>

@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { formatAmount, parseAmount } from "lib/money"
 
 export default class extends Controller {
   static targets = ["lines", "template", "row", "account", "debit", "credit", "debitTotal", "creditTotal", "difference", "status", "submit"]
@@ -48,9 +49,9 @@ export default class extends Controller {
     const complete = activeRows.length >= 2 && activeRows.every((row) => this.rowComplete(row))
     const balanced = debitTotal > 0 && Math.abs(difference) < 0.005
 
-    this.debitTotalTarget.textContent = this.format(debitTotal)
-    this.creditTotalTarget.textContent = this.format(creditTotal)
-    this.differenceTarget.textContent = this.format(Math.abs(difference))
+    this.debitTotalTarget.textContent = formatAmount(debitTotal)
+    this.creditTotalTarget.textContent = formatAmount(creditTotal)
+    this.differenceTarget.textContent = formatAmount(Math.abs(difference))
     this.differenceTarget.classList.toggle("text-red-600", Math.abs(difference) >= 0.005)
     this.submitTarget.disabled = !(complete && balanced)
     this.statusTarget.textContent = complete && balanced
@@ -75,10 +76,6 @@ export default class extends Controller {
   }
 
   amount(input) {
-    return parseFloat(input?.value.replaceAll(",", "")) || 0
-  }
-
-  format(value) {
-    return new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+    return parseAmount(input?.value)
   }
 }
