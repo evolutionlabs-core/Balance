@@ -149,8 +149,9 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "You owe"
-    assert_select "tbody th a[href='#{vendor_path(vendor)}']", text: "Lagos Landlords"
-    assert_select "tbody td", text: "—", count: 4
+    assert_select "tbody th", text: "Lagos Landlords"
+    assert_select "tbody a[href='#{vendor_path(vendor)}']", text: "View"
+    assert_select "tbody td", text: /Not due yet/
     assert_select "#tie-out", /Matches your books: Accounts Payable is ₦750.00/
   end
 end
