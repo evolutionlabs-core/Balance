@@ -17,7 +17,26 @@ module Expenses
       recorded
     end
 
+    def void!
+      voided = false
+      Expense.transaction do
+        reverse_in_ledger!(journal_entry, on: Date.current, source_type: "Expense", source_id: id, action: "void",
+          description: "Voided expense: #{description}")
+
+        update!(status: :voided)
+        voided = true
+      end
+
+      restore_status unless voided
+      voided
+    end
+
     private
+      def restore_status
+        self.status = status_in_database
+        clear_changes_information
+      end
+
       def posting_attributes
         {
           payment_date: payment_date,
