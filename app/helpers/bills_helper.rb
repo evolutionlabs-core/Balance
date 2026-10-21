@@ -21,7 +21,7 @@ module BillsHelper
   end
 
   def bill_line_account_options(workspace, selected = nil)
-    accounts = workspace.accounts.where(active: true).ordered.select { |account| BillLine.eligible_account?(account) }
+    accounts = workspace.accounts.active.ordered.select { |account| BillLine.eligible_account?(account) }
     expense_account_options(accounts, selected)
   end
 end

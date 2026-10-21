@@ -1,14 +1,14 @@
 <tr id="<%= dom_id(account) %>" class="<%= table_row_class %>">
   <td class="<%= table_cell_class %> font-mono whitespace-nowrap"><%= account.code %></td>
-  <td class="<%= table_cell_class(strong: true) %> whitespace-nowrap"><%= account.name %></td>
-  <td class="<%= table_cell_class %> whitespace-nowrap"><%= account.base_type.humanize %></td>
-  <td class="<%= table_cell_class %> whitespace-nowrap"><%= account.subtype.humanize %></td>
-  <td class="<%= table_cell_class(align: :right) %> py-2">
-    <% if account.system? %>
-      <span class="inline-flex rounded-md p-1.5 text-neutral-400" title="System account — locked">
-        <span class="sr-only">System account — locked</span>
-        <%= inline_svg_tag "icons/lock.svg", class: "h-4 w-4" %>
-      </span>
+  <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+    <%= link_to general_ledger_account_path(account), class: table_cell_link_class do %>
+      <%= account.name %>
+      <% if account.system? %>
+        <span class="ml-1 inline-flex align-middle text-neutral-400" title="System account — locked"><span class="sr-only">System account — locked</span><%= inline_svg_tag "icons/lock.svg", class: "h-3.5 w-3.5" %></span>
+      <% end %>
     <% end %>
   </td>
+  <td class="<%= table_cell_class %> whitespace-nowrap"><%= account.base_type.humanize %> · <%= account.subtype.humanize %></td>
+  <td class="<%= table_cell_class(align: :right) %> tabular-nums whitespace-nowrap"><%= money(account_balance(account, balances)) %></td>
+  <td class="<%= table_cell_class(align: :right) %> whitespace-nowrap"><%= account_actions(account, balances) %></td>
 </tr>

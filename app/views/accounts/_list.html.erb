@@ -1,8 +1,8 @@
 <%= render layout: "shared/mobile_list" do %>
-  <%= render partial: "account_card", collection: accounts, as: :account %>
+  <%= render partial: "account_card", collection: accounts, as: :account, locals: { balances: balances } %>
 <% end %>
 <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", sticky: true, columns: [
-      { label: "Code" }, { label: "Name" }, { label: "Type" }, { label: "Subtype" }, { label: "", sr_label: "System", align: :right, class: "w-12" }
+      { label: "Code" }, { label: "Name" }, { label: "Type" }, { label: "Balance", align: :right }, { label: "Actions", align: :right }
     ] } do %>
-  <%= render partial: "account_row", collection: accounts, as: :account %>
+  <%= render partial: "account_row", collection: accounts, as: :account, locals: { balances: balances } %>
 <% end %>
