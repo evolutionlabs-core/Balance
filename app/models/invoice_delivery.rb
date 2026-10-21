@@ -29,8 +29,8 @@ class InvoiceDelivery
     invoice.business_email.nil? ? invoice.user.email_address : invoice.business_email
   end
 
-  def deliver_later
-    InvoiceMailer.with(invoice: invoice, to: to, subject: subject, message: message).issued.deliver_later
+  def deliver_now
+    InvoiceMailer.with(invoice: invoice, to: to, subject: subject, message: message).issued.deliver_now
   end
 
   private

@@ -19,6 +19,7 @@ export default class extends Controller {
     }
 
     if (this.hasIssueUrlValue && this.issueUrlValue) {
+      if (via === "copy" && !window.confirm(`Link copied. It opens for your customer once the invoice is marked as sent.\n\nHave you sent it? Mark it as sent now?`)) return
       await this.issue(via)
     } else if (via === "copy") {
       this.element.querySelector("[data-share-label]")?.replaceChildren("Link copied")
