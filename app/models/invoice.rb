@@ -21,7 +21,7 @@ class Invoice < ApplicationRecord
   validate :customer_belongs_to_workspace
 
   generates_token_for :client_view, expires_in: 90.days do
-    [ workspace_id, status, invoice_number ]
+    [ workspace_id, invoice_number ]
   end
 
   before_validation :populate_party_details, on: :create

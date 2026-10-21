@@ -3,6 +3,8 @@ class Account < ApplicationRecord
   has_many :journal_entry_lines, dependent: :restrict_with_error
 
   scope :ordered, -> { order(:name) }
+  scope :active, -> { where(active: true) }
+  scope :archived, -> { where(active: false) }
 
   before_validation :derive_normal_balance
   before_destroy :protect_system_account
@@ -12,6 +14,27 @@ class Account < ApplicationRecord
 
   def control_counterparty
     AccountSubtypes.control_counterparty(subtype)
+  end
+
+  def balance
+    sign = normal_balance == "debit" ? 1 : -1
+    sign * AccountingEngine::Balances.new(ledger).by_account.fetch(id, 0)
+  end
+
+  def archive
+    if system?
+      errors.add(:base, "#{name} is a system account and can't be archived")
+    elsif balance.nonzero?
+      errors.add(:base, "#{name} still has a balance; move it to another account before archiving")
+    else
+      update(active: false)
+    end
+
+    errors.empty?
+  end
+
+  def restore
+    update(active: true)
   end
 
   private

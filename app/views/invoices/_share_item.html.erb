@@ -1,0 +1,8 @@
+<button type="button" role="menuitem" class="<%= menu_item_class %>"
+    data-controller="share" data-action="share#share"
+    data-share-url-value="<%= client_invoice_url(invoice.generate_token_for(:client_view)) %>"
+    data-share-title-value="Invoice <%= invoice.invoice_number %> from <%= invoice.business_name.presence || invoice.workspace.name %>"
+    <% if issue %>data-share-issue-url-value="<%= invoice_issuance_path(invoice) %>"<% end %>>
+  <%= inline_svg_tag "icons/share.svg", class: "h-4 w-4 flex-none" %>
+  <span data-share-label>Share link…</span>
+</button>

@@ -1,0 +1,22 @@
+<% content_for :title, "Cash flow" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Cash flow" } ] %>
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Cash flow",
+    description: current_workspace.personal? ? "Where your cash came from and where it went." : "How cash moved through operations, investment, and financing.",
+    action: (report_export_link if @statement) %>
+
+<%= render "period_menu", url: cash_flow_path, attribute: :period, choices: ReportPeriod::INCOME_STATEMENT, selected: @period %>
+
+<% if @statement.nil? %>
+  <%= render "shared/empty_state",
+      icon: "icons/gauge.svg",
+      title: "No accounts yet",
+      description: "Your cash flow statement appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <%= render "statement", statement: @statement,
+        title: current_workspace.personal? ? "Cash Flow" : "Statement of Cash Flows",
+        subtitle: "For #{@statement.columns.first.label}" %>
+<% end %>
