@@ -6,6 +6,7 @@
 
 <% draft_count = current_workspace.journal_entry_drafts.unposted.count %>
 <% new_entry = tag.div(class: "flex items-center gap-2") do %>
+  <%= link_to "Templates", entry_templates_path, class: ghost_button_class(size: :compact) %>
   <% if draft_count.positive? %>
     <%= link_to "Drafts (#{draft_count})", journal_entry_drafts_path, class: secondary_button_class(size: :compact) %>
   <% end %>

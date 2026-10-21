@@ -12,6 +12,7 @@ class Workspace < ApplicationRecord
   has_many :customers, dependent: :destroy
   has_many :ledgers, dependent: :restrict_with_error
   has_many :journal_entry_drafts, dependent: :destroy
+  has_many :entry_templates, dependent: :destroy
   has_many :accounts, through: :ledgers
   has_many :invoices, dependent: :destroy
   has_many :projects, dependent: :destroy
