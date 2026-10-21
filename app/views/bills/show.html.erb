@@ -11,7 +11,7 @@
         <h1 class="text-2xl font-semibold tracking-tight text-neutral-950"><%= @bill.display_name %></h1>
         <%= bill_status_badge(@bill) %>
       </div>
-      <p class="mt-1 text-sm text-neutral-500">From <%= link_to @bill.vendor.name, vendor_path(@bill.vendor), class: "font-medium text-[#0f7082] hover:underline" %></p>
+      <p class="mt-1 text-sm text-neutral-500">From <%= link_to @bill.vendor.name, vendor_path(@bill.vendor), class: "font-medium text-balance-teal-700 hover:underline" %></p>
     </div>
     <div class="sm:text-right">
       <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Balance due</p>

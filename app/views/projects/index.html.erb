@@ -40,7 +40,7 @@
               <%= link_to project.customer.name, project_path(project), class: "block px-4 py-4" %>
             </td>
             <td class="px-4 py-4 text-right text-sm">
-              <%= link_to "Edit", edit_project_path(project), class: "font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{project.name}" } %>
+              <%= link_to "Edit", edit_project_path(project), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{project.name}" } %>
             </td>
           </tr>
         <% end %>

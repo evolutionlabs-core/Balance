@@ -148,7 +148,7 @@ export default class extends Controller {
     const link = document.createElement("a")
     link.href = this.footerUrlValue
     link.dataset.turboFrame = "modal"
-    link.className = "flex w-full items-center rounded px-2 py-1.5 text-sm font-medium text-[#0f7082] hover:bg-neutral-50"
+    link.className = "flex w-full items-center rounded px-2 py-1.5 text-sm font-medium text-balance-teal-700 hover:bg-neutral-50"
     link.textContent = `+ ${this.footerLabelValue}`
     link.addEventListener("click", this.close.bind(this))
     wrapper.append(link)

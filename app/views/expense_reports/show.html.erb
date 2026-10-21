@@ -48,7 +48,7 @@
     <div class="mt-5 h-64">
       <%= column_chart monthly_totals.transform_values { |amount| amount / 100.0 },
           height: "250px",
-          colors: [ "#0f7082" ],
+          colors: [ UiHelper::BRAND_COLOR ],
           prefix: currency_symbol(current_workspace.currency_code),
           thousands: ",",
           legend: false %>

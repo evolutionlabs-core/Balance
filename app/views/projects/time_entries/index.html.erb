@@ -28,7 +28,7 @@
             <td class="px-4 py-3 text-sm whitespace-nowrap text-neutral-600"><%= entry.task&.title || "—" %></td>
             <td class="px-4 py-3 text-right text-sm tabular-nums whitespace-nowrap text-neutral-900"><%= entry.hours %></td>
             <td class="px-4 py-3 text-right text-sm whitespace-nowrap">
-              <%= link_to "Edit", edit_project_project_time_entry_path(@project, entry), class: "font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" } %>
+              <%= link_to "Edit", edit_project_project_time_entry_path(@project, entry), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" } %>
             </td>
           </tr>
         <% end %>

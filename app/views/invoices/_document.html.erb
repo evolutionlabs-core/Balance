@@ -1,7 +1,7 @@
 <article class="border border-neutral-200 bg-white shadow-sm">
   <header class="flex flex-col gap-5 border-b border-neutral-200 px-4 py-6 sm:flex-row sm:justify-between sm:px-8 sm:py-10 md:px-12">
     <div>
-      <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">INVOICE</p>
+      <p class="text-2xl font-semibold tracking-tight text-balance-teal-700">INVOICE</p>
       <% business_name = invoice.business_name.nil? ? invoice.workspace.name : invoice.business_name %>
       <% business_email = invoice.business_email.nil? ? invoice.user.email_address : invoice.business_email %>
       <% business_address = invoice.business_address.nil? ? invoice.workspace.address : invoice.business_address %>
@@ -23,7 +23,7 @@
     </dl>
   </header>
 
-  <section class="bg-[#f4f8f8] px-4 py-5 sm:px-8 sm:py-7 md:px-12">
+  <section class="bg-balance-teal-50 px-4 py-5 sm:px-8 sm:py-7 md:px-12">
     <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Bill to</p>
     <% bill_to_name = invoice.bill_to_name.nil? ? invoice.customer&.name : invoice.bill_to_name %>
     <% bill_to_email = invoice.bill_to_email.nil? ? invoice.customer&.email : invoice.bill_to_email %>

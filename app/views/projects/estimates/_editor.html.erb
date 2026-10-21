@@ -13,7 +13,7 @@
     <%= hidden_field_tag "estimate[currency_code]", estimate.currency_code, form: "new_estimate_form" %>
     <div class="flex flex-col gap-8 border-b border-neutral-200 px-8 py-10 sm:flex-row sm:items-start sm:justify-between md:px-12">
       <div class="w-full max-w-md">
-        <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">ESTIMATE</p>
+        <p class="text-2xl font-semibold tracking-tight text-balance-teal-700">ESTIMATE</p>
         <%= render "projects/estimates/business_fields", project: project, estimate: estimate %>
       </div>
       <div class="sm:text-right">
@@ -24,7 +24,7 @@
 
     <div id="estimate_errors"><%= render "shared/form_errors", record: estimate %></div>
 
-    <div class="grid gap-8 bg-[#f4f8f8] px-8 py-8 md:px-12">
+    <div class="grid gap-8 bg-balance-teal-50 px-8 py-8 md:px-12">
       <%= fields_for :estimate, estimate do |form| %>
         <div>
           <%= form.label :bill_to_name, "Bill to", class: field_label_class %>

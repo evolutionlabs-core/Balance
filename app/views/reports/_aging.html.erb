@@ -68,7 +68,7 @@
             <div class="mt-2 flex items-center justify-between gap-3 text-xs text-neutral-500">
               <%= aging_bucket_label(oldest) %>
               <% if row.counterparty %>
-                <%= link_to "View", polymorphic_path(row.counterparty), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+                <%= link_to "View", polymorphic_path(row.counterparty), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700" %>
               <% end %>
             </div>
           </article>
@@ -97,7 +97,7 @@
                 <td class="px-4 py-4 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= money(row.total_kobo) %></td>
                 <td class="px-4 py-4 text-right text-sm">
                   <% if row.counterparty %>
-                    <%= link_to "View", polymorphic_path(row.counterparty), class: "font-medium text-[#0f7082] hover:underline" %>
+                    <%= link_to "View", polymorphic_path(row.counterparty), class: "font-medium text-balance-teal-700 hover:underline" %>
                   <% end %>
                 </td>
               </tr>

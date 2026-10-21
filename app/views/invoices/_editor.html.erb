@@ -12,7 +12,7 @@
   <article class="overflow-hidden border border-neutral-200 bg-white shadow-sm">
     <div class="flex flex-col gap-5 border-b border-neutral-200 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-10 md:px-12">
       <div class="w-full max-w-md">
-        <p class="text-2xl font-semibold tracking-tight text-[#0f7082]">INVOICE</p>
+        <p class="text-2xl font-semibold tracking-tight text-balance-teal-700">INVOICE</p>
         <%= render "invoices/business_fields", invoice: invoice %>
       </div>
       <div class="sm:text-right">
@@ -23,7 +23,7 @@
 
     <div id="invoice_errors"><%= render "shared/form_errors", record: invoice %></div>
 
-    <div class="grid gap-6 bg-[#f4f8f8] px-4 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.2fr_1fr] md:px-12">
+    <div class="grid gap-6 bg-balance-teal-50 px-4 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.2fr_1fr] md:px-12">
       <%= render "invoices/customer", invoice: invoice %>
       <%= render invoice.persisted? ? "invoices/details" : "invoices/new_details", invoice: invoice %>
     </div>

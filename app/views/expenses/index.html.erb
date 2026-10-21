@@ -35,7 +35,7 @@
             <span><%= expense.payment_date.to_fs(:medium) %></span>
             <%= expense_status(expense) %>
           </div>
-          <%= link_to "View", expense_path(expense), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+          <%= link_to "View", expense_path(expense), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700" %>
         </div>
       </article>
     <% end %>
@@ -69,7 +69,7 @@
               <%= link_to money(expense.total_kobo), expense_path(expense), class: "block px-4 py-4" %>
             </td>
             <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-              <%= link_to "View", expense_path(expense), class: "font-medium text-[#0f7082] hover:underline" %>
+              <%= link_to "View", expense_path(expense), class: "font-medium text-balance-teal-700 hover:underline" %>
             </td>
           </tr>
         <% end %>

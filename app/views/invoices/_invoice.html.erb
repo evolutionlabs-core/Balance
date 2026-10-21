@@ -17,6 +17,6 @@
     <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
   </td>
   <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline", aria: { label: "Edit invoice" } if invoice.draft? %>
+    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-balance-teal-700 hover:underline", aria: { label: "Edit invoice" } if invoice.draft? %>
   </td>
 </tr>

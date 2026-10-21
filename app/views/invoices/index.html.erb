@@ -34,7 +34,7 @@
             <span aria-hidden="true">·</span>
             <span class="truncate">Due <%= invoice.due_date&.strftime("%b %-d") || blank_cell %></span>
           </div>
-          <%= link_to "Edit", edit_invoice_path(invoice), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+          <%= link_to "Edit", edit_invoice_path(invoice), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700" %>
         </div>
       </article>
     <% end %>

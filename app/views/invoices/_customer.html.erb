@@ -17,7 +17,7 @@
     <% end %>
     <div hidden data-combobox-target="menu" class="absolute z-30 mt-1 w-full overflow-hidden rounded-md border border-neutral-200 bg-white shadow-lg">
       <%= link_to new_invoice_customer_path(invoice_id: (invoice.id if invoice.persisted?)),
-          class: "flex items-center gap-2 border-b border-neutral-100 px-3 py-3 text-sm font-medium text-[#0f7082] hover:bg-neutral-50", data: { turbo_frame: "modal" } do %>
+          class: "flex items-center gap-2 border-b border-neutral-100 px-3 py-3 text-sm font-medium text-balance-teal-700 hover:bg-neutral-50", data: { turbo_frame: "modal" } do %>
         <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Add new
       <% end %>
       <%= turbo_frame_tag choices_id, src: choices_path do %>

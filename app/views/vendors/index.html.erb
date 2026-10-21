@@ -40,7 +40,7 @@
             <td class="px-4 py-4 text-sm text-neutral-600"><%= vendor.phone.presence || blank_cell %></td>
             <td class="px-4 py-4 text-sm"><%= status_badge(vendor.active? ? "Active" : "Inactive", tone: vendor.active? ? :success : :warning) %></td>
             <td class="px-4 py-4 text-right text-sm">
-              <%= link_to "Edit", edit_vendor_path(vendor), class: "font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{vendor.name}" } %>
+              <%= link_to "Edit", edit_vendor_path(vendor), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{vendor.name}" } %>
             </td>
           </tr>
         <% end %>

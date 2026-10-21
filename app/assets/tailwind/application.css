@@ -37,8 +37,10 @@
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
 
-  --color-balance-teal-700: #0f7082;
+  --color-balance-teal-50: #f4f8f8;
   --color-balance-teal-100: #e8f1ef;
+  --color-balance-teal-700: #0f7082;
+  --color-balance-teal-800: #0b5d6d;
   --color-balance-red-600: #c32c2c;
 }
 
@@ -132,7 +134,7 @@
   }
 
   .assistant-markdown a {
-    color: #0f7082;
+    color: var(--color-balance-teal-700);
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -208,14 +210,14 @@
 .flatpickr-day.selected,
 .flatpickr-day.startRange,
 .flatpickr-day.endRange {
-  border-color: #0f7082 !important;
-  background: #0f7082 !important;
+  border-color: var(--color-balance-teal-700) !important;
+  background: var(--color-balance-teal-700) !important;
 }
 
 .flatpickr-day.inRange {
-  border-color: #e7f2f4 !important;
-  background: #e7f2f4 !important;
-  box-shadow: -5px 0 0 #e7f2f4, 5px 0 0 #e7f2f4 !important;
+  border-color: var(--color-balance-teal-100) !important;
+  background: var(--color-balance-teal-100) !important;
+  box-shadow: -5px 0 0 var(--color-balance-teal-100), 5px 0 0 var(--color-balance-teal-100) !important;
 }
 
 .flatpickr-input[readonly] {

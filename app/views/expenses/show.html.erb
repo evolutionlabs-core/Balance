@@ -7,7 +7,7 @@
 <div class="mx-auto max-w-4xl">
   <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p class="text-sm font-medium text-[#0f7082]">Expense</p>
+      <p class="text-sm font-medium text-balance-teal-700">Expense</p>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-neutral-950"><%= @expense.description %></h1>
       <p class="mt-1 text-sm text-neutral-500">
         <%= @expense.payment_date.to_fs(:long) %> · Paid from <%= @expense.payment_account.name %>

@@ -3,7 +3,7 @@
 <div id="proposal_<%= proposal.id %>" data-message-role="proposal" class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
   <div class="flex items-start justify-between gap-3 px-4 py-3">
     <div class="min-w-0">
-      <p class="text-[11px] font-semibold tracking-wide text-[#0f7082] uppercase">Confirm entry for reversal</p>
+      <p class="text-[11px] font-semibold tracking-wide text-balance-teal-700 uppercase">Confirm entry for reversal</p>
       <h3 class="mt-0.5 text-sm font-semibold text-neutral-950"><%= proposal.description %></h3>
       <p class="mt-0.5 text-xs text-neutral-500">Entry #<%= proposal.data.fetch("source_journal_entry_id") %> · <%= proposal.effective_date.to_date.strftime("%B %-d, %Y") %></p>
     </div>

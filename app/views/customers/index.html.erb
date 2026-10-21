@@ -30,7 +30,7 @@
         <p class="mt-1 truncate text-sm text-neutral-500"><%= customer.email.presence || customer.phone.presence || customer.customer_type.humanize %></p>
         <div class="mt-1 flex items-center justify-between gap-3">
           <span class="truncate text-xs text-neutral-500"><%= [customer.customer_type.humanize, customer.phone.presence].compact.join(" · ") %></span>
-          <%= link_to "Edit", edit_customer_path(customer), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
+          <%= link_to "Edit", edit_customer_path(customer), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-balance-teal-700", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
         </div>
       </article>
     <% end %>
@@ -66,7 +66,7 @@
               <% end %>
             </td>
             <td class="px-4 py-4 text-right text-sm">
-              <%= link_to "Edit", edit_customer_path(customer), class: "font-medium text-[#0f7082] hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
+              <%= link_to "Edit", edit_customer_path(customer), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{customer.name}" } %>
             </td>
           </tr>
         <% end %>

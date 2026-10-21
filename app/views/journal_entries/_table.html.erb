@@ -10,7 +10,7 @@
       <div class="mt-2 flex items-center justify-between gap-3">
         <span class="text-xs tabular-nums text-neutral-500"><%= entry.effective_date.strftime("%b %-d, %Y") %></span>
         <% if split %>
-          <button type="button" class="flex min-h-11 items-center gap-1 px-1 text-sm font-medium text-[#0f7082]" data-action="row-expand#toggle" aria-expanded="false">
+          <button type="button" class="flex min-h-11 items-center gap-1 px-1 text-sm font-medium text-balance-teal-700" data-action="row-expand#toggle" aria-expanded="false">
             Details
             <%= inline_svg_tag "icons/chevron-right.svg", class: "h-4 w-4 transition-transform", data: { row_expand_target: "icon" } %>
           </button>

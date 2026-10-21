@@ -1,4 +1,6 @@
 module UiHelper
+  BRAND_COLOR = "#0f7082".freeze
+
   BUTTON_BASE = "relative inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-md font-medium transition-colors".freeze
 
   BUTTON_SIZES = {
@@ -16,7 +18,7 @@ module UiHelper
   CURRENCY_SYMBOLS = { "NGN" => "₦" }.freeze
 
   def primary_button_class(size: :md)
-    "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-[#0f7082] text-white hover:bg-[#0b5d6d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f7082]"
+    "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-balance-teal-700 text-white hover:bg-balance-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-balance-teal-700"
   end
 
   def secondary_button_class(size: :md)
@@ -36,7 +38,7 @@ module UiHelper
   end
 
   def field_class
-    "block min-h-11 w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-950 shadow-none transition-colors placeholder:text-neutral-400 focus:border-[#0f7082] focus:outline-none focus:ring-1 focus:ring-[#0f7082] sm:text-sm"
+    "block min-h-11 w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-950 shadow-none transition-colors placeholder:text-neutral-400 focus:border-balance-teal-700 focus:outline-none focus:ring-1 focus:ring-balance-teal-700 sm:text-sm"
   end
 
   def field_label_class
