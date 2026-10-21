@@ -38,4 +38,8 @@ module JournalEntriesHelper
       "Reversal"
     end
   end
+
+  def journal_entry_tags(tags)
+    safe_join(tags.map { |tag| link_to tag, journal_entries_path(tag: tag), class: "inline-flex rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-600 hover:bg-neutral-200" }, " ")
+  end
 end

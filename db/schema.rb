@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_160405) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_174735) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -243,9 +243,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_160405) do
     t.bigint "ledger_id", null: false
     t.integer "number", null: false
     t.bigint "posted_by_id"
+    t.string "reference"
     t.bigint "reverses_entry_id"
     t.bigint "source_id"
     t.string "source_type"
+    t.string "tags", default: [], null: false, array: true
     t.datetime "updated_at", null: false
     t.index ["ledger_id", "effective_date"], name: "index_journal_entries_on_ledger_id_and_effective_date"
     t.index ["ledger_id", "number"], name: "index_journal_entries_on_ledger_id_and_number", unique: true
@@ -253,6 +255,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_160405) do
     t.index ["ledger_id"], name: "index_journal_entries_on_ledger_id"
     t.index ["posted_by_id"], name: "index_journal_entries_on_posted_by_id"
     t.index ["reverses_entry_id"], name: "index_journal_entries_on_reverses_entry_id", unique: true
+    t.index ["tags"], name: "index_journal_entries_on_tags", using: :gin
   end
 
   create_table "journal_entry_drafts", force: :cascade do |t|
@@ -261,6 +264,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_160405) do
     t.date "effective_date"
     t.jsonb "lines", default: [], null: false
     t.bigint "posted_entry_id"
+    t.string "reference"
+    t.string "tags", default: [], null: false, array: true
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.bigint "workspace_id", null: false

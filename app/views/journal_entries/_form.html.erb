@@ -30,6 +30,17 @@
       </div>
     </div>
 
+    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[0.8fr_1.6fr]">
+      <div>
+        <%= form.label :reference, class: field_label_class %>
+        <%= form.text_field :reference, placeholder: "Optional", autocomplete: "off", class: field_class %>
+      </div>
+      <div>
+        <%= form.label :tags, class: field_label_class %>
+        <%= form.text_field :tags, value: entry_form.tags.join(", "), placeholder: "Comma separated, e.g. office, q4", autocomplete: "off", class: field_class %>
+      </div>
+    </div>
+
     <div class="mt-6">
       <div class="hidden grid-cols-[minmax(13rem,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_4.5rem] gap-2 border-b border-neutral-200 pb-2 sm:grid">
         <span class="text-xs font-medium text-neutral-500">Account</span>

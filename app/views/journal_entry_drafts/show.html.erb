@@ -15,7 +15,12 @@
         <%= status_badge(ready ? "Ready to post" : "Incomplete", tone: ready ? :success : :warning) %>
       </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-neutral-950"><%= @draft.description.presence || "Untitled entry" %></h1>
-      <p class="mt-1 text-sm text-neutral-500"><%= @draft.effective_date&.to_fs(:long) || "No date" %></p>
+      <p class="mt-1 text-sm text-neutral-500">
+        <%= [ @draft.effective_date&.to_fs(:long) || "No date", (@draft.reference if @draft.reference.present?) ].compact.join(" · ") %>
+      </p>
+      <% if @draft.tags.any? %>
+        <p class="mt-2"><%= journal_entry_tags(@draft.tags) %></p>
+      <% end %>
     </div>
     <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@draft.total_kobo) %></p>
   </div>

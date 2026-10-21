@@ -107,6 +107,22 @@ class JournalEntryDraftsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "JournalEntryDraft", draft.reload.posted_entry.source_type
   end
 
+  test "carries the reference and tags from draft to posted entry" do
+    post journal_entry_drafts_path, params: balanced_params(intent: "review").deep_merge(entry: { reference: " INV-77 ", tags: "Office, q4 ,office, " })
+    draft = @workspace.journal_entry_drafts.sole
+    assert_equal [ "INV-77", %w[office q4] ], [ draft.reference, draft.tags ]
+
+    post journal_entry_draft_posting_path(draft)
+
+    entry = draft.reload.posted_entry
+    assert_equal "INV-77", entry.reference
+    assert_equal %w[office q4], entry.tags
+
+    get journal_entry_path(entry)
+    assert_select "dd", text: "INV-77"
+    assert_select "a[href=?]", journal_entries_path(tag: "q4"), text: "q4"
+  end
+
   test "entries recorded without a draft keep the Entry source type" do
     form = JournalEntries::ManualEntry.new(workspace: @workspace, effective_date: Date.current, description: "Direct",
       lines: [ { account_id: @groceries.id, debit: "5.00", credit: "" }, { account_id: @cash.id, debit: "", credit: "5.00" } ])

@@ -10,7 +10,9 @@ module AccountingEngine::Writer
       action: command.action,
       description: command.description,
       reverses_entry: command.reverses_entry,
-      posted_by: command.posted_by
+      posted_by: command.posted_by,
+      reference: command.reference,
+      tags: command.tags
     )
 
     command.lines.each do |line|

@@ -56,6 +56,6 @@ class JournalEntryDraftsController < ApplicationController
     end
 
     def draft_params
-      params.expect(entry: [ :effective_date, :description, { lines: [ [ :account_id, :debit, :credit, :_destroy ] ] } ])
+      params.expect(entry: [ :effective_date, :description, :reference, :tags, { lines: [ [ :account_id, :debit, :credit, :_destroy ] ] } ])
     end
 end

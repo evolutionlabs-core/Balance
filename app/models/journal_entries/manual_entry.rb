@@ -8,11 +8,16 @@ module JournalEntries
     validate :entry_lines_are_valid
     validate :entry_passes_engine_checks, if: -> { errors.empty? }
 
-    attr_accessor :workspace, :effective_date, :description
+    attr_accessor :workspace, :effective_date, :description, :reference
+    attr_writer :tags
     attr_reader :entry
 
     def lines
       @lines ||= []
+    end
+
+    def tags
+      EntryTags.parse(@tags)
     end
 
     def lines=(raw)
@@ -31,7 +36,8 @@ module JournalEntries
       @entry = JournalEntry.transaction(requires_new: true) do
         record_in_ledger!(
           AccountingEngine::Builders::Entry,
-          attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line), source_type: source_type }.compact,
+          attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line), source_type: source_type,
+            reference: reference.presence, tags: tags }.compact,
           source_id: source_id,
           description: description
         )
