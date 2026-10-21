@@ -4,8 +4,14 @@
   <%= render "shared/breadcrumb", data: [ { label: "Journal entries" } ] %>
 <% end %>
 
-<% new_entry = link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
-  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
+<% draft_count = current_workspace.journal_entry_drafts.unposted.count %>
+<% new_entry = tag.div(class: "flex items-center gap-2") do %>
+  <% if draft_count.positive? %>
+    <%= link_to "Drafts (#{draft_count})", journal_entry_drafts_path, class: secondary_button_class(size: :compact) %>
+  <% end %>
+  <%= link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+    <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
+  <% end %>
 <% end %>
 
 <%= render "shared/page_header",

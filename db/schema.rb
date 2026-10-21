@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_160405) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -253,6 +253,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
     t.index ["ledger_id"], name: "index_journal_entries_on_ledger_id"
     t.index ["posted_by_id"], name: "index_journal_entries_on_posted_by_id"
     t.index ["reverses_entry_id"], name: "index_journal_entries_on_reverses_entry_id", unique: true
+  end
+
+  create_table "journal_entry_drafts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.date "effective_date"
+    t.jsonb "lines", default: [], null: false
+    t.bigint "posted_entry_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["posted_entry_id"], name: "index_journal_entry_drafts_on_posted_entry_id", unique: true
+    t.index ["user_id"], name: "index_journal_entry_drafts_on_user_id"
+    t.index ["workspace_id"], name: "index_journal_entry_drafts_on_workspace_id"
   end
 
   create_table "journal_entry_lines", force: :cascade do |t|
@@ -634,6 +648,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_000200) do
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_entry_id"
   add_foreign_key "journal_entries", "ledgers"
   add_foreign_key "journal_entries", "users", column: "posted_by_id"
+  add_foreign_key "journal_entry_drafts", "journal_entries", column: "posted_entry_id"
+  add_foreign_key "journal_entry_drafts", "users"
+  add_foreign_key "journal_entry_drafts", "workspaces"
   add_foreign_key "journal_entry_lines", "accounts"
   add_foreign_key "journal_entry_lines", "customers"
   add_foreign_key "journal_entry_lines", "journal_entries"

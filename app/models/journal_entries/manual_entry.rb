@@ -6,8 +6,10 @@ module JournalEntries
     validates :description, :effective_date, presence: true
     validate :effective_date_is_parseable
     validate :entry_lines_are_valid
+    validate :entry_passes_engine_checks, if: -> { errors.empty? }
 
     attr_accessor :workspace, :effective_date, :description
+    attr_reader :entry
 
     def lines
       @lines ||= []
@@ -23,19 +25,19 @@ module JournalEntries
       lines << Line.new
     end
 
-    def record!
+    def record!(source_type: nil, source_id: nil)
       return false unless valid?
 
-      recorded = JournalEntry.transaction do
+      @entry = JournalEntry.transaction(requires_new: true) do
         record_in_ledger!(
           AccountingEngine::Builders::Entry,
-          attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line) },
-          source_id: nil,
+          attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line), source_type: source_type }.compact,
+          source_id: source_id,
           description: description
         )
       end
 
-      recorded.present?
+      entry.present?
     end
 
     private
@@ -64,6 +66,17 @@ module JournalEntries
             errors.add(:base, "Line #{number}: enter a debit or a credit")
           end
         end
+      end
+
+      def entry_passes_engine_checks
+        command = AccountingEngine::Builders::Entry.call(
+          workspace: workspace,
+          attributes: { effective_date: parsed_date, lines: active_lines.map(&:command_line) },
+          source_id: nil
+        )
+        AccountingEngine.check(command).each { |error| errors.add(:base, error.to_s) }
+      rescue AccountingEngine::Builders::AccountMissing => error
+        errors.add(:base, error.message)
       end
 
       def active_lines

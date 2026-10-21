@@ -41,8 +41,11 @@ Rails.application.routes.draw do
   end
 
   resource :expense_report, only: %i[show]
-  resources :journal_entries, only: %i[index new create show] do
+  resources :journal_entries, only: %i[index new show] do
     resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
+  end
+  resources :journal_entry_drafts, only: %i[index show create edit update destroy] do
+    resource :posting, only: %i[create], controller: "journal_entry_drafts/postings"
   end
   resources :accounts, path: "accounts", only: %i[index new create edit update]
   resources :services, only: %i[index new create edit update]
