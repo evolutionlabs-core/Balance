@@ -197,7 +197,7 @@ module AccountingEngine
       end
 
       def earnings_split(as_of)
-        year_start = as_of.beginning_of_year
+        year_start = FinancialYear.start_for(as_of, ledger.workspace.fiscal_year_start_month)
         [ profit(movement(..(year_start - 1))), profit(movement(year_start..as_of)) ]
       end
 

@@ -1,14 +1,14 @@
 class ReportsController < ApplicationController
   def balance_sheet
     @as_of = [ parse_date(params[:as_of]) || Date.current, Date.current ].min
-    @comparison, dates = ReportPeriod.balance_sheet(@as_of, params[:compare])
+    @comparison, dates = ReportPeriod.balance_sheet(@as_of, params[:compare], year_start_month: year_start_month)
     return unless ledger
 
     @statement = AccountingEngine::FinancialStatements.balance_sheet(ledger: ledger, dates: dates)
   end
 
   def income_statement
-    @period, periods = ReportPeriod.income_statement(params[:period])
+    @period, periods = ReportPeriod.income_statement(params[:period], year_start_month: year_start_month)
     return unless ledger
 
     @statement = AccountingEngine::FinancialStatements.income_statement(ledger: ledger, periods: periods)
@@ -24,7 +24,7 @@ class ReportsController < ApplicationController
 
   def general_ledger_account
     account = current_workspace.accounts.find(params[:account_id])
-    @general_ledger = AccountingEngine::GeneralLedger.new(account, from: Date.current.beginning_of_year)
+    @general_ledger = AccountingEngine::GeneralLedger.new(account, from: FinancialYear.start_for(Date.current, year_start_month))
   end
 
   def aged_receivables
@@ -40,6 +40,10 @@ class ReportsController < ApplicationController
   end
 
   private
+    def year_start_month
+      current_workspace.fiscal_year_start_month
+    end
+
     def ledger
       @ledger ||= current_workspace.ledgers.first
     end
