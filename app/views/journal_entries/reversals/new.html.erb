@@ -1,0 +1,34 @@
+<%= render "shared/modal" do %>
+  <%= form_with model: @reversal, scope: :reversal, url: journal_entry_reversal_path(@entry), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Reverse entry ##{@entry.number}" %>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @reversal %>
+      <p class="text-sm text-neutral-600">This posts a new entry that swaps every debit and credit below. The original stays on record.</p>
+
+      <div>
+        <%= form.label :effective_date, "Date", class: field_label_class %>
+        <%= form.text_field :effective_date, required: true, autocomplete: "off",
+            class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+      </div>
+
+      <div>
+        <%= form.label :description, class: field_label_class %>
+        <%= form.text_field :description, placeholder: "Reversal of entry ##{@entry.number}", autocomplete: "off", class: field_class %>
+      </div>
+
+      <dl class="divide-y divide-neutral-200 border-y border-neutral-200 text-sm">
+        <% @entry.journal_entry_lines.each do |line| %>
+          <div class="flex items-center justify-between gap-4 py-2">
+            <dt class="truncate text-neutral-900"><%= line.account.name %></dt>
+            <dd class="shrink-0 tabular-nums text-neutral-600">
+              <%= line.credit.positive? ? "Debit #{money(line.credit)}" : "Credit #{money(line.debit)}" %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Reverse entry" %>
+  <% end %>
+<% end %>

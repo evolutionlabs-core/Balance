@@ -50,16 +50,6 @@ module ReportsHelper
     end
   end
 
-  def journal_entry_source_path(entry)
-    case entry.source_type
-    when "Invoice" then invoice_path(entry.source_id)
-    when "InvoicePayment" then current_workspace.invoice_payments.find_by(id: entry.source_id)&.then { |payment| invoice_path(payment.invoice_id) }
-    when "Bill" then bill_path(entry.source_id)
-    when "BillPayment" then current_workspace.bill_payments.find_by(id: entry.source_id)&.then { |payment| bill_path(payment.bill_id) }
-    when "Expense" then expense_path(entry.source_id)
-    end
-  end
-
   def report_export_link
     link_to "Export CSV", url_for(request.query_parameters.merge(format: :csv)), class: secondary_button_class(size: :compact), data: { turbo: false }
   end

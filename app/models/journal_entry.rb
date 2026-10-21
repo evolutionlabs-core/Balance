@@ -1,4 +1,6 @@
 class JournalEntry < ApplicationRecord
+  REVERSIBLE_SOURCES = [ nil, "Entry", "OpeningBalance" ].freeze
+
   belongs_to :ledger
   belongs_to :posted_by, class_name: "User", optional: true
   belongs_to :reverses_entry, class_name: "JournalEntry", optional: true
@@ -10,5 +12,25 @@ class JournalEntry < ApplicationRecord
 
   def reversed?
     reversal.present?
+  end
+
+  def reversible?
+    REVERSIBLE_SOURCES.include?(source_type) && !reverses_entry_id? && !reversed?
+  end
+
+  def total
+    journal_entry_lines.sum(&:debit)
+  end
+
+  def source_document
+    workspace = ledger.workspace
+
+    case source_type
+    when "Invoice" then workspace.invoices.find_by(id: source_id)
+    when "InvoicePayment" then workspace.invoice_payments.find_by(id: source_id)&.invoice
+    when "Bill" then workspace.bills.find_by(id: source_id)
+    when "BillPayment" then workspace.bill_payments.find_by(id: source_id)&.bill
+    when "Expense" then workspace.expenses.find_by(id: source_id)
+    end
   end
 end

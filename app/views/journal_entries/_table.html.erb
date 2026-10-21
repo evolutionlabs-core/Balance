@@ -4,7 +4,7 @@
     <% split = entry.journal_entry_lines.size > 2 || entry.description.to_s.length > 80 %>
     <article class="py-4" data-controller="<%= "row-expand" if split %>">
       <div class="flex items-start justify-between gap-4">
-        <p class="min-w-0 flex-1 text-sm font-medium text-neutral-950"><%= entry.description.presence || blank_cell %></p>
+        <%= link_to entry.description.presence || "Entry ##{entry.number}", journal_entry_path(entry), class: "min-w-0 flex-1 text-sm font-medium text-neutral-950" %>
         <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= money(debit_lines.sum(&:debit)) %></span>
       </div>
       <div class="mt-2 flex items-center justify-between gap-3">
@@ -19,7 +19,7 @@
         <% end %>
       </div>
       <% if entry.source_type.present? %>
-        <span class="mt-1.5 inline-block rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500"><%= entry.source_type.humanize %></span>
+        <span class="mt-1.5 inline-block rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500"><%= [ journal_entry_origin_label(entry), journal_entry_status_label(entry) ].compact.join(" · ") %></span>
       <% end %>
       <% if split %>
         <div class="mt-2 overflow-x-auto rounded-md bg-neutral-50 p-3" data-row-expand-target="detail" hidden>
@@ -67,13 +67,13 @@
             data-action="<%= "click->row-expand#toggle" if split %>">
           <td class="<%= table_cell_class(strong: true) %> max-w-sm">
             <div class="flex min-w-0 items-center gap-1.5">
-              <span class="min-w-0 truncate" title="<%= entry.description %>"><%= entry.description.presence || blank_cell %></span>
+              <%= link_to entry.description.presence || "Entry ##{entry.number}", journal_entry_path(entry), class: "min-w-0 truncate hover:underline", title: entry.description %>
               <% if split %>
                 <%= inline_svg_tag "icons/chevron-right.svg", class: "h-3.5 w-3.5 flex-none text-neutral-400 transition-transform", data: { row_expand_target: "icon" } %>
               <% end %>
             </div>
             <% if entry.source_type.present? %>
-              <span class="mt-0.5 block text-[11px] font-medium text-neutral-400"><%= entry.source_type.humanize %></span>
+              <span class="mt-0.5 block text-[11px] font-medium text-neutral-400"><%= [ journal_entry_origin_label(entry), journal_entry_status_label(entry) ].compact.join(" · ") %></span>
             <% end %>
           </td>
           <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums whitespace-nowrap"><%= money(debit_lines.sum(&:debit)) %></td>

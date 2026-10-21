@@ -1,7 +1,7 @@
 class JournalEntriesController < ApplicationController
   def index
     @journal_entries = (current_workspace.ledgers.first&.journal_entries || JournalEntry.none)
-      .includes(journal_entry_lines: :account)
+      .includes(:reversal, journal_entry_lines: :account)
     if params[:q].present?
       term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
       @journal_entries = @journal_entries
@@ -11,6 +11,12 @@ class JournalEntriesController < ApplicationController
     end
     @journal_entries = @journal_entries.where(effective_date: parsed_date_range) if parsed_date_range
     @journal_entries = @journal_entries.order(effective_date: :desc, id: :desc)
+  end
+
+  def show
+    @entry = current_workspace.ledger.journal_entries
+      .includes(:posted_by, :reverses_entry, :reversal, journal_entry_lines: %i[account customer vendor])
+      .find(params[:id])
   end
 
   def new

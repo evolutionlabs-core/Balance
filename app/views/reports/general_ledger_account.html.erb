@@ -44,8 +44,7 @@
             <td class="py-1.5 whitespace-nowrap"><%= line.entry.effective_date.strftime("%b %-d") %></td>
             <td class="py-1.5 pl-3 font-mono text-xs">#<%= line.entry.number %></td>
             <th scope="row" class="py-1.5 pl-3 text-left font-normal">
-              <% source = journal_entry_source_path(line.entry) %>
-              <%= source ? link_to(line.entry.description || "Entry ##{line.entry.number}", source, class: "hover:underline") : (line.entry.description || "Entry ##{line.entry.number}") %>
+              <%= link_to line.entry.description || "Entry ##{line.entry.number}", journal_entry_path(line.entry), class: "hover:underline" %>
               <% if line.counterparty %><span class="text-neutral-400"> · <%= line.counterparty.name %></span><% end %>
             </th>
             <td class="py-1.5 pl-3 text-right tabular-nums"><%= line.debit.zero? ? "" : statement_figure(line.debit) %></td>
