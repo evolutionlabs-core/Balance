@@ -4,11 +4,12 @@ class Expense < ApplicationRecord
   belongs_to :workspace
   belongs_to :payment_account, class_name: "Account"
   has_many :expense_lines, -> { order(:position) }, dependent: :destroy, inverse_of: :expense
-  has_one :journal_entry, -> { where(source_type: "Expense") }, foreign_key: "source_id", inverse_of: false
+  has_one :journal_entry, -> { where(source_type: "Expense", action: "create") }, foreign_key: "source_id", inverse_of: false
+  has_one :void_entry, -> { where(source_type: "Expense", action: "void") }, class_name: "JournalEntry", foreign_key: "source_id", inverse_of: false
 
   accepts_nested_attributes_for :expense_lines, allow_destroy: true, reject_if: :all_blank
 
-  enum :status, { draft: "draft", posted: "posted" }, validate: true
+  enum :status, { draft: "draft", posted: "posted", voided: "voided" }, validate: true
 
   validates :payment_date, presence: true
   validate :payment_date_is_not_in_the_future
@@ -17,8 +18,8 @@ class Expense < ApplicationRecord
   validate :payment_account_is_eligible
   validate :has_category_lines
 
-  before_update { throw(:abort) if status_in_database == "posted" }
-  before_destroy { throw(:abort) if posted? }
+  before_update { throw(:abort) unless status_in_database == "draft" || voiding? }
+  before_destroy { throw(:abort) unless draft? }
   before_validation :calculate_total_kobo
 
   def total_kobo
@@ -41,7 +42,15 @@ class Expense < ApplicationRecord
     update!(status: :posted)
   end
 
+  def voidable?
+    posted? && journal_entry.present?
+  end
+
   private
+    def voiding?
+      status_in_database == "posted" && voided? && (changed - [ "updated_at" ]) == [ "status" ]
+    end
+
     def calculate_total_kobo
       self.total_kobo = expense_lines.reject(&:marked_for_destruction?).sum { |line| line.amount_kobo || 0 }
     end

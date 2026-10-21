@@ -7,13 +7,21 @@
 <div class="mx-auto max-w-4xl">
   <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p class="text-sm font-medium text-balance-teal-700">Expense</p>
+      <div class="flex items-center gap-2">
+        <p class="text-sm font-medium text-balance-teal-700">Expense</p>
+        <%= expense_status(@expense) %>
+      </div>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight text-neutral-950"><%= @expense.description %></h1>
       <p class="mt-1 text-sm text-neutral-500">
         <%= @expense.payment_date.to_fs(:long) %> · Paid from <%= @expense.payment_account.name %>
       </p>
     </div>
-    <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@expense.total_kobo) %></p>
+    <div class="flex flex-col gap-3 sm:items-end">
+      <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@expense.total_kobo) %></p>
+      <% if @expense.voidable? %>
+        <%= link_to "Void", new_expense_void_path(@expense), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+      <% end %>
+    </div>
   </div>
 
   <% if @expense.memo.present? %>
@@ -40,7 +48,15 @@
 
   <% if @journal_entry %>
     <section class="mt-7">
-      <h2 class="text-sm font-semibold text-neutral-900">Accounting entry</h2>
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-sm font-semibold text-neutral-900">Accounting entry</h2>
+        <div class="flex items-center gap-4 text-sm">
+          <%= link_to "Entry ##{@journal_entry.number}", journal_entry_path(@journal_entry), class: "font-medium text-balance-teal-700 hover:underline" %>
+          <% if @expense.void_entry %>
+            <%= link_to "Void entry ##{@expense.void_entry.number}", journal_entry_path(@expense.void_entry), class: "font-medium text-balance-teal-700 hover:underline" %>
+          <% end %>
+        </div>
+      </div>
       <%= render layout: "shared/table", locals: { frame_class: "mt-3", columns: [ { label: "Account" }, { label: "Debit", align: :right }, { label: "Credit", align: :right } ] } do %>
         <% @journal_entry.journal_entry_lines.each do |line| %>
           <tr class="<%= table_row_class %>">

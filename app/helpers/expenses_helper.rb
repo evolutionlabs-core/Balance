@@ -9,6 +9,12 @@ module ExpensesHelper
   end
 
   def expense_status(expense)
-    status_badge(expense.status.humanize, tone: expense.posted? ? :success : :warning)
+    tone = case expense.status
+    when "posted" then :success
+    when "voided" then :neutral
+    else :warning
+    end
+
+    status_badge(expense.status.humanize, tone: tone)
   end
 end

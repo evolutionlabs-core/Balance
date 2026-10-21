@@ -37,7 +37,9 @@ Rails.application.routes.draw do
   get "reports/general_ledger/:account_id", to: "reports#general_ledger_account", as: :general_ledger_account
   get "reports/aged_receivables", to: "reports#aged_receivables", as: :aged_receivables
   get "reports/aged_payables", to: "reports#aged_payables", as: :aged_payables
-  resources :expenses, only: %i[index new create show]
+  resources :expenses, only: %i[index new create show] do
+    resource :void, only: %i[new create], controller: "expenses/voids"
+  end
 
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new create show] do

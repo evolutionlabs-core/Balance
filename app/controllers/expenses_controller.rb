@@ -29,7 +29,7 @@ class ExpensesController < ApplicationController
   private
     def set_expense
       @expense = current_workspace.expenses
-        .includes(:payment_account, expense_lines: :account, journal_entry: { journal_entry_lines: :account })
+        .includes(:payment_account, :void_entry, expense_lines: :account, journal_entry: { journal_entry_lines: :account })
         .find(params[:id])
     end
 
