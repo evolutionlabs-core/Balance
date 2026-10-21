@@ -230,7 +230,7 @@
   }
 
   @media (min-width: 640px) {
-    .expense-line-columns {
+    .amount-line-columns {
       grid-template-columns: minmax(13rem, 1.3fr) minmax(15rem, 1.7fr) minmax(9rem, 0.7fr) 3rem;
     }
   }

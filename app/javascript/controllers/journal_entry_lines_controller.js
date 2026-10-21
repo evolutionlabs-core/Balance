@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { formatAmount, parseAmount } from "lib/money"
+import { appendRow, removeRow, visibleRows } from "lib/line_rows"
 
 export default class extends Controller {
   static targets = ["lines", "template", "row", "account", "debit", "credit", "debitTotal", "creditTotal", "difference", "status", "submit"]
@@ -9,25 +10,15 @@ export default class extends Controller {
   }
 
   addLine() {
-    const index = Date.now()
-    const html = this.templateTarget.innerHTML.replaceAll("__INDEX__", index)
-    this.linesTarget.insertAdjacentHTML("beforeend", html)
+    appendRow(this.linesTarget, this.templateTarget)
     this.recalculate()
   }
 
   removeLine(event) {
-    const row = event.target.closest("[data-journal-entry-lines-target='row']")
+    const row = event.currentTarget.closest("[data-journal-entry-lines-target='row']")
     if (row.dataset.protected === "true") return
 
-    const destroyInput = row.querySelector("input[name*='_destroy']")
-
-    if (destroyInput) {
-      destroyInput.value = "1"
-      row.hidden = true
-    } else {
-      row.remove()
-    }
-
+    removeRow(row)
     this.recalculate()
   }
 
@@ -42,7 +33,7 @@ export default class extends Controller {
   }
 
   recalculate() {
-    const activeRows = this.rowTargets.filter((row) => !row.hidden)
+    const activeRows = visibleRows(this.rowTargets)
     const debitTotal = activeRows.reduce((total, row) => total + this.amount(row.querySelector("[data-journal-entry-lines-target='debit']")), 0)
     const creditTotal = activeRows.reduce((total, row) => total + this.amount(row.querySelector("[data-journal-entry-lines-target='credit']")), 0)
     const difference = debitTotal - creditTotal
