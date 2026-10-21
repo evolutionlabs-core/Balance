@@ -112,25 +112,18 @@
     <% end %>
   </section>
 
-  <div id="tie-out" class="mt-4 text-sm">
-    <% if aging.tied_out? %>
-      <p class="flex items-center gap-2 text-neutral-500">
-        <%= inline_svg_tag "icons/check-circle.svg", class: "h-4 w-4 flex-none text-emerald-600", aria: { hidden: true } %>
-        Matches your books: <%= control_account %> is <%= aging_money(aging.ledger_kobo) %>.
+  <% unless aging.tied_out? %>
+    <div id="tie-out" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <p class="font-medium">This doesn't match your books</p>
+      <p class="mt-1">
+        <%= control_account %> is <%= aging_money(aging.ledger_kobo) %>, but unpaid <%= documents %> add up to <%= aging_money(aging.total_kobo) %>.
+        Usually a journal entry touched <%= control_account %> directly. Check these:
       </p>
-    <% else %>
-      <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-        <p class="font-medium">This doesn't match your books</p>
-        <p class="mt-1">
-          <%= control_account %> is <%= aging_money(aging.ledger_kobo) %>, but unpaid <%= documents %> add up to <%= aging_money(aging.total_kobo) %>.
-          Usually a journal entry touched <%= control_account %> directly. Check these:
-        </p>
-        <ul class="mt-2 list-disc space-y-1 pl-5">
-          <% aging.unmatched_rows.each do |row| %>
-            <li><%= row.counterparty&.name || "Entries with no #{counterparty.downcase}" %>: books <%= aging_money(row.ledger_kobo) %>, <%= documents %> <%= aging_money(row.total_kobo) %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
-  </div>
+      <ul class="mt-2 list-disc space-y-1 pl-5">
+        <% aging.unmatched_rows.each do |row| %>
+          <li><%= row.counterparty&.name || "Entries with no #{counterparty.downcase}" %>: books <%= aging_money(row.ledger_kobo) %>, <%= documents %> <%= aging_money(row.total_kobo) %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 <% end %>
