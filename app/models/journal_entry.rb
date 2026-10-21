@@ -18,6 +18,10 @@ class JournalEntry < ApplicationRecord
     REVERSIBLE_SOURCES.include?(source_type) && !reverses_entry_id? && !reversed?
   end
 
+  def templatable?
+    REVERSIBLE_SOURCES.include?(source_type) && !reverses_entry_id? && source_type != "OpeningBalance"
+  end
+
   def total
     journal_entry_lines.sum(&:debit)
   end

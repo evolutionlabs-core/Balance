@@ -21,7 +21,11 @@ class JournalEntriesController < ApplicationController
   end
 
   def new
-    @draft = current_workspace.journal_entry_drafts.build(effective_date: Date.current)
+    @draft = if params[:template_id]
+      current_workspace.entry_templates.find(params[:template_id]).draft
+    else
+      current_workspace.journal_entry_drafts.build(effective_date: Date.current)
+    end
     @entry_form = @draft.entry_form
   end
 

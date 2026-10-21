@@ -43,7 +43,9 @@ Rails.application.routes.draw do
   resource :expense_report, only: %i[show]
   resources :journal_entries, only: %i[index new show] do
     resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
+    resource :template, only: %i[new create], controller: "journal_entries/templates"
   end
+  resources :entry_templates, only: %i[index destroy]
   resources :journal_entry_drafts, only: %i[index show create edit update destroy] do
     resource :posting, only: %i[create], controller: "journal_entry_drafts/postings"
   end

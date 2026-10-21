@@ -16,9 +16,14 @@
     </div>
     <div class="flex flex-col gap-3 sm:items-end">
       <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@entry.total) %></p>
-      <% if @entry.reversible? %>
-        <%= link_to "Reverse", new_journal_entry_reversal_path(@entry), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
-      <% end %>
+      <div class="flex gap-2">
+        <% if @entry.templatable? %>
+          <%= link_to "Save as template", new_journal_entry_template_path(@entry), class: ghost_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+        <% end %>
+        <% if @entry.reversible? %>
+          <%= link_to "Reverse", new_journal_entry_reversal_path(@entry), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+        <% end %>
+      </div>
     </div>
   </div>
 

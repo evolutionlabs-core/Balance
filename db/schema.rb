@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_174735) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -98,6 +98,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_174735) do
     t.index ["workspace_id", "active"], name: "index_customers_on_workspace_id_and_active"
     t.index ["workspace_id", "name"], name: "index_customers_on_workspace_id_and_name"
     t.index ["workspace_id"], name: "index_customers_on_workspace_id"
+  end
+
+  create_table "entry_templates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "lines", default: [], null: false
+    t.string "name", null: false
+    t.string "tags", default: [], null: false, array: true
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["user_id"], name: "index_entry_templates_on_user_id"
+    t.index ["workspace_id", "name"], name: "index_entry_templates_on_workspace_id_and_name", unique: true
+    t.index ["workspace_id"], name: "index_entry_templates_on_workspace_id"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -628,6 +642,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_174735) do
   add_foreign_key "bills", "vendors"
   add_foreign_key "bills", "workspaces"
   add_foreign_key "customers", "workspaces"
+  add_foreign_key "entry_templates", "users"
+  add_foreign_key "entry_templates", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_line_items", "services"
   add_foreign_key "estimates", "customers"
