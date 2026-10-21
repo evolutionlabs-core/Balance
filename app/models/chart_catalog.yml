@@ -10,7 +10,7 @@ accounts:
   - { key: accounts_receivable,      code: "1100", name: Accounts Receivable,      base_type: asset,     subtype: accounts_receivable,      profiles: [personal, business], codes: { personal: "1050" }, system: true }
   - { key: investments,              code: "1100", name: Investments,              base_type: asset,     subtype: investment,               profiles: [personal] }
   - { key: property,                 code: "1200", name: Property,                 base_type: asset,     subtype: fixed_asset,              profiles: [personal] }
-  - { key: inventory,                code: "1200", name: Inventory,                base_type: asset,     subtype: inventory,                profiles: [business] }
+  - { key: inventory,                code: "1200", name: Inventory,                base_type: asset,     subtype: inventory,                profiles: [business], templates: [goods] }
   - { key: fixed_assets,             code: "1500", name: Fixed Assets,             base_type: asset,     subtype: fixed_asset,              profiles: [business] }
   - { key: accumulated_depreciation, code: "1590", name: Accumulated Depreciation, base_type: asset,     subtype: accumulated_depreciation, profiles: [business] }
   # --- Liabilities (2xxx)
@@ -30,7 +30,7 @@ accounts:
   - { key: salary,                   code: "4010", name: Salary,                   base_type: income,    subtype: salary,                   profiles: [personal] }
   - { key: other_income,             code: "4090", name: Other Income,             base_type: income,    subtype: other,                    profiles: [personal, business], names: { business: Other Revenue } }
   # --- Expenses (5xxx)
-  - { key: cost_of_goods_sold,       code: "5010", name: Cost of Goods Sold,       base_type: expense,   subtype: cogs,                     profiles: [business] }
+  - { key: cost_of_goods_sold,       code: "5010", name: Cost of Goods Sold,       base_type: expense,   subtype: cogs,                     profiles: [business], templates: [goods] }
   - { key: housing,                  code: "5010", name: Housing,                  base_type: expense,   subtype: housing,                  profiles: [personal] }
   - { key: groceries,                code: "5020", name: Groceries,                base_type: expense,   subtype: groceries,                profiles: [personal] }
   - { key: payroll,                  code: "5100", name: Payroll,                  base_type: expense,   subtype: payroll,                  profiles: [business] }

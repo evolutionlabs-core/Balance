@@ -3,7 +3,8 @@ module Workspaces
     extend ActiveSupport::Concern
 
     class_methods do
-      def create_for_user!(user:, name:, workspace_type:, currency_code:, fiscal_year_start_month: 1, opening_balance_kobo: 0)
+      def create_for_user!(user:, name:, workspace_type:, currency_code:, fiscal_year_start_month: 1, template: nil,
+        opening_balances: {}, opening_balance_date: Date.current, opening_balance_kobo: 0)
         Workspace.transaction do
           workspace = create!(
             name: name,
@@ -13,18 +14,19 @@ module Workspaces
             onboarding_completed_at: Time.current
           )
           workspace.memberships.create!(user: user, role: :owner)
-          workspace.provision_ledger!
-          workspace.post_opening_balance!(opening_balance_kobo) if opening_balance_kobo.positive?
+          workspace.provision_ledger!(template: template)
+          balances = opening_balances.merge(opening_balance_kobo.positive? ? { "bank" => opening_balance_kobo } : {})
+          workspace.post_opening_balances!(balances, on: opening_balance_date) if balances.values.any?(&:positive?)
           workspace
         end
       end
     end
 
-    def post_opening_balance!(amount_kobo)
+    def post_opening_balances!(balances, on:)
       receipt = AccountingEngine.record(
         AccountingEngine::Builders::OpeningBalance,
         workspace: self,
-        attributes: { opening_balance_kobo: amount_kobo },
+        attributes: { balances: balances, effective_date: on },
         source_id: id
       )
 
