@@ -4,14 +4,14 @@
   <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: @invoice.invoice_number.presence || "Invoice" } ] %>
 <% end %>
 
-<div class="mx-auto max-w-6xl">
-  <div class="mb-6">
+<div class="mx-auto max-w-6xl" data-controller="invoice-review" data-invoice-review-number-value="<%= @invoice.invoice_number %>">
+  <div class="mb-5">
     <%= render "shared/page_header",
         title: "Invoice #{@invoice.invoice_number}",
         description: safe_join([ invoice_status_badge(@invoice), @invoice.customer&.name ].compact, " "),
-        action: render("invoices/actions", invoice: @invoice) %>
+        action: render("invoices/actions", invoice: @invoice, delivery: @delivery) %>
   </div>
 
-  <%= render "invoices/document", invoice: @invoice %>
+  <%= render "invoices/views", invoice: @invoice, delivery: @delivery, view: @view %>
   <%= render "invoices/payments", invoice: @invoice %>
 </div>

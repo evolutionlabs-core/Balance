@@ -43,8 +43,12 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
 
-    click_on "Send invoice"
-    assert_text "Invoice #{invoice.invoice_number} sent."
+    click_on "PDF view"
+    assert_selector "iframe[title='Invoice PDF'][src]"
+    click_on "Email view"
+    assert_field "Send to", with: "custom@example.com"
+    accept_confirm("Email invoice #{invoice.invoice_number} to custom@example.com?") { click_button "Send invoice" }
+    assert_text "Invoice #{invoice.invoice_number} sent to custom@example.com"
     assert invoice.reload.sent?
     assert_equal income.id, invoice.invoice_lines.sole.account_id
     entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole

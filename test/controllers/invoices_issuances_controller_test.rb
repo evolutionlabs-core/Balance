@@ -27,6 +27,49 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "Accounts Receivable", 30_000, 0 ], [ "Other Income", 0, 30_000 ] ], lines.sort
   end
 
+  test "the invoice page previews the email to the customer" do
+    get invoice_path(@invoice, view: "email")
+
+    assert_response :success
+    assert_select "[role=tab][aria-selected=true]", text: /Email view/
+    assert_select "form#invoice-delivery input[name='delivery[to]'][value='acme@example.com']"
+    assert_select "iframe[title='Email preview'][srcdoc*='Your invoice is ready']"
+  end
+
+  test "sending by email issues the invoice and emails the customer" do
+    assert_enqueued_email_with InvoiceMailer, :issued, params: ->(params) {
+      params[:invoice] == @invoice && params[:to] == "billing@acme.example" && params[:subject] == "Your invoice"
+    } do
+      post invoice_issuance_path(@invoice), params: { delivery: {
+        send_email: "1", to: "billing@acme.example", subject: "Your invoice", message: "Thanks!"
+      } }
+    end
+
+    assert_redirected_to invoice_path(@invoice)
+    assert @invoice.reload.sent?
+    assert_equal "Invoice #{@invoice.invoice_number} sent to billing@acme.example.", flash[:notice]
+  end
+
+  test "sending by email needs a valid address and keeps the draft" do
+    assert_no_enqueued_emails do
+      post invoice_issuance_path(@invoice), params: { delivery: { send_email: "1", to: "not-an-email", subject: "Hi" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "[role=tab][aria-selected=true]", text: /Email view/
+    assert_select "form#invoice-delivery input[name='delivery[to]'][value='not-an-email']"
+    assert @invoice.reload.draft?
+  end
+
+  test "marking as sent issues without emailing" do
+    assert_no_enqueued_emails do
+      post invoice_issuance_path(@invoice), params: { delivery: { send_email: "0" } }
+    end
+
+    assert @invoice.reload.sent?
+    assert_equal "Invoice #{@invoice.invoice_number} marked as sent.", flash[:notice]
+  end
+
   test "sending a sent invoice redirects with an alert" do
     @invoice.issue!
 
