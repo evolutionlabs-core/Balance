@@ -27,14 +27,17 @@
     <p class="mt-1.5 text-sm text-neutral-500">Reports for "this year" and your yearly profit follow this. Most people use January.</p>
   </div>
 
-  <div>
-    <%= label_tag :opening_balance, "Opening bank balance", class: field_label_class %>
-    <%= number_field_tag :opening_balance, @onboarding_data.fetch("opening_balance", "0"), min: 0, step: 0.01, class: field_class, inputmode: "decimal" %>
-    <p class="mt-1.5 text-sm text-neutral-500">What is in your bank account today. Leave it at 0 if you are starting fresh.</p>
-  </div>
+  <% templates = ChartCatalog.templates_for(workspace_type) %>
+  <% if templates.size > 1 %>
+    <div>
+      <%= label_tag :template, "Starting accounts", class: field_label_class %>
+      <%= select_tag :template, options_for_select(templates.invert, @onboarding_data.fetch("template", templates.keys.first)), class: field_class %>
+      <p class="mt-1.5 text-sm text-neutral-500">Choose Services only if you never hold stock. You can add accounts later.</p>
+    </div>
+  <% end %>
 
   <div class="flex items-center justify-between pt-2">
     <%= link_to "Back", onboarding_step_path(:workspace_type), class: ghost_button_class %>
-    <%= submit_tag "Create workspace", class: primary_button_class %>
+    <%= submit_tag "Continue", class: primary_button_class %>
   </div>
 <% end %>
