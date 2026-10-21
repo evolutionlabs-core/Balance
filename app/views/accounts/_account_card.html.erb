@@ -1,3 +1,4 @@
-<%= render "shared/mobile_card", title: account.name,
+<%= render "shared/mobile_card", title: account.name, url: general_ledger_account_path(account),
+    trailing: mobile_card_amount(money(account_balance(account, balances))),
     meta: "#{account.code} · #{account.base_type.humanize} · #{account.subtype.humanize}",
-    trailing: (tag.span(safe_join([ tag.span("System account — locked", class: "sr-only"), inline_svg_tag("icons/lock.svg", class: "h-4 w-4") ]), class: "shrink-0 text-neutral-400", title: "System account — locked") if account.system?) %>
+    action: account_actions(account, balances) %>

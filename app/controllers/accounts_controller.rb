@@ -3,7 +3,13 @@ class AccountsController < ApplicationController
   before_action :set_account, only: %i[edit update]
 
   def index
-    @accounts = Account.where(ledger: current_workspace.ledgers).order(:code)
+    @archived = params[:archived] == "1"
+    @accounts = current_workspace.accounts.public_send(@archived ? :archived : :active).order(:code)
+    if params[:q].present?
+      term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
+      @accounts = @accounts.where("accounts.name ILIKE :term OR accounts.code ILIKE :term", term: term)
+    end
+    @balances = current_workspace.ledgers.first ? AccountingEngine::Balances.new(current_workspace.ledger).by_account : {}
   end
 
   def new

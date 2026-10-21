@@ -1,5 +1,5 @@
 <% account_options = grouped_options_for_select(
-     current_workspace.accounts.ordered.group_by(&:base_type).map { |base_type, accounts|
+     current_workspace.accounts.active.ordered.group_by(&:base_type).map { |base_type, accounts|
        [ base_type.humanize, accounts.map { |account| [ account.name, account.id ] } ]
      },
      form.object.account_id
