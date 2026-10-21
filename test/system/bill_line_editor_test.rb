@@ -35,6 +35,13 @@ class BillLineEditorTest < ApplicationSystemTestCase
       document.addEventListener("click", (event) => log("click " + event.target.tagName + "." + (event.target.className?.baseVal ?? event.target.className).slice(0, 40) + " in " + (event.target.closest("button")?.dataset.action || "-")), true)
       new MutationObserver((records) => records.forEach((record) => log("attr " + record.attributeName + "=" + record.target.getAttribute(record.attributeName) + " on " + (record.target.dataset.amountLinesTarget || record.target.name || record.target.tagName)))).observe(document.querySelector("[data-amount-lines-target=lines]"), { attributes: true, subtree: true, attributeFilter: ["hidden", "value"] })
       document.addEventListener("turbo:before-morph-element", () => log("before-morph-element"), true)
+      for (const name of ["keydown", "beforeinput", "input"]) {
+        window.addEventListener(name, (event) => log(name + " " + (event.key || event.data || "") + " -> " + (event.target.name || event.target.tagName) + " focus=" + document.hasFocus()), true)
+        window.addEventListener(name, (event) => event.defaultPrevented && log(name + " PREVENTED"), false)
+      }
+      window.addEventListener("blur", () => log("window blur"))
+      window.addEventListener("focus", () => log("window focus"))
+      log("hasFocus=" + document.hasFocus() + " dialogs=" + [...document.querySelectorAll("dialog[open]")].map((d) => d.id + ":" + d.matches(":modal")).join(","))
       new MutationObserver((records) => records.forEach((record) => record.removedNodes.length && log("removed " + [...record.removedNodes].map((node) => node.nodeName).join(",")))).observe(document.body, { childList: true, subtree: true })
     JS
     puts "BEFORE: stimulus=#{page.evaluate_script("!!window.Stimulus && !!Stimulus.getControllerForElementAndIdentifier(document.querySelector('[data-controller~=amount-lines]'), 'amount-lines')")} nav=#{page.evaluate_script("performance.getEntriesByType('navigation')[0]?.type")}"
