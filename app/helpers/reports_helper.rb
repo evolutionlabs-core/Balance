@@ -59,4 +59,8 @@ module ReportsHelper
     when "Expense" then expense_path(entry.source_id)
     end
   end
+
+  def report_export_link
+    link_to "Export CSV", url_for(request.query_parameters.merge(format: :csv)), class: secondary_button_class(size: :compact), data: { turbo: false }
+  end
 end

@@ -5,7 +5,10 @@
 
 <%= render "shared/page_header",
     title: "Balance sheet",
-    description: "What you own, what you owe, and what is left, at a point in time." %>
+    description: "What you own, what you owe, and what is left, at a point in time.",
+    action: (report_export_link if @statement) %>
+
+<%= render "period_menu", url: balance_sheet_path, as_of: @as_of, attribute: :compare, choices: ReportPeriod::BALANCE_SHEET_COMPARISONS, selected: @comparison %>
 
 <% if @statement.nil? %>
   <%= render "shared/empty_state",
