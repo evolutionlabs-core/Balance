@@ -22,7 +22,9 @@ module AccountingEngine
           description: description,
           lines: lines,
           reverses_entry: reverses_entry,
-          posted_by: Current.user
+          posted_by: Current.user,
+          reference: attributes[:reference].presence,
+          tags: Array(attributes[:tags])
         )
       end
 

@@ -17,6 +17,8 @@ class JournalEntryDraft < ApplicationRecord
   def assign_form(attributes)
     self.effective_date = attributes[:effective_date].presence
     self.description = attributes[:description]
+    self.reference = attributes[:reference].to_s.strip.presence
+    self.tags = EntryTags.parse(attributes[:tags])
     self.lines = attributes[:lines]
   end
 
@@ -33,7 +35,8 @@ class JournalEntryDraft < ApplicationRecord
   end
 
   def entry_form
-    form = JournalEntries::ManualEntry.new(workspace: workspace, effective_date: effective_date, description: description, lines: lines)
+    form = JournalEntries::ManualEntry.new(workspace: workspace, effective_date: effective_date, description: description,
+      reference: reference, tags: tags, lines: lines)
     (2 - form.lines.size).times { form.build_line }
     form
   end

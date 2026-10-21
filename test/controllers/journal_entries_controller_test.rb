@@ -136,4 +136,37 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "template input[name='entry[lines][__INDEX__][debit]']"
     assert_select "template input[name='entry[lines][__INDEX__][credit]']"
   end
+
+  test "filters by tag and finds entries by reference" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
+    tagged = post_tagged!(cash, groceries, "Office chairs", reference: "PO-1001", tags: %w[office])
+    other = post_tagged!(cash, groceries, "Lunch", reference: nil, tags: %w[meals])
+
+    get journal_entries_path(tag: "office")
+    assert_select "tr##{dom_id(tagged)}"
+    assert_select "tr##{dom_id(other)}", count: 0
+    assert_select "body", /Tagged/
+
+    get journal_entries_path(q: "PO-1001")
+    assert_select "tr##{dom_id(tagged)}"
+    assert_select "tr##{dom_id(other)}", count: 0
+  end
+
+  test "normalises tags" do
+    assert_equal %w[office q4], EntryTags.parse(" Office, q4,, OFFICE ")
+    assert_equal 10, EntryTags.parse((1..15).map { |n| "tag#{n}" }.join(",")).size
+    assert_equal 30, EntryTags.parse("x" * 50).first.length
+  end
+
+  private
+    def post_tagged!(debit, credit, description, reference:, tags:)
+      AccountingEngine.post(AccountingEngine::Command.new(
+        ledger: @ledger, effective_date: Date.current, description: description, reference: reference, tags: tags, posted_by: users(:one),
+        lines: [
+          AccountingEngine::Command::Line.new(account: credit, debit: 500, credit: 0),
+          AccountingEngine::Command::Line.new(account: debit, debit: 0, credit: 500)
+        ]
+      )).entry
+    end
 end

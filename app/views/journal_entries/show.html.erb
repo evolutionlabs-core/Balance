@@ -27,6 +27,18 @@
       <dt class="text-xs font-medium text-neutral-500">Source</dt>
       <dd class="mt-1 text-sm text-neutral-900"><%= journal_entry_source(@entry) %></dd>
     </div>
+    <% if @entry.reference.present? %>
+      <div>
+        <dt class="text-xs font-medium text-neutral-500">Reference</dt>
+        <dd class="mt-1 text-sm text-neutral-900"><%= @entry.reference %></dd>
+      </div>
+    <% end %>
+    <% if @entry.tags.any? %>
+      <div>
+        <dt class="text-xs font-medium text-neutral-500">Tags</dt>
+        <dd class="mt-1 text-sm"><%= journal_entry_tags(@entry.tags) %></dd>
+      </div>
+    <% end %>
     <div>
       <dt class="text-xs font-medium text-neutral-500">Posted by</dt>
       <dd class="mt-1 text-sm text-neutral-900"><%= @entry.posted_by&.full_name || blank_cell %></dd>

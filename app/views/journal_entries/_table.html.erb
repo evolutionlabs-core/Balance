@@ -21,6 +21,9 @@
       <% if entry.source_type.present? %>
         <span class="mt-1.5 inline-block rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-500"><%= [ journal_entry_origin_label(entry), journal_entry_status_label(entry) ].compact.join(" · ") %></span>
       <% end %>
+      <% if entry.tags.any? %>
+        <p class="mt-1.5"><%= journal_entry_tags(entry.tags) %></p>
+      <% end %>
       <% if split %>
         <div class="mt-2 overflow-x-auto rounded-md bg-neutral-50 p-3" data-row-expand-target="detail" hidden>
           <% if entry.description.to_s.length > 80 %>
@@ -74,6 +77,9 @@
             </div>
             <% if entry.source_type.present? %>
               <span class="mt-0.5 block text-[11px] font-medium text-neutral-400"><%= [ journal_entry_origin_label(entry), journal_entry_status_label(entry) ].compact.join(" · ") %></span>
+            <% end %>
+            <% if entry.tags.any? %>
+              <span class="mt-1 block"><%= journal_entry_tags(entry.tags) %></span>
             <% end %>
           </td>
           <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums whitespace-nowrap"><%= money(debit_lines.sum(&:debit)) %></td>

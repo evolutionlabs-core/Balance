@@ -6,10 +6,11 @@ class JournalEntriesController < ApplicationController
       term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
       @journal_entries = @journal_entries
         .left_joins(journal_entry_lines: :account)
-        .where("journal_entries.description ILIKE :term OR accounts.name ILIKE :term", term: term)
+        .where("journal_entries.description ILIKE :term OR journal_entries.reference ILIKE :term OR accounts.name ILIKE :term", term: term)
         .distinct
     end
     @journal_entries = @journal_entries.where(effective_date: parsed_date_range) if parsed_date_range
+    @journal_entries = @journal_entries.where(":tag = ANY(journal_entries.tags)", tag: params[:tag]) if params[:tag].present?
     @journal_entries = @journal_entries.order(effective_date: :desc, id: :desc)
   end
 
