@@ -22,7 +22,10 @@ class BillLineEditorTest < ApplicationSystemTestCase
     assert_current_path root_path
 
     visit edit_bill_path(bill)
-    assert_selector "[data-amount-lines-target='total']", text: "580.00"
+    within all("[data-amount-lines-target='row']").last do
+      find("[data-amount-lines-target='amount']").set("90.00")
+    end
+    assert_selector "[data-amount-lines-target='total']", text: "590.00"
 
     within all("[data-amount-lines-target='row']").last do
       click_on "Remove line"
