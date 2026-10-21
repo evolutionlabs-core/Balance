@@ -1,5 +1,5 @@
 class JournalEntry < ApplicationRecord
-  REVERSIBLE_SOURCES = [ nil, "Entry", "OpeningBalance" ].freeze
+  REVERSIBLE_SOURCES = [ nil, "Entry", "JournalEntryDraft", "OpeningBalance" ].freeze
 
   belongs_to :ledger
   belongs_to :posted_by, class_name: "User", optional: true

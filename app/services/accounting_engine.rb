@@ -3,6 +3,16 @@ module AccountingEngine
     Posting.call(command)
   end
 
+  def self.check(command)
+    structural = Validation::StructureCheck.call(command)
+
+    if structural.any?
+      structural
+    else
+      Validation.call(command) + PeriodState.call(command)
+    end
+  end
+
   def self.record(builder, workspace:, attributes:, source_id:, description: nil)
     post(builder.call(workspace: workspace, attributes: attributes, source_id: source_id, description: description))
   rescue Builders::AccountMissing => error

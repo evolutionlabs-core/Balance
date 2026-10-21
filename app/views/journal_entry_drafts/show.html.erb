@@ -1,0 +1,50 @@
+<% content_for :title, "Review entry" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Journal entries", path: journal_entries_path }, { label: "Drafts", path: journal_entry_drafts_path }, { label: "Review" } ] %>
+<% end %>
+
+<% accounts = current_workspace.accounts.where(id: @entry_form.lines.map(&:account_id)).index_by(&:id) %>
+<% ready = @entry_form.errors.empty? %>
+
+<div class="mx-auto max-w-4xl">
+  <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2">
+        <p class="text-sm font-medium text-balance-teal-700">Draft</p>
+        <%= status_badge(ready ? "Ready to post" : "Incomplete", tone: ready ? :success : :warning) %>
+      </div>
+      <h1 class="mt-1 text-2xl font-semibold tracking-tight text-neutral-950"><%= @draft.description.presence || "Untitled entry" %></h1>
+      <p class="mt-1 text-sm text-neutral-500"><%= @draft.effective_date&.to_fs(:long) || "No date" %></p>
+    </div>
+    <p class="text-3xl font-semibold tabular-nums text-neutral-950"><%= money(@draft.total_kobo) %></p>
+  </div>
+
+  <div class="mt-5">
+    <%= render "shared/form_errors", record: @entry_form.errors.empty? ? @draft : @entry_form %>
+  </div>
+
+  <section class="mt-5">
+    <h2 class="text-sm font-semibold text-neutral-900">Lines</h2>
+    <%= render layout: "shared/table", locals: { frame_class: "mt-3", columns: [ { label: "Account" }, { label: "Debit", align: :right }, { label: "Credit", align: :right } ] } do %>
+      <% @entry_form.lines.reject(&:blank_row?).each do |line| %>
+        <tr class="<%= table_row_class %>">
+          <td class="<%= table_cell_class(strong: true) %>"><%= accounts[line.account_id.to_i]&.name || blank_cell %></td>
+          <td class="<%= table_cell_class(align: :right) %> tabular-nums"><%= line.debit_kobo.to_i.positive? ? money(line.debit_kobo) : blank_cell %></td>
+          <td class="<%= table_cell_class(align: :right) %> tabular-nums"><%= line.credit_kobo.to_i.positive? ? money(line.credit_kobo) : blank_cell %></td>
+        </tr>
+      <% end %>
+    <% end %>
+    <p class="mt-3 text-sm text-neutral-500">Posting records this entry in your books. It can't be edited afterwards, only reversed.</p>
+  </section>
+
+  <div class="mt-8 flex flex-wrap items-center justify-end gap-2 border-t border-neutral-200 pt-5">
+    <%= button_to "Delete draft", journal_entry_draft_path(@draft), method: :delete, class: ghost_button_class,
+        form: { data: { turbo_confirm: "Delete this draft?" } } %>
+    <%= link_to "Edit", edit_journal_entry_draft_path(@draft), class: secondary_button_class, data: { turbo_frame: "modal" } %>
+    <% if ready %>
+      <%= button_to "Post entry", journal_entry_draft_posting_path(@draft), class: primary_button_class,
+          form: { data: { turbo_submits_with: "Posting…" } } %>
+    <% end %>
+  </div>
+</div>

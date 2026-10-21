@@ -1,9 +1,10 @@
 <%= form_with model: entry_form,
-    url: journal_entries_path,
+    url: draft.persisted? ? journal_entry_draft_path(draft) : journal_entry_drafts_path,
+    method: draft.persisted? ? :patch : :post,
     scope: :entry,
     class: "flex min-h-0 flex-1 flex-col",
     data: { controller: "journal-entry-lines", action: "submit->journal-entry-lines#validate" } do |form| %>
-  <%= render "shared/modal/header", title: "New journal entry" %>
+  <%= render "shared/modal/header", title: draft.persisted? ? "Edit draft" : "New journal entry" %>
 
   <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
     <%= render "shared/form_errors", record: entry_form %>
@@ -75,11 +76,12 @@
   </div>
 
   <div class="flex shrink-0 items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/60 px-6 py-4">
-    <p class="hidden text-xs text-neutral-500 sm:block">Entries cannot be edited after recording.</p>
+    <p class="hidden text-xs text-neutral-500 sm:block">You can review before anything is posted.</p>
     <div class="ml-auto flex gap-2">
       <button type="button" data-action="modal#close" class="<%= secondary_button_class %>">Cancel</button>
-      <%= form.submit "Record entry",
-          disabled: true,
+      <%= button_tag "Save draft", type: "submit", name: "intent", value: "draft", formnovalidate: true,
+          class: secondary_button_class, data: { journal_entry_lines_target: "draftButton" } %>
+      <%= button_tag "Review", type: "submit", name: "intent", value: "review", disabled: true,
           class: "#{primary_button_class} disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400",
           data: { journal_entry_lines_target: "submit" } %>
     </div>

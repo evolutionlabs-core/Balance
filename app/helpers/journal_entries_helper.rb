@@ -20,7 +20,7 @@ module JournalEntriesHelper
   def journal_entry_origin_label(entry)
     case entry.source_type
     when "Entry" then entry.source_id ? "Assistant" : "Manual"
-    when nil, "JournalEntry" then "Manual"
+    when nil, "JournalEntry", "JournalEntryDraft" then "Manual"
     else entry.source_type.underscore.humanize
     end
   end
