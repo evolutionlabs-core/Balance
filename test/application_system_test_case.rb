@@ -5,6 +5,7 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
   setup do
     Capybara.default_max_wait_time = 5
+    page.driver.browser.execute_cdp("Page.bringToFront")
   end
 
   teardown do
