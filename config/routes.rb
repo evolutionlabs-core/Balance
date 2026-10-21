@@ -39,7 +39,9 @@ Rails.application.routes.draw do
   resources :expenses, only: %i[index new create show]
 
   resource :expense_report, only: %i[show]
-  resources :journal_entries, only: %i[index new create]
+  resources :journal_entries, only: %i[index new create show] do
+    resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
+  end
   resources :accounts, path: "accounts", only: %i[index new create edit update]
   resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
