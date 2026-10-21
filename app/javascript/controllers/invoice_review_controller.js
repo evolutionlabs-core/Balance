@@ -2,7 +2,6 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["tab", "panel", "message", "frame", "pdf", "recipient", "sendButton"]
-  static values = { number: String }
 
   select(event) {
     this.show(event.currentTarget.dataset.panel)
@@ -21,13 +20,6 @@ export default class extends Controller {
     event.preventDefault()
     this.show("email")
     this.recipientTarget.focus()
-  }
-
-  confirmation() {
-    if (!this.hasSendButtonTarget) return
-
-    const recipient = this.recipientTarget.value.trim() || "the customer"
-    this.sendButtonTarget.dataset.turboConfirm = `Email invoice ${this.numberValue} to ${recipient}?`
   }
 
   preview() {

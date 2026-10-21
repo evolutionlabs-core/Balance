@@ -1,6 +1,27 @@
 require "application_system_test_case"
 
 class InvoiceEditorTest < ApplicationSystemTestCase
+  test "shares a draft invoice's link through the device share sheet" do
+    user = users(:one)
+    user.update!(password: "password")
+    workspace = workspaces(:ada_store)
+    income = workspace.provision_ledger!.accounts.find_by!(name: "Other Income")
+    service = workspace.services.create!(name: "Consulting", income_account: income)
+    customer = workspace.customers.create!(name: "Share Customer", customer_type: "business", email: "share@example.com")
+    invoice = workspace.invoices.create!(user: user, customer: customer, issue_date: Date.current,
+      invoice_lines_attributes: [ { service_id: service.id, description: "Consulting", quantity: 1, rate: 100 } ])
+    sign_in(user)
+
+    visit invoice_path(invoice)
+    page.execute_script("navigator.share = (data) => { window.sharedUrl = data.url; return Promise.resolve() }")
+    click_button "Send invoice"
+    click_button "Share link…"
+
+    assert_text "Invoice #{invoice.invoice_number} shared."
+    assert invoice.reload.sent?
+    assert_match %r{/client/invoices/.+}, page.evaluate_script("window.sharedUrl")
+  end
+
   test "creates edits and sends a free-form invoice" do
     user = users(:one)
     user.update!(password: "password")
@@ -47,7 +68,8 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_selector "iframe[title='Invoice PDF'][src]"
     click_on "Email view"
     assert_field "Send to", with: "custom@example.com"
-    accept_confirm("Email invoice #{invoice.invoice_number} to custom@example.com?") { click_button "Send invoice" }
+    click_button "Send invoice"
+    click_button "Send email"
     assert_text "Invoice #{invoice.invoice_number} sent to custom@example.com"
     assert invoice.reload.sent?
     assert_equal income.id, invoice.invoice_lines.sole.account_id

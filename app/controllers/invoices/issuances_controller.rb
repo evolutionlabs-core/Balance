@@ -29,15 +29,17 @@ module Invoices
       end
 
       def delivery_params
-        params.fetch(:delivery, {}).permit(:to, :subject, :message, :send_email).to_h.symbolize_keys
+        params.fetch(:delivery, {}).permit(:to, :subject, :message, :send_email, :via).to_h.symbolize_keys
       end
 
       def sent_notice
-        if @delivery.send_email
-          "Invoice #{@invoice.invoice_number} sent to #{@delivery.to}."
-        else
-          "Invoice #{@invoice.invoice_number} marked as sent."
-        end
+        number = @invoice.invoice_number
+        return "Invoice #{number} sent to #{@delivery.to}." if @delivery.send_email
+
+        {
+          "share" => "Invoice #{number} shared.",
+          "copy" => "Invoice #{number} marked as sent. Link copied."
+        }.fetch(@delivery.via.to_s, "Invoice #{number} marked as sent.")
       end
   end
 end

@@ -61,6 +61,15 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     assert @invoice.reload.draft?
   end
 
+  test "sharing the link issues the invoice without emailing" do
+    assert_no_enqueued_emails do
+      post invoice_issuance_path(@invoice), params: { delivery: { send_email: "0", via: "share" } }
+    end
+
+    assert @invoice.reload.sent?
+    assert_equal "Invoice #{@invoice.invoice_number} shared.", flash[:notice]
+  end
+
   test "marking as sent issues without emailing" do
     assert_no_enqueued_emails do
       post invoice_issuance_path(@invoice), params: { delivery: { send_email: "0" } }

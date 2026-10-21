@@ -6,6 +6,7 @@ class InvoiceDelivery
   attribute :subject, :string
   attribute :message, :string
   attribute :send_email, :boolean, default: false
+  attribute :via, :string
 
   attr_reader :invoice
 
