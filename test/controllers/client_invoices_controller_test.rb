@@ -45,6 +45,29 @@ class ClientInvoicesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF-")
   end
 
+  test "a shared link keeps working once the invoice is paid" do
+    bank = @ledger.accounts.find_by!(key: "bank")
+    assert @invoice.record_payment!(deposit_account_id: bank.id, received_on: Date.current, amount_kobo: @invoice.balance_due_kobo)
+    assert @invoice.reload.paid?
+
+    get client_invoice_path(@token)
+
+    assert_response :success
+  end
+
+  test "a link copied from a draft opens once the invoice is sent" do
+    draft = @workspace.invoices.create!(user: @user, customer: @customer, currency_code: "NGN",
+      invoice_lines_attributes: @invoice.invoice_lines.map { |line| { service_id: line.service_id, description: line.description, quantity: 1, rate: 100 } })
+    token = draft.generate_token_for(:client_view)
+
+    get client_invoice_path(token)
+    assert_response :not_found
+
+    assert draft.issue!
+    get client_invoice_path(token)
+    assert_response :success
+  end
+
   test "draft and voided invoices are not available through client links" do
     draft = @workspace.invoices.create!(user: @user, customer: @customer, currency_code: "NGN")
 

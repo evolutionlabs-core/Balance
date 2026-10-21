@@ -4,7 +4,7 @@
   <%= render "shared/breadcrumb", data: [ { label: "Invoices", path: invoices_path }, { label: @invoice.invoice_number.presence || "Invoice" } ] %>
 <% end %>
 
-<div class="mx-auto max-w-6xl" data-controller="invoice-review" data-invoice-review-number-value="<%= @invoice.invoice_number %>">
+<div class="mx-auto max-w-6xl" data-controller="invoice-review">
   <div class="mb-5">
     <%= render "shared/page_header",
         title: "Invoice #{@invoice.invoice_number}",
