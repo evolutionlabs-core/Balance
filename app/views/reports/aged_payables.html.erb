@@ -1,4 +1,3 @@
-<%= render "aging", title: "Aged payables", aging: @aging,
-    description: "What you owe vendors on open bills, by how long it is past due.",
-    counterparty: "Vendor", control_account: "Accounts Payable", documents: "open bills",
+<%= render "aging", title: "You owe", aging: @aging,
+    counterparty: "Vendor", control_account: "Accounts Payable", documents: "bills",
     empty: "You don't owe any vendor anything right now." %>

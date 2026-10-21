@@ -5,7 +5,7 @@
 
 <%= render "shared/page_header",
     title: title,
-    description: "#{description} As of #{Date.current.strftime("%B %-d, %Y")}." %>
+    description: "As of #{Date.current.strftime("%b %-d, %Y")}" %>
 
 <% if aging.nil? %>
   <%= render "shared/empty_state",
@@ -13,62 +13,110 @@
       title: "No accounts yet",
       description: "This report appears here once your chart of accounts is provisioned." %>
 <% else %>
-  <div class="mt-6 space-y-4">
-    <div class="overflow-x-auto rounded-xl border border-neutral-200">
-      <table class="w-full min-w-[42rem] text-sm">
-        <thead class="border-b border-neutral-200 bg-neutral-50 text-[11px] font-semibold tracking-wide text-neutral-500 uppercase">
-          <tr>
-            <th scope="col" class="px-4 py-2 text-left"><%= counterparty %></th>
-            <% AgedBalances::BUCKETS.each_value do |label| %>
-              <th scope="col" class="px-4 py-2 text-right"><%= label %></th>
-            <% end %>
-            <th scope="col" class="px-4 py-2 text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-neutral-100">
-          <% aging.rows.each do |row| %>
-            <tr>
-              <th scope="row" class="px-4 py-2.5 text-left font-medium text-neutral-900"><%= row.counterparty&.name || "Unassigned" %></th>
-              <% AgedBalances::BUCKETS.each_key do |bucket| %>
-                <td class="px-4 py-2.5 text-right tabular-nums <%= row.buckets[bucket].zero? ? "text-neutral-300" : "text-neutral-700" %>"><%= naira(row.buckets[bucket]) %></td>
-              <% end %>
-              <td class="px-4 py-2.5 text-right font-semibold tabular-nums text-neutral-950"><%= naira(row.total_kobo) %></td>
-            </tr>
-          <% end %>
+  <% totals = aging.bucket_totals %>
+  <% total = aging.total_kobo %>
+  <% overdue = total - totals[:current] %>
+  <% overdue_buckets = AgingHelper::AGING_BUCKETS.except(:current) %>
 
-          <% if aging.rows.empty? %>
-            <tr><td colspan="<%= AgedBalances::BUCKETS.size + 2 %>" class="px-4 py-4 text-neutral-500"><%= empty %></td></tr>
-          <% end %>
-        </tbody>
-        <tfoot class="border-t border-neutral-200 bg-neutral-50 font-semibold text-neutral-950">
-          <tr>
-            <th scope="row" class="px-4 py-3 text-left">Total</th>
-            <% aging.bucket_totals.each_value do |amount| %>
-              <td class="px-4 py-3 text-right tabular-nums"><%= naira(amount) %></td>
-            <% end %>
-            <td class="px-4 py-3 text-right tabular-nums"><%= naira(aging.total_kobo) %></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <div id="tie-out" class="text-sm <%= aging.tied_out? ? "text-green-700" : "text-red-700" %>">
-      <p class="flex items-center gap-2">
-        <%= inline_svg_tag(aging.tied_out? ? "icons/check-circle.svg" : "icons/minus-circle.svg", class: "h-4 w-4 flex-none") %>
-        <% if aging.tied_out? %>
-          Ties out: <%= control_account %> holds <%= naira(aging.ledger_kobo) %>, matching <%= documents %>.
-        <% else %>
-          Out of balance: <%= control_account %> holds <%= naira(aging.ledger_kobo) %> but <%= documents %> total <%= naira(aging.total_kobo) %>.
-        <% end %>
-      </p>
-
-      <% unless aging.tied_out? %>
-        <ul class="mt-2 space-y-1 pl-6 text-neutral-700">
-          <% aging.unmatched_rows.each do |row| %>
-            <li><%= row.counterparty&.name || "Unassigned entries" %>: ledger <%= naira(row.ledger_kobo) %>, <%= documents %> <%= naira(row.total_kobo) %></li>
-          <% end %>
-        </ul>
-      <% end %>
-    </div>
+  <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <% [ [ "Total", total, "text-neutral-950", "col-span-2 sm:col-span-1" ],
+         [ "Not due", totals[:current], "text-neutral-950", "" ],
+         [ "Overdue", overdue, overdue.positive? ? "text-red-700" : "text-neutral-950", "" ] ].each do |label, amount, tone, span| %>
+      <div class="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 <%= span %>">
+        <p class="text-sm font-medium text-neutral-500"><%= label %></p>
+        <p class="mt-2 text-lg font-semibold tracking-tight tabular-nums lg:text-2xl <%= tone %>"><%= aging_money(amount) %></p>
+      </div>
+    <% end %>
   </div>
+
+  <% if total.positive? %>
+    <section class="mt-3 rounded-xl border border-neutral-200 bg-white p-5" aria-label="Balance by age">
+      <div class="flex h-2 gap-0.5 overflow-hidden rounded-full bg-neutral-100" aria-hidden="true">
+        <% AgingHelper::AGING_BUCKETS.each do |bucket, style| %>
+          <% if totals[bucket].positive? %>
+            <span class="h-full" style="width: <%= aging_share(totals[bucket], total) %>%; background-color: <%= style[:color] %>"></span>
+          <% end %>
+        <% end %>
+      </div>
+      <dl class="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-5">
+        <% AgingHelper::AGING_BUCKETS.each do |bucket, style| %>
+          <div class="flex items-center justify-between gap-3 sm:block">
+            <dt class="flex items-center gap-1.5 whitespace-nowrap text-neutral-500">
+              <span class="size-2 flex-none rounded-full" style="background-color: <%= style[:color] %>" aria-hidden="true"></span>
+              <%= style[:label] %>
+            </dt>
+            <dd class="font-medium tabular-nums <%= totals[bucket].zero? ? "text-neutral-400" : "text-neutral-900" %> sm:mt-1 sm:pl-3.5"><%= aging_money(totals[bucket]) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
+
+  <section class="mt-6" aria-label="By <%= counterparty.downcase %>">
+
+    <% if aging.rows.empty? %>
+      <p class="mt-3 rounded-md border border-dashed border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500"><%= empty %></p>
+    <% else %>
+      <div class="mt-3 divide-y divide-neutral-200 border-y border-neutral-200 sm:hidden">
+        <% aging.rows.each do |row| %>
+          <% oldest = aging_oldest_bucket(row) %>
+          <article class="py-4">
+            <div class="flex items-start justify-between gap-4">
+              <span class="min-w-0 flex-1 truncate text-sm font-medium text-neutral-950"><%= row.counterparty&.name || "Unassigned" %></span>
+              <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-950"><%= aging_money(row.total_kobo) %></span>
+            </div>
+            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-neutral-500">
+              <%= aging_bucket_label(oldest) %>
+              <% if row.counterparty %>
+                <%= link_to "View", polymorphic_path(row.counterparty), class: "flex min-h-11 shrink-0 items-center px-1 text-sm font-medium text-[#0f7082]" %>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+
+      <div class="mt-3 hidden overflow-x-auto border-y border-neutral-200 sm:block">
+        <table class="min-w-full">
+          <thead class="bg-white">
+            <tr>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500"><%= counterparty %></th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Overdue by</th>
+              <% [ "Overdue", "Total" ].each do |label| %>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-neutral-500"><%= label %></th>
+              <% end %>
+              <th scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white">
+            <% aging.rows.each do |row| %>
+              <% overdue_amount = row.total_kobo - row.buckets[:current] %>
+              <tr class="border-t border-neutral-200 transition-colors hover:bg-neutral-50">
+                <th scope="row" class="px-4 py-4 text-left text-sm font-medium whitespace-nowrap text-neutral-900"><%= row.counterparty&.name || "Unassigned" %></th>
+                <td class="px-4 py-4 text-sm whitespace-nowrap text-neutral-600"><%= aging_bucket_label(aging_oldest_bucket(row)) %></td>
+                <td class="px-4 py-4 text-right text-sm tabular-nums whitespace-nowrap <%= overdue_amount.zero? ? "text-neutral-300" : "text-neutral-900" %>"><%= overdue_amount.zero? ? "—" : aging_money(overdue_amount) %></td>
+                <td class="px-4 py-4 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900"><%= aging_money(row.total_kobo) %></td>
+                <td class="px-4 py-4 text-right text-sm">
+                  <% if row.counterparty %>
+                    <%= link_to "View", polymorphic_path(row.counterparty), class: "font-medium text-[#0f7082] hover:underline" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+
+  <% unless aging.tied_out? %>
+    <div id="tie-out" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <p class="font-medium">Doesn't match your books</p>
+      <p class="mt-1"><%= control_account %> <%= aging_money(aging.ledger_kobo) %> · <%= documents.capitalize %> <%= aging_money(aging.total_kobo) %></p>
+      <ul class="mt-2 list-disc space-y-1 pl-5">
+        <% aging.unmatched_rows.each do |row| %>
+          <li><%= row.counterparty&.name || "No #{counterparty.downcase}" %>: books <%= aging_money(row.ledger_kobo) %>, <%= documents %> <%= aging_money(row.total_kobo) %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 <% end %>

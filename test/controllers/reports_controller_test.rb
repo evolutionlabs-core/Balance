@@ -116,12 +116,12 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "No accounts yet"
   end
 
-  test "aged receivables shows the tie-out to the control account" do
+  test "aged receivables only warns when it disagrees with the books" do
     get aged_receivables_path
 
     assert_response :success
-    assert_select "h1", /Aged receivables/
-    assert_select "#tie-out", /Ties out: Accounts Receivable holds/
+    assert_select "h1", "Owed to you"
+    assert_select "#tie-out", count: 0
   end
 
   test "aged payables is only for business workspaces" do
@@ -138,6 +138,19 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:three))
   end
 
+  test "aged receivables explains a gap between invoices and the books" do
+    receivable = @ledger.accounts.find_by!(key: "accounts_receivable")
+    sales = @ledger.accounts.find_by!(key: "sales")
+    entry = @ledger.journal_entries.create!(number: 99, effective_date: Date.current, description: "Posted around the subledger")
+    entry.journal_entry_lines.create!(account: receivable, debit: 5_000, credit: 0)
+    entry.journal_entry_lines.create!(account: sales, debit: 0, credit: 5_000)
+
+    get aged_receivables_path
+
+    assert_select "#tie-out", text: /Doesn't match your books/
+    assert_select "#tie-out li", text: /No customer: books ₦50.00, invoices ₦0.00/
+  end
+
   test "aged payables lists open bills by vendor" do
     rent = @ledger.accounts.find_by!(key: "rent")
     vendor = @workspace.vendors.create!(name: "Lagos Landlords")
@@ -148,7 +161,10 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
     get aged_payables_path
 
     assert_response :success
+    assert_select "h1", "You owe"
     assert_select "tbody th", text: "Lagos Landlords"
-    assert_select "#tie-out", /Ties out: Accounts Payable holds ₦750.00/
+    assert_select "tbody a[href='#{vendor_path(vendor)}']", text: "View"
+    assert_select "tbody td", text: "Not due"
+    assert_select "#tie-out", count: 0
   end
 end
