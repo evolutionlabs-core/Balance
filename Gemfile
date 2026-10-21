@@ -25,6 +25,7 @@ gem "chartkick"
 # Define explicit JSON response shapes without coupling them to controllers.
 gem "blueprinter", "~> 1.3"
 # Generate downloadable invoice PDFs without a browser process.
+gem "csv"
 gem "prawn"
 gem "prawn-table"
 # State machines for domain lifecycles (estimate status).

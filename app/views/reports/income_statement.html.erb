@@ -5,7 +5,8 @@
 
 <%= render "shared/page_header",
     title: "Income statement",
-    description: current_workspace.personal? ? "What came in and what went out over a period." : "Revenue, costs, and profit over a period." %>
+    description: current_workspace.personal? ? "What came in and what went out over a period." : "Revenue, costs, and profit over a period.",
+    action: (report_export_link if @statement) %>
 
 <% if @statement.nil? %>
   <%= render "shared/empty_state",

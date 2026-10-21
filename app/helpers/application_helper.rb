@@ -24,6 +24,7 @@ module ApplicationHelper
         { path: balance_sheet_path, svg: "icons/gauge.svg", text: "Reports", children: [
           { path: balance_sheet_path, text: "Balance sheet" },
           { path: income_statement_path, text: "Income statement" },
+          { path: cash_flow_path, text: "Cash flow" },
           { path: trial_balance_path, text: "Trial balance" },
           { path: general_ledger_path, text: "General ledger" }
         ] }

@@ -3,7 +3,8 @@
   <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Trial balance" } ] %>
 <% end %>
 
-<%= render "shared/page_header", title: "Trial balance", description: "Every account with a balance, in debit and credit columns that must agree." %>
+<%= render "shared/page_header", title: "Trial balance", description: "Every account with a balance, in debit and credit columns that must agree.",
+    action: (report_export_link if @trial_balance) %>
 
 <% if @trial_balance.nil? %>
   <%= render "shared/empty_state", icon: "icons/gauge.svg", title: "No accounts yet",
