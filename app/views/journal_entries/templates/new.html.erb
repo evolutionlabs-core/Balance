@@ -1,0 +1,17 @@
+<%= render "shared/modal" do %>
+  <%= form_with model: @template, scope: :entry_template, url: journal_entry_template_path(@entry), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Save as template" %>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @template %>
+      <p class="text-sm text-neutral-600">Start new entries from these accounts and amounts. You can change anything before reviewing.</p>
+
+      <div>
+        <%= form.label :name, class: field_label_class %>
+        <%= form.text_field :name, required: true, autofocus: true, autocomplete: "off", class: field_class %>
+      </div>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Save template" %>
+  <% end %>
+<% end %>

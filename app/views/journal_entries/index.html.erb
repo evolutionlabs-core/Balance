@@ -4,8 +4,15 @@
   <%= render "shared/breadcrumb", data: [ { label: "Journal entries" } ] %>
 <% end %>
 
-<% new_entry = link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
-  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
+<% draft_count = current_workspace.journal_entry_drafts.unposted.count %>
+<% new_entry = tag.div(class: "flex items-center gap-2") do %>
+  <%= link_to "Templates", entry_templates_path, class: ghost_button_class(size: :compact) %>
+  <% if draft_count.positive? %>
+    <%= link_to "Drafts (#{draft_count})", journal_entry_drafts_path, class: secondary_button_class(size: :compact) %>
+  <% end %>
+  <%= link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+    <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
+  <% end %>
 <% end %>
 
 <%= render "shared/page_header",
@@ -27,10 +34,15 @@
     <%= form.hidden_field :from, value: params[:from], data: { date_range_target: "from" } %>
     <%= form.hidden_field :to, value: params[:to], data: { date_range_target: "to" } %>
   </div>
+  <%= form.hidden_field :tag, value: params[:tag] if params[:tag].present? %>
   <%= form.submit "Filter", class: secondary_button_class %>
-  <% if params[:q].present? || params[:from].present? %>
+  <% if params[:q].present? || params[:from].present? || params[:tag].present? %>
     <%= link_to "Clear", journal_entries_path, class: ghost_button_class %>
   <% end %>
+<% end %>
+
+<% if params[:tag].present? %>
+  <p class="mt-3 text-sm text-neutral-600">Tagged <span class="font-medium text-neutral-900"><%= params[:tag] %></span></p>
 <% end %>
 
 <% if @journal_entries.empty? %>

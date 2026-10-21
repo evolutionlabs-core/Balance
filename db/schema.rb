@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -98,6 +98,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
     t.index ["workspace_id", "active"], name: "index_customers_on_workspace_id_and_active"
     t.index ["workspace_id", "name"], name: "index_customers_on_workspace_id_and_name"
     t.index ["workspace_id"], name: "index_customers_on_workspace_id"
+  end
+
+  create_table "entry_templates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "lines", default: [], null: false
+    t.string "name", null: false
+    t.string "tags", default: [], null: false, array: true
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["user_id"], name: "index_entry_templates_on_user_id"
+    t.index ["workspace_id", "name"], name: "index_entry_templates_on_workspace_id_and_name", unique: true
+    t.index ["workspace_id"], name: "index_entry_templates_on_workspace_id"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -243,9 +257,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
     t.bigint "ledger_id", null: false
     t.integer "number", null: false
     t.bigint "posted_by_id"
+    t.string "reference"
     t.bigint "reverses_entry_id"
     t.bigint "source_id"
     t.string "source_type"
+    t.string "tags", default: [], null: false, array: true
     t.datetime "updated_at", null: false
     t.index ["ledger_id", "effective_date"], name: "index_journal_entries_on_ledger_id_and_effective_date"
     t.index ["ledger_id", "number"], name: "index_journal_entries_on_ledger_id_and_number", unique: true
@@ -253,6 +269,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
     t.index ["ledger_id"], name: "index_journal_entries_on_ledger_id"
     t.index ["posted_by_id"], name: "index_journal_entries_on_posted_by_id"
     t.index ["reverses_entry_id"], name: "index_journal_entries_on_reverses_entry_id", unique: true
+    t.index ["tags"], name: "index_journal_entries_on_tags", using: :gin
+  end
+
+  create_table "journal_entry_drafts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.date "effective_date"
+    t.jsonb "lines", default: [], null: false
+    t.bigint "posted_entry_id"
+    t.string "reference"
+    t.string "tags", default: [], null: false, array: true
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["posted_entry_id"], name: "index_journal_entry_drafts_on_posted_entry_id", unique: true
+    t.index ["user_id"], name: "index_journal_entry_drafts_on_user_id"
+    t.index ["workspace_id"], name: "index_journal_entry_drafts_on_workspace_id"
   end
 
   create_table "journal_entry_lines", force: :cascade do |t|
@@ -610,6 +643,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
   add_foreign_key "bills", "vendors"
   add_foreign_key "bills", "workspaces"
   add_foreign_key "customers", "workspaces"
+  add_foreign_key "entry_templates", "users"
+  add_foreign_key "entry_templates", "workspaces"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_line_items", "services"
   add_foreign_key "estimates", "customers"
@@ -635,6 +670,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_173102) do
   add_foreign_key "journal_entries", "journal_entries", column: "reverses_entry_id"
   add_foreign_key "journal_entries", "ledgers"
   add_foreign_key "journal_entries", "users", column: "posted_by_id"
+  add_foreign_key "journal_entry_drafts", "journal_entries", column: "posted_entry_id"
+  add_foreign_key "journal_entry_drafts", "users"
+  add_foreign_key "journal_entry_drafts", "workspaces"
   add_foreign_key "journal_entry_lines", "accounts"
   add_foreign_key "journal_entry_lines", "customers"
   add_foreign_key "journal_entry_lines", "journal_entries"

@@ -3,7 +3,7 @@ import { formatAmount, parseAmount } from "lib/money"
 import { appendRow, removeRow, visibleRows } from "lib/line_rows"
 
 export default class extends Controller {
-  static targets = ["lines", "template", "row", "account", "debit", "credit", "debitTotal", "creditTotal", "difference", "status", "submit"]
+  static targets = ["lines", "template", "row", "account", "debit", "credit", "debitTotal", "creditTotal", "difference", "status", "submit", "draftButton"]
 
   connect() {
     this.recalculate()
@@ -46,12 +46,14 @@ export default class extends Controller {
     this.differenceTarget.classList.toggle("text-red-600", Math.abs(difference) >= 0.005)
     this.submitTarget.disabled = !(complete && balanced)
     this.statusTarget.textContent = complete && balanced
-      ? "Balanced and ready to record."
+      ? "Balanced and ready to review."
       : "Choose an account and enter either a debit or credit on every line; totals must balance."
     this.statusTarget.classList.toggle("text-emerald-700", complete && balanced)
   }
 
   validate(event) {
+    if (this.hasDraftButtonTarget && event.submitter === this.draftButtonTarget) return
+
     this.recalculate()
     if (!this.submitTarget.disabled) return
 

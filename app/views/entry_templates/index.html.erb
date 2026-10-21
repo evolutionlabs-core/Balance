@@ -1,0 +1,35 @@
+<% content_for :title, "Entry templates" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Journal entries", path: journal_entries_path }, { label: "Templates" } ] %>
+<% end %>
+
+<%= render "shared/page_header", title: "Templates", description: "Common entries you can start from in one click." %>
+
+<% if @templates.empty? %>
+  <%= render "shared/empty_state", icon: "icons/list.svg", title: "No templates yet",
+      description: "Open any manual entry and choose Save as template." %>
+<% else %>
+  <% summary = ->(template) { template.lines.filter_map { |line| @accounts[line["account_id"].to_i]&.name }.to_sentence } %>
+  <%= render layout: "shared/mobile_list" do %>
+    <% @templates.each do |template| %>
+      <%= render "shared/mobile_card", title: template.name, meta: summary.call(template),
+          footer: template.tags.any? ? journal_entry_tags(template.tags) : nil,
+          action: link_to("Use", new_journal_entry_path(template_id: template.id), class: mobile_card_action_class, data: { turbo_frame: "modal" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Name" }, { label: "Accounts" }, { label: "Tags" }, { label: "Actions", align: :right } ] } do %>
+    <% @templates.each do |template| %>
+      <tr id="<%= dom_id(template) %>" class="<%= table_row_class %>">
+        <td class="<%= table_cell_class(strong: true) %>"><%= template.name %></td>
+        <td class="<%= table_cell_class %>"><%= summary.call(template) %></td>
+        <td class="<%= table_cell_class %>"><%= template.tags.any? ? journal_entry_tags(template.tags) : blank_cell %></td>
+        <td class="<%= table_cell_class(align: :right) %> whitespace-nowrap">
+          <%= link_to "Use", new_journal_entry_path(template_id: template.id), class: "mr-3 font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" } %>
+          <%= button_to "Delete", entry_template_path(template), method: :delete, class: "cursor-pointer bg-transparent font-medium text-neutral-500 hover:underline",
+              form: { class: "inline", data: { turbo_confirm: "Delete the #{template.name} template?" } } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>

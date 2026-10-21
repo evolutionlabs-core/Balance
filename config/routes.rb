@@ -31,16 +31,28 @@ Rails.application.routes.draw do
   resource :feedback, only: %i[new create]
   get "reports/balance_sheet", to: "reports#balance_sheet", as: :balance_sheet
   get "reports/income_statement", to: "reports#income_statement", as: :income_statement
+  get "reports/cash_flow", to: "reports#cash_flow", as: :cash_flow
   get "reports/trial_balance", to: "reports#trial_balance", as: :trial_balance
   get "reports/general_ledger", to: "reports#general_ledger", as: :general_ledger
   get "reports/general_ledger/:account_id", to: "reports#general_ledger_account", as: :general_ledger_account
   get "reports/aged_receivables", to: "reports#aged_receivables", as: :aged_receivables
   get "reports/aged_payables", to: "reports#aged_payables", as: :aged_payables
-  resources :expenses, only: %i[index new create show]
+  resources :expenses, only: %i[index new create show] do
+    resource :void, only: %i[new create], controller: "expenses/voids"
+  end
 
   resource :expense_report, only: %i[show]
-  resources :journal_entries, only: %i[index new create]
-  resources :accounts, path: "accounts", only: %i[index new create edit update]
+  resources :journal_entries, only: %i[index new show] do
+    resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
+    resource :template, only: %i[new create], controller: "journal_entries/templates"
+  end
+  resources :entry_templates, only: %i[index destroy]
+  resources :journal_entry_drafts, only: %i[index show create edit update destroy] do
+    resource :posting, only: %i[create], controller: "journal_entry_drafts/postings"
+  end
+  resources :accounts, path: "accounts", only: %i[index new create edit update] do
+    resource :archival, only: %i[create destroy], controller: "accounts/archivals"
+  end
   resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]

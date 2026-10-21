@@ -2,6 +2,10 @@ module AccountingEngine
   module Builders
     class Entry < Base
       private
+        def source_type
+          attributes.fetch(:source_type) { super }
+        end
+
         def effective_date
           attributes.fetch(:effective_date).to_date
         end

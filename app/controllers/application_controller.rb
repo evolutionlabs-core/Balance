@@ -20,7 +20,7 @@ class ApplicationController < ActionController::Base
       redirect_to onboarding_step_path(:workspace_type)
     end
 
-    def redirect_out_of_frame(url, notice:)
+    def redirect_out_of_frame(url, notice: nil)
       respond_to do |format|
         format.turbo_stream do
           flash[:notice] = notice

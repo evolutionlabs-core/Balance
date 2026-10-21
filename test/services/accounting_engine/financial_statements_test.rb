@@ -81,7 +81,50 @@ class AccountingEngine::FinancialStatementsTest < ActiveSupport::TestCase
     assert_equal [ 100_000 ], line("Current year earnings").amounts
   end
 
+  test "cash flow splits cash movement into operating, investing and financing and reconciles to cash" do
+    post({ "bank" => 500_000 }, credit: "owner_contributions", on: Date.current.prev_month)
+    post({ "bank" => 300_000 }, credit: "sales")
+    post({ "rent" => 50_000 }, credit: "credit_card")
+    post({ "inventory" => 120_000 }, credit: "bank")
+    post({ "depreciation" => 20_000 }, credit: "accumulated_depreciation")
+    post({ "fixed_assets" => 200_000 }, credit: "bank")
+    post({ "bank" => 400_000 }, credit: "loan_payable")
+    post({ "owner_draws" => 30_000 }, credit: "bank")
+
+    statement = cash_flow
+
+    assert_equal [ 230_000, 0 ], line("Net profit").amounts
+    assert_equal [ 50_000, 0 ], line("Credit Card Payable").amounts
+    assert_equal [ -120_000, 0 ], line("Inventory").amounts
+    assert_equal [ 20_000, 0 ], line("Accumulated Depreciation").amounts
+    assert_equal [ 180_000, 0 ], line("Net cash from operating activities").amounts
+    assert_equal [ -200_000, 0 ], line("Net cash from investing activities").amounts
+    assert_equal [ 370_000, 500_000 ], line("Net cash from financing activities").amounts
+    assert_equal [ 350_000, 500_000 ], line("Net change in cash").amounts
+    assert_equal [ 500_000, 0 ], line("Cash at start of period").amounts
+    assert_equal [ 850_000, 500_000 ], line("Cash at end of period").amounts
+    assert_equal [ true, true ], statement.total(:reconciled)
+  end
+
+  test "personal cash flow uses plain section names" do
+    workspace = workspaces(:ada_store)
+    @ledger = workspace.provision_ledger!
+    @accounts = @ledger.accounts.index_by(&:key)
+    post({ "bank" => 100_000 }, credit: "salary")
+
+    cash_flow
+
+    assert_equal [ 100_000, 0 ], line("Net savings").amounts
+    assert_equal [ 100_000, 0 ], line("Total day-to-day money").amounts
+    assert_equal [ 100_000, 0 ], line("Cash at the end").amounts
+  end
+
   private
+    def cash_flow
+      _key, periods = ReportPeriod.income_statement("this_month")
+      @statement = AccountingEngine::FinancialStatements.cash_flow(ledger: @ledger, periods: periods)
+    end
+
     def balance_sheet(dates: [ [ "now", Date.current ] ])
       @statement = AccountingEngine::FinancialStatements.balance_sheet(ledger: @ledger, dates: dates)
     end

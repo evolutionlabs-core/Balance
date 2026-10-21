@@ -11,6 +11,8 @@ class Workspace < ApplicationRecord
   has_many :expenses, dependent: :destroy
   has_many :customers, dependent: :destroy
   has_many :ledgers, dependent: :restrict_with_error
+  has_many :journal_entry_drafts, dependent: :destroy
+  has_many :entry_templates, dependent: :destroy
   has_many :accounts, through: :ledgers
   has_many :invoices, dependent: :destroy
   has_many :projects, dependent: :destroy
@@ -35,19 +37,19 @@ class Workspace < ApplicationRecord
   end
 
   def payment_accounts
-    accounts.where(subtype: %w[cash credit_card])
+    accounts.active.where(subtype: %w[cash credit_card])
   end
 
   def deposit_accounts
-    accounts.where(subtype: "cash")
+    accounts.active.where(subtype: "cash")
   end
 
   def income_accounts
-    accounts.where(base_type: "income")
+    accounts.active.where(base_type: "income")
   end
 
   def expense_categories
-    accounts.where(base_type: "expense")
+    accounts.active.where(base_type: "expense")
   end
 
   def owned_by?(user)

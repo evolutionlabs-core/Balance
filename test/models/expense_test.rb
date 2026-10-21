@@ -79,6 +79,22 @@ class ExpenseTest < ActiveSupport::TestCase
     assert_equal "Fuel", line.reload.description
   end
 
+  test "a posted expense only changes by being voided, and a voided one not at all" do
+    expense = build_expense
+    expense.save!
+    expense.mark_posted!
+
+    assert_not expense.update(memo: "Changed", status: :voided)
+    assert expense.reload.posted?
+    assert_not expense.update(memo: "Changed")
+    assert expense.reload.update(status: :voided)
+
+    assert_not expense.reload.update(status: :posted)
+    assert_not expense.reload.update(memo: "Changed")
+    assert_not expense.destroy
+    assert expense.reload.voided?
+  end
+
   private
     def account(name)
       @ledger.accounts.find_by!(name: name)

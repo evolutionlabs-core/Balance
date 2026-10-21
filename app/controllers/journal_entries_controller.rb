@@ -1,34 +1,32 @@
 class JournalEntriesController < ApplicationController
   def index
     @journal_entries = (current_workspace.ledgers.first&.journal_entries || JournalEntry.none)
-      .includes(journal_entry_lines: :account)
+      .includes(:reversal, journal_entry_lines: :account)
     if params[:q].present?
       term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
       @journal_entries = @journal_entries
         .left_joins(journal_entry_lines: :account)
-        .where("journal_entries.description ILIKE :term OR accounts.name ILIKE :term", term: term)
+        .where("journal_entries.description ILIKE :term OR journal_entries.reference ILIKE :term OR accounts.name ILIKE :term", term: term)
         .distinct
     end
     @journal_entries = @journal_entries.where(effective_date: parsed_date_range) if parsed_date_range
+    @journal_entries = @journal_entries.where(":tag = ANY(journal_entries.tags)", tag: params[:tag]) if params[:tag].present?
     @journal_entries = @journal_entries.order(effective_date: :desc, id: :desc)
   end
 
-  def new
-    @entry_form = JournalEntries::ManualEntry.new(workspace: current_workspace, effective_date: Date.current)
-    2.times { @entry_form.build_line }
+  def show
+    @entry = current_workspace.ledger.journal_entries
+      .includes(:posted_by, :reverses_entry, :reversal, journal_entry_lines: %i[account customer vendor])
+      .find(params[:id])
   end
 
-  def create
-    @entry_form = JournalEntries::ManualEntry.new(workspace: current_workspace, **entry_params)
-
-    if @entry_form.record!
-      respond_to do |format|
-        format.html { redirect_to journal_entries_path, notice: "Entry recorded." }
-        format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, journal_entries_path) }
-      end
+  def new
+    @draft = if params[:template_id]
+      current_workspace.entry_templates.find(params[:template_id]).draft
     else
-      render :new, status: :unprocessable_content
+      current_workspace.journal_entry_drafts.build(effective_date: Date.current)
     end
+    @entry_form = @draft.entry_form
   end
 
   private
@@ -36,12 +34,5 @@ class JournalEntriesController < ApplicationController
       return if params[:from].blank? || params[:to].blank?
 
       Date.iso8601(params[:from])..Date.iso8601(params[:to])
-    end
-
-    def entry_params
-      params.expect(entry: [
-        :effective_date, :description,
-        { lines: [ [ :account_id, :debit, :credit, :_destroy ] ] }
-      ])
     end
 end

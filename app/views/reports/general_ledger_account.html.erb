@@ -4,7 +4,18 @@
   <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "General ledger", path: general_ledger_path }, { label: ledger.account.name } ] %>
 <% end %>
 
-<%= render "shared/page_header", title: ledger.account.name, description: "Every line posted to #{ledger.account.code} #{ledger.account.name} this year, with a running balance." %>
+<%= render "shared/page_header", title: ledger.account.name, description: "Every line posted to #{ledger.account.code} #{ledger.account.name}, with a running balance.",
+    action: report_export_link %>
+
+<%= form_with url: general_ledger_account_path(ledger.account), method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>
+  <div class="relative sm:w-72">
+    <%= form.text_field :range, value: "#{ledger.from.iso8601} to #{ledger.to.iso8601}", placeholder: "Select date range", autocomplete: "off",
+        class: "#{field_class} cursor-pointer", aria: { label: "Date range" }, data: { date_range_target: "input" } %>
+    <%= form.hidden_field :from, value: ledger.from.iso8601, data: { date_range_target: "from" } %>
+    <%= form.hidden_field :to, value: ledger.to.iso8601, data: { date_range_target: "to" } %>
+  </div>
+  <%= form.submit "Filter", class: secondary_button_class %>
+<% end %>
 
 <%= render layout: "paper", locals: { title: "General Ledger: #{ledger.account.code} #{ledger.account.name}", subtitle: "#{ledger.from.strftime("%B %-d")} – #{ledger.to.strftime("%B %-d, %Y")}" } do %>
   <div class="mt-6 overflow-x-auto">
@@ -33,8 +44,7 @@
             <td class="py-1.5 whitespace-nowrap"><%= line.entry.effective_date.strftime("%b %-d") %></td>
             <td class="py-1.5 pl-3 font-mono text-xs">#<%= line.entry.number %></td>
             <th scope="row" class="py-1.5 pl-3 text-left font-normal">
-              <% source = journal_entry_source_path(line.entry) %>
-              <%= source ? link_to(line.entry.description || "Entry ##{line.entry.number}", source, class: "hover:underline") : (line.entry.description || "Entry ##{line.entry.number}") %>
+              <%= link_to line.entry.description || "Entry ##{line.entry.number}", journal_entry_path(line.entry), class: "hover:underline" %>
               <% if line.counterparty %><span class="text-neutral-400"> · <%= line.counterparty.name %></span><% end %>
             </th>
             <td class="py-1.5 pl-3 text-right tabular-nums"><%= line.debit.zero? ? "" : statement_figure(line.debit) %></td>

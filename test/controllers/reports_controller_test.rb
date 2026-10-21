@@ -94,11 +94,23 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     get income_statement_path
 
     assert_select "nav[aria-label=Primary] details[open] summary", text: "Reports"
-    assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a", count: 4
+    assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a", count: 5
     assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a[aria-current=page]", text: "Income statement"
     assert_select "nav[aria-label=Primary] a", text: "Receivables", count: 0
     assert_select "nav[aria-label=Reports]", count: 0
-    assert_select "form[action='#{income_statement_path}']", count: 0
+  end
+
+  test "statements offer a period menu that keeps the current choice" do
+    get income_statement_path(period: "last_quarter")
+    assert_select "form[action=?][method=get] select[name=period] option[selected][value=last_quarter]", income_statement_path
+
+    get cash_flow_path(period: "this_year")
+    assert_select "form[action=?] select[name=period] option[selected][value=this_year]", cash_flow_path
+    assert_select "a[href=?]", cash_flow_path(period: "this_year", format: :csv)
+
+    get balance_sheet_path(as_of: Date.current.prev_month.end_of_month.iso8601, compare: "previous_year")
+    assert_select "form[action=?] input[name=as_of][value=?]", balance_sheet_path, Date.current.prev_month.end_of_month.iso8601
+    assert_select "form[action=?] select[name=compare] option[selected][value=previous_year]", balance_sheet_path
   end
 
   test "reports render an empty state when no ledger is provisioned" do
@@ -114,6 +126,75 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     get income_statement_path
     assert_response :success
     assert_select "h2", text: "No accounts yet"
+  end
+
+  test "cash flow shows operating cash from profit and exports it" do
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 500_000, description: "Pay")
+
+    get cash_flow_path
+    assert_response :success
+    assert_select "h1", "Cash flow"
+    assert_select "th", text: "Net savings"
+    assert_select "a[href=?]", cash_flow_path(format: :csv), text: "Export CSV"
+
+    get cash_flow_path(format: :csv)
+    assert_response :success
+    assert_equal "text/csv", response.media_type
+    assert_match %r{attachment; filename="cash-flow-#{Date.current.iso8601}\.csv"}, response.headers["Content-Disposition"]
+    rows = CSV.parse(response.body)
+    assert_equal [ "Code", "Line" ], rows.first.first(2)
+    assert_includes rows, [ nil, "Net savings", "5000.00", "0.00" ]
+  end
+
+  test "statement and trial balance exports keep the chosen period and figures" do
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 250_000, effective_date: Date.current.prev_month)
+
+    get income_statement_path(period: "last_month", format: :csv)
+    assert_response :success
+    assert_includes CSV.parse(response.body).first, Date.current.prev_month.strftime("%b %Y")
+
+    get trial_balance_path(format: :csv)
+    rows = CSV.parse(response.body)
+    assert_equal [ "Code", "Account", "Debit", "Credit" ], rows.first
+    assert_equal [ nil, "Total", "2500.00", "2500.00" ], rows.last
+  end
+
+  test "exports guard spreadsheet formulas in names" do
+    @cash.update!(name: "=HYPERLINK(\"evil\")")
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 100)
+
+    get trial_balance_path(format: :csv)
+
+    assert_includes CSV.parse(response.body).map(&:second), "'=HYPERLINK(\"evil\")"
+  end
+
+  test "an account ledger filters by date and exports the filtered lines" do
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 100_000, effective_date: 10.days.ago.to_date, description: "Older")
+    post_journal_entry!(@workspace, debit_account: @cash, credit_account: @salary, amount_kobo: 200_000, description: "Newer")
+    from = 2.days.ago.to_date.iso8601
+
+    get general_ledger_account_path(@cash, from: from, to: Date.current.iso8601)
+    assert_response :success
+    assert_select "tbody th", text: "Newer"
+    assert_select "tbody th", text: "Older", count: 0
+    assert_select "#closing-balance", "3,000.00"
+
+    get general_ledger_account_path(@cash, from: from, format: :csv)
+    rows = CSV.parse(response.body)
+    assert_equal [ from, nil, "Opening balance", nil, nil, nil, "1000.00" ], rows.second
+    assert_equal [ "Newer" ], rows.map(&:third).grep("Newer")
+    assert_equal "3000.00", rows.last.last
+  end
+
+  test "report exports return not found without a ledger" do
+    user = User.create!(full_name: "No Ledger", email_address: "noledger-csv@example.com", password: "supersecret123")
+    workspace = Workspace.create!(name: "No Ledger Co", currency_code: "NGN")
+    user.memberships.create!(workspace: workspace, role: :owner)
+    sign_in_as(user)
+
+    get cash_flow_path(format: :csv)
+
+    assert_response :not_found
   end
 
   test "aged receivables only warns when it disagrees with the books" do

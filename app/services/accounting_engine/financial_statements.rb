@@ -25,12 +25,37 @@ module AccountingEngine
 
     DEBIT_SECTIONS = %w[asset expense].freeze
 
+    CASH_FLOW_SECTIONS = {
+      operating: %w[accumulated_depreciation accounts_receivable inventory other_asset accounts_payable credit_card tax_payable other_liability],
+      investing: %w[fixed_asset investment],
+      financing: %w[loan owner_equity owner_draws retained_earnings opening_balance_equity]
+    }.freeze
+
+    CASH_FLOW_TITLES = {
+      "business" => {
+        operating: [ "Operating activities", "Net cash from operating activities" ],
+        investing: [ "Investing activities", "Net cash from investing activities" ],
+        financing: [ "Financing activities", "Net cash from financing activities" ],
+        profit: "Net profit", net: "Net change in cash", opening: "Cash at start of period", closing: "Cash at end of period"
+      },
+      "personal" => {
+        operating: [ "Day-to-day money", "Total day-to-day money" ],
+        investing: [ "Investments and property", "Total investments and property" ],
+        financing: [ "Loans and contributions", "Total loans and contributions" ],
+        profit: "Net savings", net: "Change in cash", opening: "Cash at the start", closing: "Cash at the end"
+      }
+    }.freeze
+
     def self.balance_sheet(ledger:, dates:)
       new(ledger).balance_sheet(dates)
     end
 
     def self.income_statement(ledger:, periods:)
       new(ledger).income_statement(periods)
+    end
+
+    def self.cash_flow(ledger:, periods:)
+      new(ledger).cash_flow(periods)
     end
 
     def initialize(ledger)
@@ -78,8 +103,50 @@ module AccountingEngine
       end
     end
 
+    def cash_flow(periods)
+      columns = periods.map { |label, from, to| Column.new(label: label, from: from, to: to) }
+      movements = columns.map { |column| movement(column.from..column.to) }
+      titles = CASH_FLOW_TITLES.fetch(profile)
+      lines = []
+
+      net_profit = Line.new(kind: :account, label: titles[:profit], code: nil, amounts: movements.map { |by_account| profit(by_account) })
+      operating = cash_flow_section(lines, *titles[:operating], :operating, movements, lead: net_profit)
+      investing = cash_flow_section(lines, *titles[:investing], :investing, movements)
+      financing = cash_flow_section(lines, *titles[:financing], :financing, movements)
+
+      net = add(add(operating, investing), financing)
+      opening = columns.map { |column| cash_balance(balances_through(column.from - 1)) }
+      closing = columns.map { |column| cash_balance(balances_through(column.to)) }
+      lines << Line.new(kind: :result, label: titles[:net], code: nil, amounts: net)
+      lines << Line.new(kind: :account, label: titles[:opening], code: nil, amounts: opening)
+      lines << Line.new(kind: :grand_total, label: titles[:closing], code: nil, amounts: closing)
+
+      Statement.new(
+        columns: columns,
+        lines: lines,
+        totals: {
+          operating: operating, investing: investing, financing: financing, net: net, opening: opening, closing: closing,
+          reconciled: opening.zip(net, closing).map { |start, change, finish| start + change == finish }
+        }
+      )
+    end
+
     private
       attr_reader :ledger, :profile
+
+      def cash_flow_section(lines, title, total_label, section, movements, lead: nil)
+        rows = accounts.select { |account| CASH_FLOW_SECTIONS.fetch(section).include?(account.subtype) }.filter_map do |account|
+          amounts = movements.map { |by_account| -by_account.fetch(account.id, 0) }
+          Line.new(kind: :account, label: account.name, code: account.code, amounts: amounts) if amounts.any?(&:nonzero?)
+        end
+        rows.unshift(lead) if lead
+
+        statement_section(lines, title, rows, movements, always: true, total_label: total_label)
+      end
+
+      def cash_balance(by_account)
+        accounts.select { |account| account.subtype == "cash" }.sum { |account| by_account.fetch(account.id, 0) }
+      end
 
       def business_income_statement(columns, movements)
         lines = []
@@ -157,13 +224,13 @@ module AccountingEngine
         total
       end
 
-      def statement_section(lines, title, rows, columns, always: false)
+      def statement_section(lines, title, rows, columns, always: false, total_label: "Total #{title.downcase}")
         return zeros(columns) if rows.empty? && !always
 
         lines << Line.new(kind: :section, label: title, code: nil, amounts: nil)
         lines.concat(rows)
         total = rows.empty? ? zeros(columns) : sum(rows)
-        lines << Line.new(kind: :section_total, label: "Total #{title.downcase}", code: nil, amounts: total)
+        lines << Line.new(kind: :section_total, label: total_label, code: nil, amounts: total)
         total
       end
 
