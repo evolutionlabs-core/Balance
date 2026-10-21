@@ -98,7 +98,19 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Primary] ul[aria-label=Reports] a[aria-current=page]", text: "Income statement"
     assert_select "nav[aria-label=Primary] a", text: "Receivables", count: 0
     assert_select "nav[aria-label=Reports]", count: 0
-    assert_select "form[action='#{income_statement_path}']", count: 0
+  end
+
+  test "statements offer a period menu that keeps the current choice" do
+    get income_statement_path(period: "last_quarter")
+    assert_select "form[action=?][method=get] select[name=period] option[selected][value=last_quarter]", income_statement_path
+
+    get cash_flow_path(period: "this_year")
+    assert_select "form[action=?] select[name=period] option[selected][value=this_year]", cash_flow_path
+    assert_select "a[href=?]", cash_flow_path(period: "this_year", format: :csv)
+
+    get balance_sheet_path(as_of: Date.current.prev_month.end_of_month.iso8601, compare: "previous_year")
+    assert_select "form[action=?] input[name=as_of][value=?]", balance_sheet_path, Date.current.prev_month.end_of_month.iso8601
+    assert_select "form[action=?] select[name=compare] option[selected][value=previous_year]", balance_sheet_path
   end
 
   test "reports render an empty state when no ledger is provisioned" do

@@ -1,0 +1,8 @@
+<%= form_with url: url, method: :get, class: "mt-4 flex flex-wrap items-center gap-2", data: { controller: "form" } do |form| %>
+  <% if local_assigns[:as_of] %>
+    <%= form.text_field :as_of, value: as_of.iso8601, autocomplete: "off", aria: { label: "As of" },
+        class: "#{field_class} w-40 cursor-pointer sm:w-44", data: { controller: "date-picker", action: "change->form#submit" } %>
+  <% end %>
+  <%= render "shared/select_menu", form: form, attribute: attribute, options: options_for_select(choices.invert, selected),
+      prompt: nil, compact: true, required: false, select_data: { action: "change->form#submit" } %>
+<% end %>
