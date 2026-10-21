@@ -30,6 +30,12 @@ class BillLineEditorTest < ApplicationSystemTestCase
         document.addEventListener(name, (event) => log(name + " " + (event.detail?.url || event.target?.name || event.target?.id || "")), true)
       }
       addEventListener("beforeunload", () => log("beforeunload"))
+      addEventListener("error", (event) => log("error " + event.message))
+      addEventListener("unhandledrejection", (event) => log("rejection " + event.reason))
+      document.addEventListener("click", (event) => log("click " + event.target.tagName + "." + (event.target.className?.baseVal ?? event.target.className).slice(0, 40) + " in " + (event.target.closest("button")?.dataset.action || "-")), true)
+      const controller = Stimulus.getControllerForElementAndIdentifier(document.querySelector("[data-controller~=amount-lines]"), "amount-lines")
+      const original = controller?.removeLine?.bind(controller)
+      if (controller) controller.removeLine = (event) => { log("removeLine " + event.currentTarget?.tagName); try { original(event) } catch (error) { log("threw " + error.message) } }
       new MutationObserver((records) => records.forEach((record) => record.removedNodes.length && log("removed " + [...record.removedNodes].map((node) => node.nodeName).join(",")))).observe(document.body, { childList: true, subtree: true })
     JS
     puts "BEFORE: stimulus=#{page.evaluate_script("!!window.Stimulus && !!Stimulus.getControllerForElementAndIdentifier(document.querySelector('[data-controller~=amount-lines]'), 'amount-lines')")} nav=#{page.evaluate_script("performance.getEntriesByType('navigation')[0]?.type")}"
@@ -46,8 +52,14 @@ class BillLineEditorTest < ApplicationSystemTestCase
     within all("[data-amount-lines-target='row']").last do
       click_on "Remove line"
     end
+    sleep 1
+    puts "AFTER CLICK: rows=#{page.evaluate_script("[...document.querySelectorAll('[data-amount-lines-target=row]')].map(r => [r.hidden, r.querySelector('input[name$=\"[_destroy]\"]')?.value, !!r.querySelector('input[name$=\"[id]\"]')].join('/'))").inspect} total=#{find("[data-amount-lines-target='total']").text}"
+    puts "EVENTS2: #{page.evaluate_script("window.__events").inspect}"
+    puts "LOGS2: #{page.driver.browser.logs.get(:browser).map { |entry| "#{entry.level} #{entry.message}" }.first(15).inspect}"
     assert_selector "[data-amount-lines-target='total']", text: "500.00"
 
+    puts "AFTER CLICK: rows=#{page.evaluate_script("[...document.querySelectorAll('[data-amount-lines-target=row]')].map(r => [r.hidden, r.querySelector('input[name$=\"[_destroy]\"]')?.value, !!r.querySelector('input[name$=\"[id]\"]')].join('/'))").inspect} total=#{find("[data-amount-lines-target='total']", visible: :all).text(:all)}"
+    puts "EVENTS2: #{page.evaluate_script("window.__events").inspect}"
     click_on "Save draft"
     assert_current_path bill_path(bill)
 
