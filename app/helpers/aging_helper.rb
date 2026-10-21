@@ -1,10 +1,10 @@
 module AgingHelper
   AGING_BUCKETS = {
-    current: { label: "Not due yet", short: "Not due", color: "#d4d4d4" },
-    days_1_30: { label: "1–30 days overdue", short: "1–30 days", color: "#a3a3a3" },
-    days_31_60: { label: "31–60 days overdue", short: "31–60 days", color: "#737373" },
-    days_61_90: { label: "61–90 days overdue", short: "61–90 days", color: "#525252" },
-    over_90: { label: "Over 90 days overdue", short: "90+ days", color: "#262626" }
+    current: { label: "Not due", color: "#d4d4d4" },
+    days_1_30: { label: "1–30 days", color: "#a3a3a3" },
+    days_31_60: { label: "31–60 days", color: "#737373" },
+    days_61_90: { label: "61–90 days", color: "#525252" },
+    over_90: { label: "90+ days", color: "#262626" }
   }.freeze
 
   def aging_money(kobo)

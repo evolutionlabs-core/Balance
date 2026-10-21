@@ -147,8 +147,8 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
 
     get aged_receivables_path
 
-    assert_select "#tie-out", text: /This doesn't match your books/
-    assert_select "#tie-out li", text: /Entries with no customer: books ₦50.00, invoices ₦0.00/
+    assert_select "#tie-out", text: /Doesn't match your books/
+    assert_select "#tie-out li", text: /No customer: books ₦50.00, invoices ₦0.00/
   end
 
   test "aged payables lists open bills by vendor" do
@@ -164,7 +164,7 @@ class BusinessReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "You owe"
     assert_select "tbody th", text: "Lagos Landlords"
     assert_select "tbody a[href='#{vendor_path(vendor)}']", text: "View"
-    assert_select "tbody td", text: /Not due yet/
+    assert_select "tbody td", text: "Not due"
     assert_select "#tie-out", count: 0
   end
 end
