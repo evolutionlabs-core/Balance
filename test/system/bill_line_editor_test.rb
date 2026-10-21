@@ -22,9 +22,25 @@ class BillLineEditorTest < ApplicationSystemTestCase
     assert_current_path root_path
 
     visit edit_bill_path(bill)
+    page.execute_script(<<~JS)
+      window.__marker = "loaded"
+      window.__events = []
+      const log = (label) => window.__events.push(label + " @" + Math.round(performance.now()))
+      for (const name of ["turbo:load", "turbo:render", "turbo:morph", "turbo:visit", "turbo:before-render", "turbo:before-fetch-request", "turbo:submit-start", "turbo:frame-load", "focusin"]) {
+        document.addEventListener(name, (event) => log(name + " " + (event.detail?.url || event.target?.name || event.target?.id || "")), true)
+      }
+      addEventListener("beforeunload", () => log("beforeunload"))
+      new MutationObserver((records) => records.forEach((record) => record.removedNodes.length && log("removed " + [...record.removedNodes].map((node) => node.nodeName).join(",")))).observe(document.body, { childList: true, subtree: true })
+    JS
+    puts "BEFORE: stimulus=#{page.evaluate_script("!!window.Stimulus && !!Stimulus.getControllerForElementAndIdentifier(document.querySelector('[data-controller~=amount-lines]'), 'amount-lines')")} nav=#{page.evaluate_script("performance.getEntriesByType('navigation')[0]?.type")}"
     within all("[data-amount-lines-target='row']").last do
       find("[data-amount-lines-target='amount']").set("90.00")
     end
+    puts "AFTER SET: value=#{all("[data-amount-lines-target='amount']").last.value} total=#{find("[data-amount-lines-target='total']").text} active=#{page.evaluate_script("document.activeElement?.name || document.activeElement?.tagName")}"
+    sleep 2
+    puts "LATER: marker=#{page.evaluate_script("window.__marker").inspect} value=#{all("[data-amount-lines-target='amount']").last.value} total=#{find("[data-amount-lines-target='total']").text} stimulus=#{page.evaluate_script("!!window.Stimulus && !!Stimulus.getControllerForElementAndIdentifier(document.querySelector('[data-controller~=amount-lines]'), 'amount-lines')")}"
+    puts "EVENTS: #{page.evaluate_script("window.__events").inspect}"
+    puts "LOGS: #{page.driver.browser.logs.get(:browser).map { |entry| "#{entry.level} #{entry.message}" }.first(15).inspect}"
     assert_selector "[data-amount-lines-target='total']", text: "590.00"
 
     within all("[data-amount-lines-target='row']").last do
