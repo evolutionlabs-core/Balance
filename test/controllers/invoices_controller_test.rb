@@ -24,7 +24,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
   test "invalid creation returns the populated form" do
     assert_no_difference "Invoice.count" do
-      post invoices_path, params: { invoice: { currency_code: "NGN" } }
+      post invoices_path, params: { invoice: { customer_id: "" } }
     end
 
     assert_response :unprocessable_content

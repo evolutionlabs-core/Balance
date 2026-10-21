@@ -17,8 +17,6 @@ module UiHelper
 
   TABLE_ALIGNMENTS = { left: "text-left", right: "text-right", center: "text-center" }.freeze
 
-  CURRENCY_SYMBOLS = { "NGN" => "₦" }.freeze
-
   def primary_button_class(size: :md)
     "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-balance-teal-700 text-white hover:bg-balance-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-balance-teal-700"
   end
@@ -95,7 +93,7 @@ module UiHelper
   end
 
   def currency_symbol(currency_code)
-    CURRENCY_SYMBOLS.fetch(currency_code, "#{currency_code} ")
+    Currency.symbol(currency_code) || "#{currency_code} "
   end
 
   def money(minor, currency_code = current_workspace.currency_code)

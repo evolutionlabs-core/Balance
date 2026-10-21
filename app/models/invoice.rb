@@ -1,4 +1,5 @@
 class Invoice < ApplicationRecord
+  include WorkspaceCurrency
   include AASM
   include Invoices::Posting
 

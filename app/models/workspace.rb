@@ -24,7 +24,8 @@ class Workspace < ApplicationRecord
   has_many :llm_chats, class_name: "Llm::Chat", dependent: :destroy
 
   validates :name, presence: true
-  validates :currency_code, inclusion: { in: %w[NGN] }
+  validates :currency_code, inclusion: { in: Currency.codes }
+  validate :currency_unchanged, on: :update
   validate :default_sales_account_is_workspace_income
   validate :default_deposit_account_is_workspace_cash
 
@@ -55,6 +56,10 @@ class Workspace < ApplicationRecord
   end
 
   private
+    def currency_unchanged
+      errors.add(:currency_code, "can't be changed after the workspace is created") if currency_code_changed?
+    end
+
     def default_sales_account_is_workspace_income
       return if default_sales_account.blank?
 
