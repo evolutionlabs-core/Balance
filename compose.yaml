@@ -74,7 +74,8 @@ services:
   # (missing deps, asset precompile failures, env-var wiring) without deploying.
   # RAILS_MASTER_KEY is injected as an env var (the same mechanism Kamal uses) so
   # Rails can decrypt credentials for secret_key_base. It comes from .env — set it
-  # to the contents of config/master.key (see .env.example). force_ssl is off in
+  # to the contents of config/master.key (see .env.example). The dev stack never
+  # reads it, so it stays optional here and only this profile needs it. force_ssl is off in
   # production.rb, so this serves plain HTTP locally with no redirect loop.
   web-prod:
     profiles: ["prod"]
@@ -85,7 +86,7 @@ services:
       RAILS_ENV: production
       DB_HOST: postgres
       BALANCE_DATABASE_PASSWORD: ${BALANCE_DATABASE_PASSWORD:-balance_dev_password}
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?set RAILS_MASTER_KEY in .env to the contents of config/master.key}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:-}
     ports:
       - "8080:80"
     depends_on:
