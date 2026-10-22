@@ -79,10 +79,15 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_equal 15_000, entry.journal_entry_lines.sum(&:debit)
     assert_no_link "Edit"
 
-    click_on "Mark as paid"
-    assert_text "₦150.00 received into Checking Account."
+    click_on "Receive payment"
+    within("dialog") do
+      assert_text "Balance due NGN 150.00"
+      assert_field "Amount received", with: "150.00"
+      click_on "Receive payment"
+    end
+    assert_text "Payment recorded for invoice #{invoice.invoice_number}."
     assert_selector "dd", text: "NGN 0.00"
-    assert_no_button "Mark as paid"
+    assert_no_link "Receive payment"
     assert_equal 0, invoice.reload.balance_due_kobo
     assert invoice.reload.paid?
 

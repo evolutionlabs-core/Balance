@@ -153,7 +153,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a, button", text: "Send invoice", count: 0
     assert_select "button[data-copy-value-value]", text: /Copy secure link/
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", text: /Share link/
-    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
+    assert_select "a[href='#{new_invoice_payment_path(invoice)}']", text: "Receive payment"
   end
 
   test "a draft's header offers edit and send, with download and void in the menu" do
@@ -173,20 +173,53 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
   end
 
-  test "a sent invoice's header offers download and payment, with the client link and void in the menu" do
+  test "a sent invoice's header offers receive payment and download, with the client link and void in the menu" do
     invoice = create_invoice
     assert invoice.issue!
 
     get invoice_path(invoice)
 
     assert_select "a[href='#{invoice_path(invoice, format: :pdf)}']:not([role=menuitem])", text: /Download PDF/
-    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
-    assert_select "[role=menu] a[href='#{new_invoice_payment_path(invoice)}']", text: /Record partial payment/
+    assert_select "a[href='#{new_invoice_payment_path(invoice)}']:not([role=menuitem])", text: /Receive payment/
+    assert_select "a, button", text: /Mark as paid|partial payment/, count: 0
     assert_select "[role=menu] button[data-copy-value-value]", text: /Copy secure link/
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", text: /Share link/
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
     assert_select "[role=menu] form[action='#{invoice_duplicate_path(invoice)}'] button", text: /Duplicate/
     assert_select "a", text: "Back to invoices", count: 0
+  end
+
+  test "a paid invoice leads with download and offers duplicate" do
+    invoice = create_invoice
+    assert invoice.issue!
+    assert invoice.mark_paid!
+
+    get invoice_path(invoice)
+
+    assert_select "a.bg-balance-teal-700[href='#{invoice_path(invoice, format: :pdf)}']", text: /Download PDF/
+    assert_select "form[action='#{invoice_duplicate_path(invoice)}'] button[role=menuitem]", count: 0
+    assert_select "form[action='#{invoice_duplicate_path(invoice)}'] button", text: /Duplicate/
+    assert_select "a", text: /Receive payment/, count: 0
+  end
+
+  test "each list row has a menu with the actions for its status" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
+    get invoices_path
+
+    assert_select "#invoice_#{draft.id} [role=menu]" do
+      assert_select "a[href='#{edit_invoice_path(draft)}']", text: /Edit/
+      assert_select "a[href='#{invoice_path(draft, format: :pdf)}']", text: /Download PDF/
+      assert_select "form[action='#{invoice_duplicate_path(draft)}'] button", text: /Duplicate/
+      assert_select "button[data-copy-value-value]", count: 0
+    end
+    assert_select "#invoice_#{sent.id} [role=menu]" do
+      assert_select "a", text: /Edit/, count: 0
+      assert_select "button[data-copy-value-value]", text: /Copy secure link/
+      assert_select "a[href='#{new_invoice_void_path(sent)}']", text: /Void invoice/
+    end
   end
 
   test "draft invoices do not expose client links" do

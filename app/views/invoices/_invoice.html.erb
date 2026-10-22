@@ -18,6 +18,9 @@
     <%= link_to (invoice.sent? ? minor_currency(invoice.balance_due_kobo, invoice.currency_code) : blank_cell), invoice_path(invoice), class: table_cell_link_class %>
   </td>
   <td class="<%= table_cell_class(align: :right) %> whitespace-nowrap">
-    <%= invoice_row_action(invoice, class: "font-medium text-balance-teal-700 hover:underline") %>
+    <div class="flex items-center justify-end gap-2">
+      <%= invoice_row_action(invoice, class: "font-medium text-balance-teal-700 hover:underline") %>
+      <%= render "invoices/row_menu", invoice: invoice %>
+    </div>
   </td>
 </tr>

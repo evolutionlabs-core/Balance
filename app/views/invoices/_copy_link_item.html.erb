@@ -1,0 +1,12 @@
+<button type="button" role="menuitem" data-controller="copy"
+    data-copy-value-value="<%= client_invoice_url(invoice.generate_token_for(:client_view)) %>"
+    data-action="copy#copy" class="<%= menu_item_class %>">
+  <span data-copy-target="defaultIcon" class="flex items-center gap-2.5">
+    <%= inline_svg_tag "icons/copy.svg", class: "h-4 w-4 flex-none" %>
+    Copy secure link
+  </span>
+  <span hidden data-copy-target="doneIcon" class="flex items-center gap-2.5 text-green-600">
+    <%= inline_svg_tag "icons/check.svg", class: "h-4 w-4 flex-none" %>
+    Link copied
+  </span>
+</button>
