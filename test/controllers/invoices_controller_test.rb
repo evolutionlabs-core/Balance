@@ -171,6 +171,27 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", count: 0
   end
 
+  test "the internal note stays off everything the customer sees" do
+    invoice = create_invoice
+    invoice.update!(internal_note: "Secret margin", notes: "Thanks", payment_instructions: "GTBank 0123456789", reference: "PO-9")
+    assert invoice.issue!
+
+    get invoice_path(invoice)
+    assert_select "p", text: /Internal note · Secret margin/
+    assert_select "article", text: /Secret margin/, count: 0
+    assert_select "article", text: /GTBank 0123456789/
+    assert_select "article", text: /PO-9/
+
+    get client_invoice_path(invoice.generate_token_for(:client_view))
+    assert_response :success
+    assert_no_match "Secret margin", response.body
+    assert_match "GTBank 0123456789", response.body
+
+    mail = InvoiceMailer.with(invoice: invoice, to: "a@example.com", subject: "Invoice", message: "Hello").issued
+    assert_no_match "Secret margin", mail.body.encoded
+    assert_match "GTBank 0123456789", mail.html_part.body.decoded
+  end
+
   test "show downloads the saved invoice as a PDF" do
     invoice = create_invoice
     get invoice_path(invoice, format: :pdf)

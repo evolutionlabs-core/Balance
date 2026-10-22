@@ -19,6 +19,7 @@ class Pdf::Invoice
     customer
     lines
     totals
+    notes
     @document.number_pages "<page> / <total>", at: [ 0, -18 ], width: @document.bounds.width,
       align: :right, size: 8, color: "737373"
     @document.render
@@ -32,7 +33,10 @@ class Pdf::Invoice
       email = @invoice.business_email || @invoice.user.email_address
       address = @invoice.business_address || @invoice.workspace.address
       business = [ name.presence || "—", email.presence || "—", address.presence ].compact.join("\n")
-      @document.table([ [ business, "Invoice date\nDue date", "#{date(@invoice.issue_date)}\n#{date(@invoice.due_date)}" ] ],
+      details = [ [ "Invoice date", date(@invoice.issue_date) ], [ "Due date", date(@invoice.due_date) ] ]
+      details << [ "Terms", PaymentTerms.label(@invoice.payment_terms) ] if PaymentTerms::DAYS.key?(@invoice.payment_terms)
+      details << [ "Reference", @invoice.reference ] if @invoice.reference.present?
+      @document.table([ [ business, details.map(&:first).join("\n"), details.map(&:last).join("\n") ] ],
         width: @document.bounds.width, column_widths: [ 285, 105, @document.bounds.width - 390 ],
         cell_style: { borders: [], padding: [ 0, 0, 16, 0 ], leading: 5 }) do |table|
         table.column(1).text_color = "737373"
@@ -77,15 +81,32 @@ class Pdf::Invoice
 
     def totals
       @document.move_down 24
-      @document.table([ [ "Subtotal", money(@invoice.subtotal_minor) ], [ "Total due", money(@invoice.total_minor) ] ],
-        position: :right, width: 260, column_widths: [ 100, 160 ],
+      rows = [ [ "Subtotal", money(@invoice.subtotal_minor) ] ]
+      rows << [ @invoice.discount_label, "−#{money(@invoice.discount_minor)}" ] if @invoice.discounted?
+      rows << [ "Total due", money(@invoice.total_minor) ]
+      @document.table(rows, position: :right, width: 260, column_widths: [ 100, 160 ],
         cell_style: { borders: [], padding: [ 12, 0 ] }) do |table|
         table.column(1).align = :right
-        table.row(0).text_color = "737373"
-        table.row(1).borders = [ :top ]
-        table.row(1).border_color = "E5E5E5"
-        table.row(1).font_style = :bold
-        table.row(1).size = 14
+        last = rows.size - 1
+        table.rows(0..(last - 1)).text_color = "737373"
+        table.row(last).text_color = "262626"
+        table.row(last).borders = [ :top ]
+        table.row(last).border_color = "E5E5E5"
+        table.row(last).font_style = :bold
+        table.row(last).size = 14
+      end
+    end
+
+    def notes
+      sections = { "PAYMENT DETAILS" => @invoice.payment_instructions, "NOTE" => @invoice.notes }.compact_blank
+      return if sections.empty?
+
+      @document.move_down 28
+      sections.each do |title, body|
+        @document.text title, size: 8, color: "737373"
+        @document.move_down 4
+        @document.text body, leading: 3
+        @document.move_down 14
       end
     end
 

@@ -12,6 +12,9 @@
         action: render("invoices/actions", invoice: @invoice, delivery: @delivery) %>
   </div>
 
+  <% if @invoice.internal_note.present? %>
+    <p class="mb-4 whitespace-pre-line rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700"><span class="font-medium text-neutral-900">Internal note</span> · <%= @invoice.internal_note %></p>
+  <% end %>
   <%= render "invoices/views", invoice: @invoice, delivery: @delivery, view: @view %>
   <%= render "invoices/payments", invoice: @invoice %>
 </div>
