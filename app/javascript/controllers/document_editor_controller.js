@@ -3,8 +3,14 @@ import { Turbo } from "@hotwired/turbo-rails"
 import { formatAmount, parseAmount } from "lib/money"
 
 export default class extends Controller {
-  static targets = ["form", "amount", "subtotal", "total", "discount", "discountValue", "discountType"]
+  static targets = ["form", "amount", "subtotal", "total", "discount", "discountValue", "discountType", "tab", "panel"]
   static values = { currency: String }
+
+  show(event) {
+    const name = event.currentTarget.dataset.panel
+    this.tabTargets.forEach((tab) => tab.setAttribute("aria-selected", tab.dataset.panel === name))
+    this.panelTargets.forEach((panel) => { panel.hidden = panel.dataset.panel !== name })
+  }
 
   calculateTotals() {
     const subtotal = this.amountTargets.reduce((sum, input) => sum + parseAmount(input.value), 0)

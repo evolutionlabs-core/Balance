@@ -1,4 +1,6 @@
-<div id="new_invoice_submission">
-  <%= button_tag "Save and preview", form: "new_invoice_form", formaction: invoices_path(format: :html),
+<div id="new_invoice_submission" class="flex items-center gap-2">
+  <%= button_tag "Save draft", form: "new_invoice_form", formaction: invoices_path(format: :html),
+      name: "invoice[customer_id]", value: invoice.customer_id, class: secondary_button_class, data: { turbo_frame: "_top" } %>
+  <%= button_tag "Review and send", form: "new_invoice_form", formaction: invoices_path(format: :html, next: "send"),
       name: "invoice[customer_id]", value: invoice.customer_id, class: primary_button_class, data: { turbo_frame: "_top" } %>
 </div>

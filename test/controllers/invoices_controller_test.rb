@@ -22,6 +22,22 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, invoice.invoice_lines.count
   end
 
+  test "review and send saves the draft and opens the email view" do
+    post invoices_path(next: "send"), params: invoice_params
+
+    assert_redirected_to invoice_path(@workspace.invoices.order(:id).last, view: "email")
+  end
+
+  test "editing a draft shows its number and lets every line be removed" do
+    invoice = create_invoice
+
+    get edit_invoice_path(invoice)
+
+    assert_select "#invoice_number", text: invoice.invoice_number
+    assert_select "tr.line-item button[value=delete]", count: 1
+    assert_select "input[name$='[rate]'][value='150.00']"
+  end
+
   test "new invoices start with the workspace terms, payment details and note" do
     @workspace.update!(default_payment_terms: "net_15", payment_instructions: "GTBank 0123456789", default_invoice_note: "Thanks")
 

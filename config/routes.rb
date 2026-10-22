@@ -81,6 +81,7 @@ Rails.application.routes.draw do
     resource :workspace, only: %i[edit update]
     resources :lines, only: %i[new destroy]
     resource :calculation, only: :create
+    resource :preview, only: :create
   end
 
   resources :projects, only: %i[index new create show edit update] do

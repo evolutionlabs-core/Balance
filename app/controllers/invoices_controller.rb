@@ -1,4 +1,6 @@
 class InvoicesController < ApplicationController
+  include InvoiceParams
+
   before_action :set_invoice, only: %i[show edit update]
   before_action :ensure_draft, only: %i[edit update]
   before_action :set_services, only: %i[new create edit update]
@@ -34,9 +36,9 @@ class InvoicesController < ApplicationController
     @invoice.user = Current.user
 
     if @invoice.save
-      redirect_to invoice_path(@invoice), notice: "Invoice draft saved."
+      redirect_to invoice_path(@invoice, view: ("email" if params[:next] == "send")), notice: "Invoice draft saved."
     else
-      @invoice.invoice_lines.build if @invoice.invoice_lines.empty?
+      @invoice.invoice_lines.build(quantity: 1) if @invoice.invoice_lines.empty?
       render :new, status: :unprocessable_content
     end
   end
@@ -55,7 +57,7 @@ class InvoicesController < ApplicationController
   end
 
   def edit
-    @invoice.invoice_lines.build if @invoice.invoice_lines.empty?
+    @invoice.invoice_lines.build(quantity: 1) if @invoice.invoice_lines.empty?
   end
 
   def update
@@ -109,16 +111,6 @@ class InvoicesController < ApplicationController
       return if @invoice.draft?
 
       redirect_to invoice_path(@invoice), alert: "Only draft invoices can be changed."
-    end
-
-    def invoice_params
-      params.expect(invoice: [
-        :customer_id, :issue_date, :due_date, :payment_terms, :reference,
-        :notes, :internal_note, :payment_instructions, :discount_type, :discount_value,
-        :business_name, :business_email, :business_address,
-        :bill_to_name, :bill_to_email, :bill_to_address,
-        invoice_lines_attributes: [ [ :id, :service_id, :description, :quantity, :rate, :rate_minor, :_destroy ] ]
-      ])
     end
 
     def set_services
