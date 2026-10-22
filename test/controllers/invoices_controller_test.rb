@@ -22,6 +22,30 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, invoice.invoice_lines.count
   end
 
+  test "new invoices start with the workspace terms, payment details and note" do
+    @workspace.update!(default_payment_terms: "net_15", payment_instructions: "GTBank 0123456789", default_invoice_note: "Thanks")
+
+    get new_invoice_path
+
+    assert_select "select[name='invoice[payment_terms]'] option[selected][value=net_15]"
+    assert_select "input[name='invoice[due_date]'][value=?]", (Date.current + 15.days).iso8601
+    assert_select "textarea[name='invoice[payment_instructions]']", text: "GTBank 0123456789"
+    assert_select "textarea[name='invoice[notes]']", text: "Thanks"
+    assert_select "tr.line-item", count: 1
+  end
+
+  test "create saves terms, reference, notes and discount" do
+    post invoices_path, params: invoice_params.deep_merge(invoice: {
+      payment_terms: "net_7", due_date: "", reference: "PO-1", notes: "Thanks", internal_note: "Repeat client",
+      payment_instructions: "GTBank", discount_type: "percent", discount_value: "10"
+    })
+
+    invoice = @workspace.invoices.order(:id).last
+    assert_equal [ "net_7", invoice.issue_date + 7.days ], [ invoice.payment_terms, invoice.due_date ]
+    assert_equal [ "PO-1", "Thanks", "Repeat client", "GTBank" ], [ invoice.reference, invoice.notes, invoice.internal_note, invoice.payment_instructions ]
+    assert_equal [ 3_000, 27_000 ], [ invoice.discount_minor, invoice.total_minor ]
+  end
+
   test "invalid creation returns the populated form" do
     assert_no_difference "Invoice.count" do
       post invoices_path, params: { invoice: { customer_id: "" } }

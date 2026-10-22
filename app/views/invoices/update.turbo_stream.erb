@@ -2,3 +2,6 @@
 <% if @invoice.errors.empty? %>
   <%= render "shared/line_items/totals", document: @invoice, scope: "invoice" %>
 <% end %>
+<% if @dates_changed %>
+  <%= turbo_stream.replace dom_id(@invoice, :details), partial: "invoices/details", locals: { invoice: @invoice } %>
+<% end %>

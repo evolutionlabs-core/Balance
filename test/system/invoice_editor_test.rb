@@ -33,7 +33,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
-    assert_selector "tr.line-item", count: 2
+    assert_selector "tr.line-item", count: 1
     fill_in "Customer", with: "Invoice"
     find("[role='option']", text: customer.name).click
     assert_selector "input[name='invoice[customer_id]'][value='#{customer.id}']", visible: :all
@@ -45,6 +45,8 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     find("h2", text: "Product or service").click
     assert_selector "#invoice_total", text: "NGN 300.00"
     fill_in "invoice_bill_to_email", with: "custom@example.com"
+    click_on "Add product or service"
+    assert_selector "tr.line-item", count: 2
     within all("tr.line-item").last do
       click_on "Remove line"
     end

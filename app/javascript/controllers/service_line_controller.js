@@ -18,7 +18,7 @@ export default class extends Controller {
   }
 
   calculateAmount() {
-    const quantity = Number.parseFloat(this.quantityTarget.value) || 0
+    const quantity = Number.parseFloat(this.quantityTarget.value || this.quantityTarget.placeholder) || 0
     const rate = Number.parseFloat(this.rateTarget.value) || 0
 
     this.amountTarget.value = (quantity * rate).toFixed(2)

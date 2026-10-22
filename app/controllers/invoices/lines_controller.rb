@@ -3,7 +3,7 @@ class Invoices::LinesController < ApplicationController
 
   def new
     @index = SecureRandom.random_number(10**18)
-    @line = InvoiceLine.new
+    @line = InvoiceLine.new(quantity: 1)
     @services = current_workspace.services.ordered.to_a
   end
 

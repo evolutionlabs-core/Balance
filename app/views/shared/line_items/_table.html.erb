@@ -29,8 +29,24 @@
   <div class="mt-8 ml-auto max-w-sm border-t border-neutral-200 pt-4">
     <div class="flex items-center justify-between text-sm">
       <span class="text-neutral-500">Subtotal</span>
-      <span id="<%= scope %>_subtotal" class="font-medium tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(document.subtotal_minor, document.currency_code) %></span>
+      <span id="<%= scope %>_subtotal" class="font-medium tabular-nums text-neutral-950" data-document-editor-target="subtotal"><%= minor_currency(document.subtotal_minor, document.currency_code) %></span>
     </div>
+    <% if local_assigns[:discount] %>
+      <div class="mt-3 flex items-center justify-between gap-3 text-sm">
+        <div class="flex items-center gap-2">
+          <label for="<%= scope %>_discount_value" class="text-neutral-500">Discount</label>
+          <%= number_field_tag "#{scope}[discount_value]", document.discount_value&.to_s("F"), id: "#{scope}_discount_value", form: "new_#{scope}_form",
+              min: 0, step: 0.01, inputmode: "decimal", placeholder: "0",
+              class: "h-8 w-24 rounded-md border border-neutral-300 bg-white px-2 text-right text-sm tabular-nums focus:border-balance-teal-700 focus:ring-1 focus:ring-balance-teal-700 focus:outline-none",
+              data: { document_editor_target: "discountValue", action: "input->document-editor#calculateTotals change->form#submit" } %>
+          <%= select_tag "#{scope}[discount_type]", options_for_select([ [ "%", "percent" ], [ document.currency_code, "amount" ] ], document.discount_type || "percent"),
+              form: "new_#{scope}_form", aria: { label: "Discount type" },
+              class: "h-8 rounded-md border border-neutral-300 bg-white pr-7 pl-2 text-sm focus:border-balance-teal-700 focus:ring-1 focus:ring-balance-teal-700 focus:outline-none",
+              data: { document_editor_target: "discountType", action: "change->document-editor#calculateTotals change->form#submit" } %>
+        </div>
+        <span id="<%= scope %>_discount" class="tabular-nums text-neutral-950" data-document-editor-target="discount"><%= document.discounted? ? "−#{minor_currency(document.discount_minor, document.currency_code)}" : "—" %></span>
+      </div>
+    <% end %>
     <div class="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3">
       <span class="font-semibold text-neutral-950">Total</span>
       <span id="<%= scope %>_total" class="text-xl font-semibold tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(document.total_minor, document.currency_code) %></span>

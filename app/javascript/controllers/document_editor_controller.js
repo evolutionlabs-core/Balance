@@ -3,14 +3,28 @@ import { Turbo } from "@hotwired/turbo-rails"
 import { formatAmount, parseAmount } from "lib/money"
 
 export default class extends Controller {
-  static targets = ["form", "amount", "total"]
+  static targets = ["form", "amount", "subtotal", "total", "discount", "discountValue", "discountType"]
   static values = { currency: String }
 
   calculateTotals() {
-    const total = this.amountTargets.reduce((sum, input) => sum + parseAmount(input.value), 0)
-    const formatted = `${this.currencyValue} ${formatAmount(total)}`
+    const subtotal = this.amountTargets.reduce((sum, input) => sum + parseAmount(input.value), 0)
+    const discount = this.discountFor(subtotal)
 
-    this.totalTargets.forEach((output) => { output.textContent = formatted })
+    this.subtotalTargets.forEach((output) => { output.textContent = this.format(subtotal) })
+    this.discountTargets.forEach((output) => { output.textContent = discount > 0 ? `−${this.format(discount)}` : "—" })
+    this.totalTargets.forEach((output) => { output.textContent = this.format(subtotal - discount) })
+  }
+
+  discountFor(subtotal) {
+    if (!this.hasDiscountValueTarget) return 0
+
+    const value = parseAmount(this.discountValueTarget.value)
+    const discount = this.discountTypeTarget.value === "percent" ? Math.round(subtotal * value) / 100 : value
+    return discount > 0 && discount < subtotal ? discount : 0
+  }
+
+  format(amount) {
+    return `${this.currencyValue} ${formatAmount(amount)}`
   }
 
   async saveAndShow(event) {

@@ -20,10 +20,13 @@ class InvoicesController < ApplicationController
   def new
     @invoice = current_workspace.invoices.build(
       user: Current.user,
-      currency_code: current_workspace.currency_code
+      currency_code: current_workspace.currency_code,
+      issue_date: Date.current
     )
-    2.times { @invoice.invoice_lines.build }
+    @invoice.invoice_lines.build(quantity: 1)
     @invoice.populate_party_details
+    @invoice.apply_workspace_defaults
+    @invoice.due_date = PaymentTerms.due_date(@invoice.payment_terms, @invoice.issue_date)
   end
 
   def create
@@ -57,6 +60,7 @@ class InvoicesController < ApplicationController
 
   def update
     if @invoice.update(invoice_params)
+      @dates_changed = @invoice.saved_change_to_due_date? || @invoice.saved_change_to_payment_terms?
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to invoice_path(@invoice), notice: "Invoice draft saved." }
@@ -109,7 +113,8 @@ class InvoicesController < ApplicationController
 
     def invoice_params
       params.expect(invoice: [
-        :customer_id, :issue_date, :due_date,
+        :customer_id, :issue_date, :due_date, :payment_terms, :reference,
+        :notes, :internal_note, :payment_instructions, :discount_type, :discount_value,
         :business_name, :business_email, :business_address,
         :bill_to_name, :bill_to_email, :bill_to_address,
         invoice_lines_attributes: [ [ :id, :service_id, :description, :quantity, :rate, :rate_minor, :_destroy ] ]

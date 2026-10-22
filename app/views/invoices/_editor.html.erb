@@ -34,12 +34,14 @@
         <p class="mt-1 text-sm text-neutral-500">Describe each charge, or choose a service to fill in its details.</p>
       </div>
 
-      <%= render layout: "shared/line_items/table", locals: { document: invoice, scope: "invoice", add_path: new_invoice_line_path, add_label: "Add product or service" } do %>
+      <%= render layout: "shared/line_items/table", locals: { document: invoice, scope: "invoice", add_path: new_invoice_line_path, add_label: "Add product or service", discount: true } do %>
         <% invoice.invoice_lines.each_with_index do |line, index| %>
           <%= render "invoices/new_line", line: line, index: line.persisted? ? "-#{line.id}" : index, first: index.zero? %>
         <% end %>
       <% end %>
     </section>
+
+    <%= render "invoices/notes", invoice: invoice %>
 
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-4 py-4 sm:px-6 md:px-10">
       <%= link_to "Back to invoices", invoices_path, class: ghost_button_class %>
