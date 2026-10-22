@@ -25,6 +25,7 @@ export default class extends Controller {
   updateRange(dates) {
     this.fromTarget.value = dates[0] ? this.isoDate(dates[0]) : ""
     this.toTarget.value = dates[1] ? this.isoDate(dates[1]) : ""
+    if (dates.length !== 1) this.dispatch("change")
   }
 
   isoDate(date) {
