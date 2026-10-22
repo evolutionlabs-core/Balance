@@ -2,7 +2,7 @@
   <div class="sm:col-span-2">
     <%= form.label :payment_terms, "Terms", class: field_label_class %>
     <%= render "shared/select_menu", form: form, attribute: :payment_terms,
-        options: options_for_select(PaymentTerms.choices, form.object.payment_terms), prompt: nil, form_id: local_assigns[:form_id],
+        options: options_for_select(PaymentTerms.choices, form.object.payment_terms || "custom"), prompt: nil, form_id: local_assigns[:form_id],
         select_data: { payment_terms_target: "terms", action: "change->payment-terms#apply" } %>
   </div>
   <div>
@@ -18,5 +18,9 @@
   <div class="sm:col-span-2">
     <%= form.label :reference, "PO / reference", class: field_label_class %>
     <%= form.text_field :reference, form: local_assigns[:form_id], autocomplete: "off", class: field_class %>
+  </div>
+  <div class="sm:col-span-2">
+    <p class="<%= field_label_class %>">Currency</p>
+    <p class="text-sm text-neutral-900"><%= Currency.label(form.object.currency_code) %></p>
   </div>
 </div>

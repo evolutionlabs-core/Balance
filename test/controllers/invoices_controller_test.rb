@@ -46,6 +46,17 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ 3_000, 27_000 ], [ invoice.discount_minor, invoice.total_minor ]
   end
 
+  test "drafts without terms show Custom and keep their due date when edited" do
+    invoice = create_invoice
+    invoice.update_column(:payment_terms, nil)
+
+    get edit_invoice_path(invoice)
+    assert_select "select[name='invoice[payment_terms]'] option[selected][value=custom]"
+
+    patch invoice_path(invoice), params: { invoice: { reference: "PO-2", payment_terms: "custom" } }, as: :turbo_stream
+    assert_equal [ "PO-2", Date.current + 30.days ], [ invoice.reload.reference, invoice.due_date ]
+  end
+
   test "invalid creation returns the populated form" do
     assert_no_difference "Invoice.count" do
       post invoices_path, params: { invoice: { customer_id: "" } }
