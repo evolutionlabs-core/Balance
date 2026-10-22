@@ -1,0 +1,217 @@
+module Bills
+  module Posting
+    extend ActiveSupport::Concern
+    include AccountingEngine::Postable
+
+    def issue!
+      posted = Bill.transaction do
+        lock!
+
+        unless may_enter?
+          errors.add(:base, "Bill cannot be entered from its current state")
+          raise ActiveRecord::Rollback
+        end
+
+        line_errors = expense_line_errors
+        unless line_errors.empty?
+          line_errors.each { |error| errors.add(:base, error) }
+          raise ActiveRecord::Rollback
+        end
+
+        raise ActiveRecord::Rollback unless update(bill_date: bill_date.presence || Date.current)
+        enter!
+
+        post_issue_entry
+      end
+
+      restore_status unless posted
+      posted.present?
+    end
+
+    def record_payment!(payment_account_id:, paid_on:, amount_kobo:)
+      recorded = Bill.transaction do
+        lock!
+        payments.reset
+
+        if payment_rejected?(amount_kobo, paid_on)
+          raise ActiveRecord::Rollback
+        end
+
+        payment_account = workspace.payment_accounts.find_by(id: payment_account_id)
+        unless payment_account
+          errors.add(:base, "Payment account must be a cash or credit-card account in this workspace")
+          raise ActiveRecord::Rollback
+        end
+
+        application = payments.build(amount_kobo: amount_kobo, workspace: workspace)
+        unless application.save
+          application.errors.full_messages.each { |message| errors.add(:base, message) }
+          raise ActiveRecord::Rollback
+        end
+
+        entry = post_application(application, payment_account, paid_on)
+        application.update!(journal_entry_id: entry.id)
+
+        payments.reset
+        pay! if may_pay?
+        true
+      end
+
+      restore_status unless recorded
+      recorded.present?
+    end
+
+    def reverse_payment!(payment)
+      reversed = Bill.transaction do
+        lock!
+
+        if payment.reverses_bill_payment_id? || payment.reversal_payment.present?
+          errors.add(:base, "This payment has already been reversed")
+          raise ActiveRecord::Rollback
+        end
+
+        reversal = payments.build(workspace: workspace, amount_kobo: payment.amount_kobo, reverses_bill_payment: payment)
+        unless reversal.save
+          reversal.errors.full_messages.each { |message| errors.add(:base, message) }
+          raise ActiveRecord::Rollback
+        end
+
+        entry = reverse_in_ledger!(payment.journal_entry, on: Date.current, source_type: "BillPayment", source_id: reversal.id,
+          description: "Payment reversed for #{display_name.downcase_first}")
+        reversal.update!(journal_entry_id: entry.id)
+
+        payments.reset
+        reopen! if may_reopen?
+        true
+      end
+
+      restore_status unless reversed
+      reversed.present?
+    end
+
+    def void!
+      voided = Bill.transaction do
+        lock!
+
+        unless may_mark_voided?
+          errors.add(:base, "Bill cannot be voided from its current state")
+          raise ActiveRecord::Rollback
+        end
+
+        if open?
+          post_void_entry
+        end
+
+        mark_voided!
+        true
+      end
+
+      restore_status unless voided
+      voided.present?
+    end
+
+    private
+      def payment_rejected?(amount_kobo, paid_on)
+        unless open?
+          errors.add(:base, "Only an entered bill with a balance can be paid")
+          return true
+        end
+
+        if balance_due_kobo.zero?
+          errors.add(:base, "Bill has no outstanding balance")
+          return true
+        end
+
+        unless amount_kobo.is_a?(Integer) && amount_kobo.positive?
+          errors.add(:base, "Payment amount must be positive")
+          return true
+        end
+
+        if amount_kobo > balance_due_kobo
+          errors.add(:base, "Payment amount must be no more than the balance due")
+          return true
+        end
+
+        if paid_on.nil?
+          errors.add(:base, "Payment date is required")
+        elsif paid_on > Date.current
+          errors.add(:base, "Payment date can't be in the future")
+        elsif paid_on < bill_date
+          errors.add(:base, "Payment date can't be before the bill date")
+        else
+          return false
+        end
+
+        true
+      end
+
+      def expense_line_errors
+        bill_lines.reject(&:marked_for_destruction?).each_with_index.filter_map do |line, index|
+          if line.account.nil?
+            "Line #{index + 1}: #{line.description.presence || "item"} has no account"
+          elsif !BillLine.eligible_account?(line.account)
+            "Line #{index + 1}: account #{line.account.name} is not an expense or asset account"
+          elsif line.account.ledger.workspace_id != workspace_id
+            "Line #{index + 1}: account #{line.account.name} belongs to another workspace"
+          end
+        end
+      end
+
+      def post_issue_entry
+        record_in_ledger!(
+          AccountingEngine::Builders::Bill,
+          attributes: {
+            effective_date: bill_date,
+            vendor: vendor,
+            expense_lines: posted_expense_lines
+          },
+          source_id: id,
+          description: "#{display_name} from #{vendor.name}"
+        )
+      end
+
+      def post_application(application, payment_account, paid_on)
+        record_in_ledger!(
+          AccountingEngine::Builders::BillPayment,
+          attributes: {
+            paid_on: paid_on,
+            payment_account_id: payment_account.id,
+            amount_kobo: application.amount_kobo,
+            vendor: vendor
+          },
+          source_id: application.id,
+          description: "Payment to #{vendor.name} for #{display_name.downcase_first}"
+        )
+      end
+
+      def post_void_entry
+        entry = issue_entry
+        unless entry
+          errors.add(:base, "This bill has no recorded entry to reverse")
+          raise ActiveRecord::Rollback
+        end
+
+        reverse_in_ledger!(entry, on: Date.current, source_type: "Bill", source_id: id, action: "void",
+          description: "#{display_name} voided")
+      end
+
+      def issue_entry
+        workspace.ledger.journal_entries.find_by(source_type: "Bill", source_id: id, action: "issue")
+      end
+
+      def posted_expense_lines
+        bill_lines.reject(&:marked_for_destruction?).map do |line|
+          { account: line.account, amount_kobo: line.amount_kobo }
+        end
+      end
+
+      # A rollback restores the database but not the in-memory aasm state; put
+      # the loaded truth back so the instance stays honest for the caller.
+      def restore_status
+        return if status_in_database == status
+
+        self.status = status_in_database
+        clear_changes_information
+      end
+  end
+end

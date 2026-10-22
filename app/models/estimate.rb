@@ -1,7 +1,15 @@
 class Estimate < ApplicationRecord
+  include WorkspaceCurrency
   include AASM
 
-  STATUSES = %w[draft sent approved declined].freeze
+  class InvalidClientReview < StandardError; end
+
+  generates_token_for :client_review, expires_in: 30.days do
+    [ status, lock_version, Digest::SHA256.hexdigest(review_content.to_json) ]
+  end
+
+  STATUSES = %w[draft sent approved declined invoiced].freeze
+  CLIENT_DECISIONS = %w[accepted declined].freeze
 
   belongs_to :workspace
   belongs_to :user
@@ -9,18 +17,20 @@ class Estimate < ApplicationRecord
   belongs_to :project, optional: true
   has_many :line_items, class_name: "EstimateLineItem", dependent: :destroy
 
-  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
+  accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :blank_line_attributes?
 
   def line_items_attributes=(attributes)
+    @line_items_submitted = true
     drop_missing_lines(attributes) if saved_rows_submitted?(attributes)
     super(restore_line_ids(attributes))
   end
 
   validates :status, inclusion: { in: STATUSES }
-  validates :currency_code, inclusion: { in: %w[NGN] }
+  validates :client_decision, inclusion: { in: CLIENT_DECISIONS }, allow_nil: true
   validate :customer_belongs_to_workspace
   validate :project_belongs_to_workspace
   validate :project_matches_customer
+  validate :at_least_one_line, if: -> { @line_items_submitted }
 
   before_validation :populate_party_details, on: :create
   before_validation :calculate_totals
@@ -33,7 +43,7 @@ class Estimate < ApplicationRecord
 
   aasm column: :status do
     state :draft, initial: true
-    state :sent, :approved, :declined
+    state :sent, :approved, :declined, :invoiced
 
     event :send_to_client do
       transitions from: :draft, to: :sent
@@ -49,6 +59,67 @@ class Estimate < ApplicationRecord
 
     event :reopen do
       transitions from: :declined, to: :draft
+    end
+
+    event :convert_to_invoice do
+      transitions from: :approved, to: :invoiced
+    end
+  end
+
+  def build_invoice(user:)
+    workspace.invoices.build(
+      user: user,
+      customer: customer,
+      project: project,
+      estimate: self,
+      currency_code: currency_code,
+      issue_date: Date.current,
+      due_date: Date.current + 15.days,
+      business_name: business_name,
+      business_email: business_email,
+      business_address: business_address,
+      bill_to_name: bill_to_name,
+      bill_to_email: bill_to_email,
+      bill_to_address: bill_to_address,
+      invoice_lines_attributes: line_items.map do |line|
+        {
+          service: line.service,
+          description: line.description,
+          quantity: line.quantity,
+          rate_minor: line.rate_minor
+        }
+      end
+    )
+  end
+
+  def review_content
+    attributes.slice("currency_code", "business_name", "business_email", "business_address",
+      "bill_to_name", "bill_to_email", "bill_to_address", "notes", "subtotal_minor", "total_minor").merge(
+        "number" => number,
+        "business_name" => business_name.presence || workspace.name,
+        "line_items" => line_items.sort_by(&:position).map do |line|
+          line.attributes.slice("description", "quantity", "rate_minor", "amount_minor")
+        end
+      ).as_json
+  end
+
+  def prepare_client_review
+    with_lock do
+      send_to_client! if draft?
+      raise InvalidClientReview unless sent?
+    end
+  end
+
+  def record_client_decision(token, decision)
+    with_lock do
+      unless sent? && CLIENT_DECISIONS.include?(decision) && self.class.find_by_token_for(:client_review, token)&.id == id
+        raise InvalidClientReview
+      end
+
+      self.client_review_snapshot = review_content
+      self.client_decision = decision
+      self.client_decided_at = Time.current
+      decision == "accepted" ? approve! : decline!
     end
   end
 
@@ -78,6 +149,16 @@ class Estimate < ApplicationRecord
   end
 
   private
+    def blank_line_attributes?(attributes)
+      attributes.values_at("service_id", :service_id, "service", :service, "description", :description).all?(&:blank?) &&
+        attributes.fetch("rate", attributes.fetch(:rate, 0)).to_d.zero? &&
+        attributes.fetch("amount", attributes.fetch(:amount, 0)).to_d.zero?
+    end
+
+    def at_least_one_line
+      errors.add(:line_items, "must include at least one item") if active_lines.empty?
+    end
+
     def customer_belongs_to_workspace
       return if customer.blank? || workspace.blank?
       return if customer.workspace_id == workspace_id

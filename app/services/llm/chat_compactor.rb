@@ -89,9 +89,9 @@ class Llm::ChatCompactor
   end
 
   def summarize(prompt, temperature: 0)
-    chat = RubyLLM.chat(model: @chat.llm_model&.model_id || RubyLLM.config.default_model)
-    chat.with_temperature(temperature)
-      .with_params(max_tokens: MAX_SUMMARY_TOKENS)
+    @chat.detached_llm_chat
+      .with_temperature(temperature)
+      .with_max_output_tokens(MAX_SUMMARY_TOKENS)
       .ask(prompt).content.to_s
   rescue RubyLLM::BadRequestError
     ""

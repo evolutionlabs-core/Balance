@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { placeBelow } from "lib/floating"
 
 export default class extends Controller {
   static targets = ["native", "button", "label", "menu"]
@@ -90,7 +91,7 @@ export default class extends Controller {
     this.optionsContainer = document.createElement("div")
     this.optionsContainer.setAttribute("role", "listbox")
     this.optionsContainer.className = this.searchableValue
-      ? "max-h-40 overflow-y-auto pb-2"
+      ? "max-h-40 overflow-y-auto"
       : "max-h-56 overflow-y-auto"
     this.menu.append(this.optionsContainer)
 
@@ -148,7 +149,7 @@ export default class extends Controller {
     const link = document.createElement("a")
     link.href = this.footerUrlValue
     link.dataset.turboFrame = "modal"
-    link.className = "flex w-full items-center rounded px-2 py-1.5 text-sm font-medium text-[#0f7082] hover:bg-neutral-50"
+    link.className = "flex w-full items-center rounded px-2 py-1.5 text-sm font-medium text-balance-teal-700 hover:bg-neutral-50"
     link.textContent = `+ ${this.footerLabelValue}`
     link.addEventListener("click", this.close.bind(this))
     wrapper.append(link)
@@ -156,25 +157,12 @@ export default class extends Controller {
   }
 
   positionMenu() {
-    const rect = this.buttonTarget.getBoundingClientRect()
-    const gap = 4
-    const width = this.compactValue ? Math.max(rect.width, 256) : rect.width
-    const left = Math.min(rect.left, window.innerWidth - width - gap)
-
-    this.menu.style.left = `${Math.max(gap, left)}px`
-    this.menu.style.width = `${width}px`
-    this.menu.style.top = `${rect.bottom + gap}px`
+    const width = this.buttonTarget.getBoundingClientRect().width
+    this.menu.style.width = `${this.compactValue ? Math.max(width, 256) : width}px`
     this.menu.style.zIndex = "60"
-
-    const menuHeight = this.menu.getBoundingClientRect().height
-    const roomBelow = window.innerHeight - rect.bottom - gap
-    const roomAbove = rect.top - gap
-
-    if (menuHeight > roomBelow && roomAbove > roomBelow) {
-      this.menu.style.top = `${Math.max(gap, rect.top - menuHeight - gap)}px`
-    }
-    this.menu.style.maxHeight = `${Math.max(96, window.innerHeight - (gap * 2))}px`
+    this.menu.style.maxHeight = `${Math.max(96, window.innerHeight - 8)}px`
     this.menu.style.overflowY = "auto"
+    placeBelow(this.menu, this.buttonTarget)
   }
 
   search(event) {

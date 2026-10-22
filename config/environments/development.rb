@@ -29,8 +29,10 @@ Rails.application.configure do
   config.cache_store = :memory_store
 
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Keep email local: deliveries land in the /letter_opener inbox instead of being sent.
+  config.action_mailer.delivery_method = :letter_opener_web
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false

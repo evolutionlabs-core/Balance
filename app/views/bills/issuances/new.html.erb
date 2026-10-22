@@ -1,0 +1,15 @@
+<%= render "shared/modal" do %>
+  <%= form_with url: bill_issuance_path(@bill), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Enter bill" %>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @bill %>
+      <p class="text-sm text-neutral-600">
+        Entering this bill posts <%= money(@bill.total_kobo, @bill.currency_code) %> owed to <%= @bill.vendor.name %> to accounts payable.
+        The bill can no longer be edited afterwards.
+      </p>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Enter bill" %>
+  <% end %>
+<% end %>

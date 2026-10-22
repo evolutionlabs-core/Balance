@@ -1,0 +1,31 @@
+<div data-controller="menu" data-action="keydown->menu#dismiss" class="relative inline-block text-left">
+  <button type="button" data-menu-target="button" data-action="menu#toggle"
+      class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+      aria-label="Actions for <%= invoice.invoice_number %>" aria-haspopup="menu" aria-expanded="false">
+    <%= inline_svg_tag "icons/dots-vertical.svg", class: "h-4 w-4" %>
+  </button>
+  <div data-menu-target="menu" role="menu" class="z-50 hidden w-52 rounded-md border border-neutral-200 bg-white p-1 text-left shadow-md">
+    <%= link_to invoice_path(invoice), role: "menuitem", class: menu_item_class do %>
+      <%= inline_svg_tag "icons/eye.svg", class: "h-4 w-4 flex-none" %>View
+    <% end %>
+    <% if invoice.draft? %>
+      <%= link_to edit_invoice_path(invoice), role: "menuitem", class: menu_item_class do %>
+        <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4 flex-none" %>Edit
+      <% end %>
+    <% end %>
+    <%= link_to invoice_path(invoice, format: :pdf), role: "menuitem", class: menu_item_class, data: { turbo: false } do %>
+      <%= inline_svg_tag "icons/download.svg", class: "h-4 w-4 flex-none" %>Download PDF
+    <% end %>
+    <%= button_to invoice_duplicate_path(invoice), method: :post, role: "menuitem", class: menu_item_class, form: { class: "contents" } do %>
+      <%= inline_svg_tag "icons/copy.svg", class: "h-4 w-4 flex-none" %>Duplicate
+    <% end %>
+    <% if invoice.sent? || invoice.paid? %>
+      <%= render "invoices/copy_link_item", invoice: invoice %>
+    <% end %>
+    <% if invoice.may_mark_voided? %>
+      <%= link_to new_invoice_void_path(invoice), role: "menuitem", class: "#{menu_item_class} text-red-700 hover:text-red-800", data: { turbo_frame: "modal" } do %>
+        <%= inline_svg_tag "icons/x.svg", class: "h-4 w-4 flex-none" %>Void invoice
+      <% end %>
+    <% end %>
+  </div>
+</div>

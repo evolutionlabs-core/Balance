@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-/* Geist has to be registered here — @font-face plus a --font-* theme variable is
-   the only way to hand a webfont to Tailwind. Everything else the app needs is a
-   stock utility. */
+/* Register the local fonts and the design tokens Tailwind exposes as utilities. */
 @font-face {
   font-family: "Geist";
   src: url("Geist-Regular.woff2") format("woff2");
@@ -39,9 +37,10 @@
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
 
-  --color-balance-teal-700: #0f7082;
+  --color-balance-teal-50: #f4f8f8;
   --color-balance-teal-100: #e8f1ef;
-  --color-balance-cream-50: #fbfaf7;
+  --color-balance-teal-700: #0f7082;
+  --color-balance-teal-800: #0b5d6d;
   --color-balance-red-600: #c32c2c;
 }
 
@@ -56,33 +55,17 @@
   }
 }
 
-.onboarding-enter {
-  animation: onboarding-enter 260ms ease-out both;
-}
-
 @layer components {
-  .invoice-lines {
-    counter-reset: invoice-line;
+  .line-items {
+    counter-reset: line-item;
   }
 
-  .invoice-line {
-    counter-increment: invoice-line;
+  .line-item {
+    counter-increment: line-item;
   }
 
-  .invoice-line-number::before {
-    content: counter(invoice-line);
-  }
-
-  .estimate-lines {
-    counter-reset: estimate-line;
-  }
-
-  .estimate-line {
-    counter-increment: estimate-line;
-  }
-
-  .estimate-line-number::before {
-    content: counter(estimate-line);
+  .line-item-number::before {
+    content: counter(line-item);
   }
 
   @keyframes message-in {
@@ -151,7 +134,7 @@
   }
 
   .assistant-markdown a {
-    color: #0f7082;
+    color: var(--color-balance-teal-700);
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -212,12 +195,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .onboarding-enter {
-    animation: none;
-  }
-}
-
 .flatpickr-calendar {
   border: 1px solid #e5e5e5 !important;
   border-radius: 0.75rem !important;
@@ -233,14 +210,14 @@
 .flatpickr-day.selected,
 .flatpickr-day.startRange,
 .flatpickr-day.endRange {
-  border-color: #0f7082 !important;
-  background: #0f7082 !important;
+  border-color: var(--color-balance-teal-700) !important;
+  background: var(--color-balance-teal-700) !important;
 }
 
 .flatpickr-day.inRange {
-  border-color: #e7f2f4 !important;
-  background: #e7f2f4 !important;
-  box-shadow: -5px 0 0 #e7f2f4, 5px 0 0 #e7f2f4 !important;
+  border-color: var(--color-balance-teal-100) !important;
+  background: var(--color-balance-teal-100) !important;
+  box-shadow: -5px 0 0 var(--color-balance-teal-100), 5px 0 0 var(--color-balance-teal-100) !important;
 }
 
 .flatpickr-input[readonly] {
@@ -253,7 +230,7 @@
   }
 
   @media (min-width: 640px) {
-    .expense-line-columns {
+    .amount-line-columns {
       grid-template-columns: minmax(13rem, 1.3fr) minmax(15rem, 1.7fr) minmax(9rem, 0.7fr) 3rem;
     }
   }
@@ -265,52 +242,35 @@
       font-size: 16px;
     }
 
-    .invoice-line-editor,
-    .invoice-line-editor tbody,
-    .invoice-line-editor tr,
-    .invoice-line-editor td {
+    :is(.line-item-editor, .invoice-preview-lines),
+    :is(.line-item-editor, .invoice-preview-lines) :is(tbody, tr, td) {
       display: block;
       width: 100%;
     }
 
-    .invoice-line-editor thead {
+    :is(.line-item-editor, .invoice-preview-lines) thead {
       display: none;
     }
 
-    .invoice-line-editor tr {
+    .line-item-editor tr {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 0.5rem;
       padding-block: 0.75rem;
       border-top: 1px solid #e5e5e5;
     }
 
-    .invoice-line-editor .invoice-line-number {
+    .line-item-editor .line-item-number {
       display: none;
     }
 
-    .invoice-line-editor td {
+    .line-item-editor td {
       padding-inline: 0;
     }
 
-    .invoice-line-editor td:nth-of-type(3),
-    .invoice-line-editor td:nth-of-type(4) {
-      display: inline-block;
+    .line-item-editor td:nth-of-type(3),
+    .line-item-editor td:nth-of-type(4) {
       width: calc(50% - 0.25rem);
-      vertical-align: top;
-    }
-
-    .invoice-line-editor td:nth-of-type(4) {
-      margin-left: 0.5rem;
-    }
-
-    .invoice-preview-lines,
-    .invoice-preview-lines tbody,
-    .invoice-preview-lines tr,
-    .invoice-preview-lines td {
-      display: block;
-      width: 100%;
-    }
-
-    .invoice-preview-lines thead {
-      display: none;
     }
 
     .invoice-preview-lines tr {

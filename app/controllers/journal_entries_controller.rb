@@ -1,29 +1,32 @@
 class JournalEntriesController < ApplicationController
   def index
-    @journal_entries = current_workspace.journal_entries
-      .includes(journal_entry_lines: :account)
-    @journal_entries = @journal_entries.where("description ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%") if params[:q].present?
-    @journal_entries = @journal_entries.where(entry_date: parsed_date_range) if parsed_date_range
-    @journal_entries = @journal_entries.order(entry_date: :desc, id: :desc)
+    @journal_entries = (current_workspace.ledgers.first&.journal_entries || JournalEntry.none)
+      .includes(:reversal, journal_entry_lines: :account)
+    if params[:q].present?
+      term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
+      @journal_entries = @journal_entries
+        .left_joins(journal_entry_lines: :account)
+        .where("journal_entries.description ILIKE :term OR journal_entries.reference ILIKE :term OR accounts.name ILIKE :term", term: term)
+        .distinct
+    end
+    @journal_entries = @journal_entries.where(effective_date: parsed_date_range) if parsed_date_range
+    @journal_entries = @journal_entries.where(":tag = ANY(journal_entries.tags)", tag: params[:tag]) if params[:tag].present?
+    @journal_entries = @journal_entries.order(effective_date: :desc, id: :desc)
+  end
+
+  def show
+    @entry = current_workspace.ledger.journal_entries
+      .includes(:posted_by, :reverses_entry, :reversal, journal_entry_lines: %i[account customer vendor])
+      .find(params[:id])
   end
 
   def new
-    @journal_entry = current_workspace.journal_entries.build
-    2.times { @journal_entry.journal_entry_lines.build }
-  end
-
-  def create
-    @journal_entry = current_workspace.journal_entries.build(journal_entry_params)
-    result = Accounting::PostingService.call(entry: @journal_entry)
-
-    if result.success?
-      respond_to do |format|
-        format.html { redirect_to journal_entries_path, notice: "Journal entry recorded." }
-        format.turbo_stream { render turbo_stream: turbo_stream.action(:redirect, journal_entries_path) }
-      end
+    @draft = if params[:template_id]
+      current_workspace.entry_templates.find(params[:template_id]).draft
     else
-      render :new, status: :unprocessable_content
+      current_workspace.journal_entry_drafts.build(effective_date: Date.current)
     end
+    @entry_form = @draft.entry_form
   end
 
   private
@@ -31,14 +34,5 @@ class JournalEntriesController < ApplicationController
       return if params[:from].blank? || params[:to].blank?
 
       Date.iso8601(params[:from])..Date.iso8601(params[:to])
-    rescue Date::Error
-      nil
-    end
-
-    def journal_entry_params
-      params.expect(journal_entry: [
-        :entry_date, :description,
-        journal_entry_lines_attributes: [ [ :id, :account_id, :debit, :credit, :_destroy ] ]
-      ])
     end
 end

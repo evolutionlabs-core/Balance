@@ -19,8 +19,6 @@ class Llm::ChatsController < ApplicationController
       return render :index, status: :unprocessable_content
     end
 
-    Llm::Model.resolve(params.dig(:llm_chat, :model))
-
     @llm_chat = current_workspace.llm_chats.new(model: params.dig(:llm_chat, :model).presence)
     @llm_chat.derive_title_from(prompt)
     @llm_chat.save!

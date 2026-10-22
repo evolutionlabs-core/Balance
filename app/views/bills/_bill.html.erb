@@ -1,0 +1,12 @@
+<tr id="<%= dom_id(bill) %>" class="<%= table_row_class %>">
+  <td class="<%= table_cell_class(strong: true, link: true) %>">
+    <%= link_to bill.vendor.name, bill_path(bill), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(link: true) %>">
+    <%= link_to bill.bill_number.presence || blank_cell, bill_path(bill), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums whitespace-nowrap"><%= money(bill.total_kobo, bill.currency_code) %></td>
+  <td class="<%= table_cell_class(align: :right) %> tabular-nums whitespace-nowrap"><%= bill.open? ? money(bill.balance_due_kobo, bill.currency_code) : blank_cell %></td>
+  <td class="<%= table_cell_class %> whitespace-nowrap"><%= bill_status_badge(bill) %></td>
+  <td class="<%= table_cell_class %> whitespace-nowrap"><%= bill.due_date&.strftime("%b %-d, %Y") || blank_cell %></td>
+</tr>

@@ -1,0 +1,53 @@
+<% content_for :title, "Services" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Services" } ] %>
+<% end %>
+
+<% new_service = link_to "New service", new_service_path,
+    class: primary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+
+<%= render "shared/page_header",
+    title: "Services",
+    description: "Manage the services you sell and where their income is recorded.",
+    action: new_service %>
+
+<% if @services.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/services.svg",
+      title: "No services yet",
+      description: "Create a service before adding billable work to an estimate or invoice.",
+      action: new_service %>
+<% else %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @services.each do |service| %>
+      <%= render "shared/mobile_card", title: service.name,
+          trailing: status_badge(service.active? ? "Active" : "Inactive", tone: service.active? ? :success : :neutral),
+          meta: service.description,
+          footer: [ service.income_account.name, (minor_currency(service.default_rate_minor, current_workspace.currency_code) if service.default_rate_minor) ].compact.join(" · "),
+          action: link_to("Edit", edit_service_path(service), class: mobile_card_action_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{service.name}" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "Service" }, { label: "Income account" }, { label: "Default rate", align: :right }, { label: "Status" }, { label: "Actions", align: :right, class: "w-20" }
+      ] } do %>
+    <% @services.each do |service| %>
+      <tr id="<%= dom_id(service) %>" class="<%= table_row_class %>">
+        <td class="<%= table_cell_class(strong: true) %>">
+          <p><%= service.name %></p>
+          <% if service.description.present? %>
+            <p class="mt-0.5 max-w-xl truncate text-xs font-normal text-neutral-500"><%= service.description %></p>
+          <% end %>
+        </td>
+        <td class="<%= table_cell_class %>"><%= service.income_account.name %></td>
+        <td class="<%= table_cell_class(align: :right) %> tabular-nums">
+          <%= service.default_rate_minor ? minor_currency(service.default_rate_minor, current_workspace.currency_code) : blank_cell %>
+        </td>
+        <td class="<%= table_cell_class %>"><%= status_badge(service.active? ? "Active" : "Inactive", tone: service.active? ? :success : :neutral) %></td>
+        <td class="<%= table_cell_class(align: :right) %>">
+          <%= link_to "Edit", edit_service_path(service), aria: { label: "Edit #{service.name}" }, class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>

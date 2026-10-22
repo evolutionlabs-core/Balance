@@ -1,0 +1,4 @@
+<%= render "shared/mobile_card", title: account.name, url: general_ledger_account_path(account),
+    trailing: mobile_card_amount(money(account_balance(account, balances))),
+    meta: "#{account.code} · #{account.base_type.humanize} · #{account.subtype.humanize}",
+    action: account_actions(account, balances) %>

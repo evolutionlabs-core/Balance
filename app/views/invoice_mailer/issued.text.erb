@@ -1,0 +1,13 @@
+<% delivery = InvoiceDelivery.new(invoice: @invoice) %>
+Invoice <%= @invoice.invoice_number %> from <%= delivery.sender_name %>
+
+Balance due: <%= minor_currency(@invoice.balance_due_kobo, @invoice.currency_code) %>
+<% if @invoice.due_date %>Due: <%= @invoice.due_date.strftime("%b %-d, %Y") %>
+<% end %>
+<%= @message %>
+<% if @invoice.payment_instructions.present? %>
+Payment details:
+<%= @invoice.payment_instructions %>
+<% end %>
+
+View the invoice: <%= @link %>

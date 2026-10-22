@@ -17,8 +17,9 @@
 
     <div>
       <%= form.label :project_task_id, "Task (optional)", class: field_label_class %>
-      <%= form.collection_select :project_task_id, @project.tasks.ordered, :id, :title,
-          { include_blank: "No task" }, { class: field_class } %>
+      <%= render "shared/select_menu", form: form, attribute: :project_task_id,
+          options: options_from_collection_for_select(@project.tasks.ordered, :id, :title, time_entry.project_task_id),
+          prompt: "No task", include_blank_option: true, required: false, select_data: {} %>
     </div>
 
     <div>

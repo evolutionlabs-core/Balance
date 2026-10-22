@@ -1,20 +1,25 @@
 module UiHelper
+  BRAND_COLOR = "#0f7082".freeze
+
   BUTTON_BASE = "relative inline-flex flex-none cursor-pointer items-center gap-1.5 rounded-md font-medium transition-colors".freeze
 
   BUTTON_SIZES = {
     sm: "px-2.5 py-1.5 text-xs",
     compact: "min-h-0 px-2.5 py-1.5 text-sm",
-    md: "min-h-11 px-3 py-2 text-sm"
+    md: "min-h-0 px-3 py-2 text-sm"
   }.freeze
 
   STATUS_BADGE_TONES = {
     success: "border-emerald-200 bg-emerald-50 text-emerald-700",
     warning: "border-amber-200 bg-amber-50 text-amber-700",
+    danger: "border-red-200 bg-red-50 text-red-700",
     neutral: "border-neutral-200 bg-neutral-50 text-neutral-600"
   }.freeze
 
+  TABLE_ALIGNMENTS = { left: "text-left", right: "text-right", center: "text-center" }.freeze
+
   def primary_button_class(size: :md)
-    "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-[#0f7082] text-white hover:bg-[#0b5d6d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f7082]"
+    "#{BUTTON_BASE} #{BUTTON_SIZES.fetch(size)} bg-balance-teal-700 text-white hover:bg-balance-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-balance-teal-700"
   end
 
   def secondary_button_class(size: :md)
@@ -34,7 +39,7 @@ module UiHelper
   end
 
   def field_class
-    "block min-h-11 w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-950 shadow-none transition-colors placeholder:text-neutral-400 focus:border-[#0f7082] focus:outline-none focus:ring-1 focus:ring-[#0f7082] sm:text-sm"
+    "block min-h-11 w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-950 shadow-none transition-colors placeholder:text-neutral-400 focus:border-balance-teal-700 focus:outline-none focus:ring-1 focus:ring-balance-teal-700 sm:text-sm"
   end
 
   def field_label_class
@@ -49,12 +54,51 @@ module UiHelper
     tag.span(label, class: "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium #{STATUS_BADGE_TONES.fetch(tone)}")
   end
 
-  def table_cell_class
-    "px-4 py-3 text-sm text-neutral-500"
+  def table_header_class(align: :left, compact: false)
+    "px-4 #{compact ? "py-2.5" : "py-3"} #{TABLE_ALIGNMENTS.fetch(align)} text-xs font-medium text-neutral-500"
   end
 
-  def naira(kobo)
-    number_to_currency(BigDecimal(kobo) / 100, unit: "₦", precision: 2)
+  def table_row_class
+    "border-t border-neutral-200 transition-colors hover:bg-neutral-50"
+  end
+
+  def table_cell_class(align: :left, strong: false, link: false, muted: false)
+    [
+      link ? "p-0" : "px-4 py-4",
+      "text-sm",
+      TABLE_ALIGNMENTS.fetch(align),
+      table_cell_tone(strong:, muted:)
+    ].join(" ")
+  end
+
+  def table_cell_tone(strong:, muted:)
+    if muted
+      "text-neutral-400"
+    elsif strong
+      "font-medium text-neutral-900"
+    else
+      "text-neutral-600"
+    end
+  end
+
+  def mobile_card_amount(amount)
+    tag.span(amount, class: "shrink-0 text-sm font-semibold tabular-nums text-neutral-950")
+  end
+
+  def mobile_card_action_class
+    "flex min-h-11 items-center px-1 text-sm font-medium text-balance-teal-700"
+  end
+
+  def table_cell_link_class
+    "block px-4 py-4"
+  end
+
+  def currency_symbol(currency_code)
+    Currency.symbol(currency_code) || "#{currency_code} "
+  end
+
+  def money(minor, currency_code = current_workspace.currency_code)
+    number_to_currency(BigDecimal(minor || 0) / 100, unit: currency_symbol(currency_code), precision: 2)
   end
 
   def minor_currency(amount, currency_code)

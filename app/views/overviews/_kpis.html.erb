@@ -1,0 +1,9 @@
+<section aria-label="<%= overview.t("kpis.aria") %>" class="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+  <% overview.kpis.each do |kpi| %>
+    <div class="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 sm:p-5" data-kpi="<%= kpi.key %>">
+      <p class="text-sm font-medium text-neutral-500"><%= overview.t("kpis.#{kpi.key}") %></p>
+      <p class="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums sm:text-2xl <%= kpi.negative? ? "text-red-700" : "text-neutral-950" %>"><%= money(kpi.amount_kobo.abs, overview.workspace.currency_code) %></p>
+      <%= overview_kpi_change(overview, kpi) %>
+    </div>
+  <% end %>
+</section>

@@ -1,0 +1,48 @@
+<% content_for :title, "Vendors" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Vendors" } ] %>
+<% end %>
+
+<% new_vendor = link_to(new_vendor_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New vendor
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Vendors",
+    description: "The suppliers you receive bills from.",
+    action: new_vendor %>
+
+<% if @vendors.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/users.svg",
+      title: "No vendors yet",
+      description: "Add a vendor once, then record the bills they send you.",
+      action: new_vendor %>
+<% else %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @vendors.each do |vendor| %>
+      <%= render "shared/mobile_card", title: vendor.name, url: vendor_path(vendor),
+          trailing: status_badge(vendor.active? ? "Active" : "Inactive", tone: vendor.active? ? :success : :warning),
+          meta: [ vendor.email.presence, vendor.phone.presence ].compact.join(" · "),
+          action: link_to("Edit", edit_vendor_path(vendor), class: mobile_card_action_class, data: { turbo_frame: "modal" }, aria: { label: "Edit #{vendor.name}" }) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "Name" }, { label: "Email" }, { label: "Phone" }, { label: "Status" }, { label: "Actions", align: :right }
+      ] } do %>
+    <% @vendors.each do |vendor| %>
+      <tr id="<%= dom_id(vendor) %>" class="<%= table_row_class %>">
+        <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+          <%= link_to vendor.name, vendor_path(vendor), class: table_cell_link_class %>
+        </td>
+        <td class="<%= table_cell_class %>"><%= vendor.email.presence || blank_cell %></td>
+        <td class="<%= table_cell_class %>"><%= vendor.phone.presence || blank_cell %></td>
+        <td class="<%= table_cell_class %>"><%= status_badge(vendor.active? ? "Active" : "Inactive", tone: vendor.active? ? :success : :warning) %></td>
+        <td class="<%= table_cell_class(align: :right) %>">
+          <%= link_to "Edit", edit_vendor_path(vendor), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "modal" }, aria: { label: "Edit #{vendor.name}" } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>

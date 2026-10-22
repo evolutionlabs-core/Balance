@@ -1,0 +1,42 @@
+# One catalog of chart accounts. Each workspace type receives the accounts that
+# list it under `profiles`. `codes` and `names` override the default code and
+# name for a profile. Normal balances follow from base type and subtype
+# (see AccountSubtypes). `system` accounts are ones the application posts to.
+accounts:
+  # --- Assets (1xxx)
+  - { key: cash,                     code: "1010", name: Cash,                     base_type: asset,     subtype: cash,                     profiles: [personal, business] }
+  - { key: bank,                     code: "1020", name: Bank,                     base_type: asset,     subtype: cash,                     profiles: [personal, business], names: { personal: Checking Account }, system: true }
+  - { key: savings,                  code: "1030", name: Savings Account,          base_type: asset,     subtype: cash,                     profiles: [personal] }
+  - { key: accounts_receivable,      code: "1100", name: Accounts Receivable,      base_type: asset,     subtype: accounts_receivable,      profiles: [personal, business], codes: { personal: "1050" }, system: true }
+  - { key: investments,              code: "1100", name: Investments,              base_type: asset,     subtype: investment,               profiles: [personal] }
+  - { key: property,                 code: "1200", name: Property,                 base_type: asset,     subtype: fixed_asset,              profiles: [personal] }
+  - { key: inventory,                code: "1200", name: Inventory,                base_type: asset,     subtype: inventory,                profiles: [business], templates: [goods] }
+  - { key: fixed_assets,             code: "1500", name: Fixed Assets,             base_type: asset,     subtype: fixed_asset,              profiles: [business] }
+  - { key: accumulated_depreciation, code: "1590", name: Accumulated Depreciation, base_type: asset,     subtype: accumulated_depreciation, profiles: [business] }
+  # --- Liabilities (2xxx)
+  - { key: accounts_payable,         code: "2010", name: Accounts Payable,         base_type: liability, subtype: accounts_payable,         profiles: [business], system: true }
+  - { key: credit_card,              code: "2020", name: Credit Card Payable,      base_type: liability, subtype: credit_card,              profiles: [personal, business], codes: { personal: "2010" }, names: { personal: Credit Card } }
+  - { key: tax_payable,              code: "2100", name: Tax Payable,              base_type: liability, subtype: tax_payable,              profiles: [business] }
+  - { key: mortgage,                 code: "2100", name: Mortgage Payable,         base_type: liability, subtype: loan,                     profiles: [personal] }
+  - { key: auto_loan,                code: "2200", name: Auto Loan,                base_type: liability, subtype: loan,                     profiles: [personal] }
+  - { key: loan_payable,             code: "2500", name: Loan Payable,             base_type: liability, subtype: loan,                     profiles: [business] }
+  # --- Equity (3xxx)
+  - { key: owner_contributions,      code: "3010", name: Owner Contributions,      base_type: equity,    subtype: owner_equity,             profiles: [personal, business], names: { personal: Contributions } }
+  - { key: owner_draws,              code: "3020", name: Owner Draws,              base_type: equity,    subtype: owner_draws,              profiles: [personal, business], names: { personal: Personal Spending } }
+  - { key: retained_earnings,        code: "3900", name: Retained Earnings,        base_type: equity,    subtype: retained_earnings,        profiles: [personal, business], system: true }
+  - { key: opening_balance_equity,   code: "3990", name: Opening Balance Equity,   base_type: equity,    subtype: opening_balance_equity,   profiles: [personal, business], system: true }
+  # --- Income (4xxx)
+  - { key: sales,                    code: "4010", name: Sales,                    base_type: income,    subtype: operating,                profiles: [business] }
+  - { key: salary,                   code: "4010", name: Salary,                   base_type: income,    subtype: salary,                   profiles: [personal] }
+  - { key: other_income,             code: "4090", name: Other Income,             base_type: income,    subtype: other,                    profiles: [personal, business], names: { business: Other Revenue } }
+  # --- Expenses (5xxx)
+  - { key: cost_of_goods_sold,       code: "5010", name: Cost of Goods Sold,       base_type: expense,   subtype: cogs,                     profiles: [business], templates: [goods] }
+  - { key: housing,                  code: "5010", name: Housing,                  base_type: expense,   subtype: housing,                  profiles: [personal] }
+  - { key: groceries,                code: "5020", name: Groceries,                base_type: expense,   subtype: groceries,                profiles: [personal] }
+  - { key: payroll,                  code: "5100", name: Payroll,                  base_type: expense,   subtype: payroll,                  profiles: [business] }
+  - { key: rent,                     code: "5200", name: Rent,                     base_type: expense,   subtype: rent,                     profiles: [business] }
+  - { key: marketing,                code: "5300", name: Marketing,                base_type: expense,   subtype: marketing,                profiles: [business] }
+  - { key: professional_fees,        code: "5400", name: Professional Fees,        base_type: expense,   subtype: professional_fees,        profiles: [business] }
+  - { key: utilities,                code: "5500", name: Utilities,                base_type: expense,   subtype: utilities,                profiles: [business] }
+  - { key: depreciation,             code: "5600", name: Depreciation Expense,     base_type: expense,   subtype: depreciation,             profiles: [business] }
+  - { key: other_expense,            code: "5900", name: Other Expense,            base_type: expense,   subtype: other_expense,            profiles: [personal, business] }

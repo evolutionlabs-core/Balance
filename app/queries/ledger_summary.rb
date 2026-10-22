@@ -5,44 +5,8 @@ class LedgerSummary
     end
   end
 
-  Card = Struct.new(:label, :current, :previous, keyword_init: true) do
-    def profit_kobo
-      current.profit_kobo
-    end
-
-    def income_kobo
-      current.income_kobo
-    end
-
-    def expense_kobo
-      current.expense_kobo
-    end
-
-    def change_pct
-      base = previous.profit_kobo
-      value = current.profit_kobo
-
-      if base.zero?
-        return 0.0 if value.zero?
-
-        return value.positive? ? 100.0 : -100.0
-      end
-
-      ((value - base).to_f / base.abs * 100).round(1)
-    end
-
-    def up?
-      current.profit_kobo >= previous.profit_kobo
-    end
-  end
-
-  TrialBalanceLine = Struct.new(:account, :debit_kobo, :credit_kobo, keyword_init: true)
-
-  BalanceSheet = Struct.new(:assets_kobo, :liabilities_kobo, :equity_kobo, keyword_init: true) do
-    def balanced?
-      assets_kobo == liabilities_kobo + equity_kobo
-    end
-  end
+  CashFlow = Data.define(:opening_kobo, :incoming_kobo, :outgoing_kobo, :closing_kobo, :series)
+  AccountAmount = Data.define(:account, :amount_kobo)
 
   def initialize(workspace)
     @workspace = workspace
@@ -60,14 +24,6 @@ class LedgerSummary
     profit_and_loss(Date.current.beginning_of_month..Date.current)
   end
 
-  def cards
-    [
-      Card.new(label: "Today", current: today, previous: profit_and_loss((Date.current - 1)..(Date.current - 1))),
-      Card.new(label: "This week", current: this_week, previous: profit_and_loss((Date.current.beginning_of_week - 7)..(Date.current - 7))),
-      Card.new(label: "This month", current: this_month, previous: profit_and_loss((Date.current.beginning_of_month - 1.month)..(Date.current - 1.month)))
-    ]
-  end
-
   def period(days: 30)
     profit_and_loss((Date.current - (days - 1))..Date.current)
   end
@@ -78,107 +34,116 @@ class LedgerSummary
   end
 
   def liquid_balance_kobo(as_of: Date.current)
-    JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: ..as_of })
-      .where(accounts: { account_type: liquid_account_types })
-      .where.not(accounts: { detail_type: "Suspense / Clearing" })
-      .sum("journal_entry_lines.debit_kobo - journal_entry_lines.credit_kobo")
+    raw_by_account(..as_of).sum { |account_id, raw| accounts.fetch(account_id).subtype == "cash" ? raw : 0 }
   end
 
   def performance_series(days: 30)
-    daily_series(days: days).then do |series|
-      [ { name: "Profit / loss", data: series.to_h { |day| [ day[:date], day[:net_kobo] / 100.0 ] } } ]
+    running = 0
+    data = daily_series(days: days).to_h do |day|
+      running += day[:net_kobo]
+      [ day[:date], running / 100.0 ]
     end
+
+    [ { name: "Profit / loss", data: data } ]
   end
 
   def income_expense_series(days: 30)
-    series = daily_series(days: days)
+    buckets = daily_series(days: days).group_by { |day| bucket_start(day[:date], days) }
+
     [ [ "Income", :income_kobo ], [ "Expenses", :expense_kobo ] ].map do |name, key|
-      { name: name, data: series.to_h { |day| [ day[:date], day[key] / 100.0 ] } }
+      { name: name, data: buckets.transform_values { |grouped| grouped.sum { |day| day[key] } / 100.0 } }
     end
   end
 
   def daily_series(days: 30)
-    start_date = Date.current - (days - 1)
-    range = start_date..Date.current
-
-    rows = JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: range })
-      .group("journal_entries.entry_date", "accounts.base_type")
-      .pluck(Arel.sql("journal_entries.entry_date"), Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo)"), Arel.sql("SUM(journal_entry_lines.credit_kobo)"))
-
-    by_date = rows.group_by { |date, _base_type, _debit, _credit| date }
+    range = (Date.current - (days - 1))..Date.current
+    by_date = raw_by_date_and_account(range).group_by { |(date, _account_id), _raw| date }
 
     range.map do |date|
-      day_rows = by_date[date] || []
-      income_row = day_rows.find { |_date, base_type, _debit, _credit| base_type == "income" }
-      expense_row = day_rows.find { |_date, base_type, _debit, _credit| base_type == "expense" }
-
-      income_kobo = income_row ? income_row[3].to_i - income_row[2].to_i : 0
-      expense_kobo = expense_row ? expense_row[2].to_i - expense_row[3].to_i : 0
-
-      { date: date, income_kobo: income_kobo, expense_kobo: expense_kobo, net_kobo: income_kobo - expense_kobo }
+      period = period_from((by_date[date] || []).to_h { |(_date, account_id), raw| [ account_id, raw ] })
+      { date: date, income_kobo: period.income_kobo, expense_kobo: period.expense_kobo, net_kobo: period.profit_kobo }
     end
-  end
-
-  def trial_balance
-    raw_balances = JournalEntryLine.joins(:journal_entry)
-      .where(journal_entries: { workspace_id: workspace.id })
-      .group(:account_id)
-      .pluck(:account_id, Arel.sql("SUM(journal_entry_lines.debit_kobo) - SUM(journal_entry_lines.credit_kobo)"))
-      .to_h
-
-    workspace.accounts.ordered.filter_map do |account|
-      raw = raw_balances[account.id].to_i
-      next if raw.zero?
-
-      if raw.positive?
-        TrialBalanceLine.new(account: account, debit_kobo: raw, credit_kobo: 0)
-      else
-        TrialBalanceLine.new(account: account, debit_kobo: 0, credit_kobo: -raw)
-      end
-    end
-  end
-
-  def balance_sheet(as_of: Date.current)
-    totals = base_type_totals(as_of: as_of)
-    lifetime = profit_and_loss(..as_of)
-
-    assets_kobo = totals["asset"].to_i
-    liabilities_kobo = -totals["liability"].to_i
-    equity_kobo = -totals["equity"].to_i + lifetime.profit_kobo
-
-    BalanceSheet.new(assets_kobo: assets_kobo, liabilities_kobo: liabilities_kobo, equity_kobo: equity_kobo)
   end
 
   def profit_and_loss(date_range)
-    totals = JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: date_range })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo)"), Arel.sql("SUM(journal_entry_lines.credit_kobo)"))
+    period_from(raw_by_account(date_range))
+  end
 
-    income_row = totals.find { |base_type, _debit, _credit| base_type == "income" }
-    expense_row = totals.find { |base_type, _debit, _credit| base_type == "expense" }
+  def cash_flow(days: 30)
+    range = (Date.current - (days - 1))..Date.current
+    movements = balances ? balances.by_entry(range, subtype: "cash") : {}
+    by_date = movements.each_with_object(Hash.new(0)) { |((date, _entry_id), raw), totals| totals[date] += raw }
+    opening = liquid_balance_kobo(as_of: range.begin - 1)
 
-    income_kobo = income_row ? income_row[2].to_i - income_row[1].to_i : 0
-    expense_kobo = expense_row ? expense_row[1].to_i - expense_row[2].to_i : 0
+    running = opening
+    series = range.to_h do |date|
+      running += by_date[date]
+      [ date, running / 100.0 ]
+    end
 
-    Period.new(income_kobo: income_kobo, expense_kobo: expense_kobo)
+    CashFlow.new(
+      opening_kobo: opening,
+      incoming_kobo: movements.values.select(&:positive?).sum,
+      outgoing_kobo: -movements.values.select(&:negative?).sum,
+      closing_kobo: running,
+      series: series
+    )
+  end
+
+  def expense_breakdown(days: 30)
+    raw_by_account((Date.current - (days - 1))..Date.current)
+      .filter_map { |account_id, raw| AccountAmount.new(account: accounts.fetch(account_id), amount_kobo: raw) if accounts.fetch(account_id).base_type == "expense" && raw.positive? }
+      .sort_by { |row| [ -row.amount_kobo, row.account.code ] }
+  end
+
+  def account_balances(subtypes:)
+    totals = raw_by_account(..Date.current)
+
+    accounts.values
+      .select { |account| account.active? && subtypes.include?(account.subtype) }
+      .sort_by(&:code)
+      .map do |account|
+        raw = totals.fetch(account.id, 0)
+        AccountAmount.new(account: account, amount_kobo: account.base_type == "asset" ? raw : -raw)
+      end
   end
 
   private
+    attr_reader :workspace
 
-  attr_reader :workspace
+    def bucket_start(date, days)
+      if days > 90
+        date.beginning_of_month
+      elsif days > 30
+        date.beginning_of_week
+      else
+        date
+      end
+    end
 
-  def liquid_account_types
-    workspace.personal? ? [ "Cash & Liquid Assets" ] : [ "Bank" ]
-  end
+    def period_from(raw_by_account)
+      income = raw_by_account.sum { |account_id, raw| accounts.fetch(account_id).base_type == "income" ? -raw : 0 }
+      expense = raw_by_account.sum { |account_id, raw| accounts.fetch(account_id).base_type == "expense" ? raw : 0 }
+      Period.new(income_kobo: income, expense_kobo: expense)
+    end
 
-  def base_type_totals(as_of:)
-    JournalEntryLine.joins(:journal_entry, :account)
-      .where(journal_entries: { workspace_id: workspace.id, entry_date: ..as_of })
-      .group("accounts.base_type")
-      .pluck(Arel.sql("accounts.base_type"), Arel.sql("SUM(journal_entry_lines.debit_kobo) - SUM(journal_entry_lines.credit_kobo)"))
-      .to_h
-  end
+    def raw_by_account(dates = nil)
+      balances ? balances.by_account(dates) : {}
+    end
+
+    def raw_by_date_and_account(dates)
+      balances ? balances.by_date_and_account(dates) : {}
+    end
+
+    def balances
+      @balances ||= ledger && AccountingEngine::Balances.new(ledger)
+    end
+
+    def ledger
+      @ledger ||= workspace.ledgers.first
+    end
+
+    def accounts
+      @accounts ||= (ledger ? ledger.accounts.to_a : []).index_by(&:id)
+    end
 end

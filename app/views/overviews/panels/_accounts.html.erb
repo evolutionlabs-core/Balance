@@ -1,0 +1,30 @@
+<% balances = overview.account_balances %>
+
+<section class="<%= overview_panel_class %>" aria-labelledby="accounts-heading">
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <h2 id="accounts-heading" class="text-base font-semibold text-neutral-950"><%= overview.t("accounts.title") %></h2>
+      <p class="mt-1 text-sm text-neutral-500"><%= overview.t("accounts.description") %></p>
+    </div>
+    <%= link_to overview.t("accounts.link"), accounts_path, class: "whitespace-nowrap text-sm font-medium text-balance-teal-700 hover:underline" %>
+  </div>
+
+  <% if balances.empty? %>
+    <p class="mt-5 rounded-lg border border-dashed border-neutral-200 p-6 text-center text-sm text-neutral-500"><%= overview.t("accounts.empty") %></p>
+  <% else %>
+    <ul class="mt-4 divide-y divide-neutral-100">
+      <% balances.each do |row| %>
+        <% liability = row.account.base_type == "liability" %>
+        <li class="flex items-center gap-3 py-3">
+          <%= link_to row.account.name, general_ledger_account_path(row.account), class: "min-w-0 flex-1 truncate text-sm font-medium text-neutral-900 hover:underline" %>
+          <span class="flex-none text-right text-sm tabular-nums <%= row.amount_kobo.negative? ? "text-red-700" : "text-neutral-950" %>">
+            <span class="font-semibold"><%= money(row.amount_kobo.abs, overview.workspace.currency_code) %></span>
+            <% if liability && row.amount_kobo.positive? %>
+              <span class="text-xs text-neutral-500"><%= overview.t("accounts.owed") %></span>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

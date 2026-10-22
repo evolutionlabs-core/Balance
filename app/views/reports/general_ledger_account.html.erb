@@ -1,0 +1,62 @@
+<% ledger = @general_ledger %>
+<% content_for :title, "#{ledger.account.name} · General ledger" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "General ledger", path: general_ledger_path }, { label: ledger.account.name } ] %>
+<% end %>
+
+<%= render "shared/page_header", title: ledger.account.name, description: "Every line posted to #{ledger.account.code} #{ledger.account.name}, with a running balance.",
+    action: report_export_link %>
+
+<%= form_with url: general_ledger_account_path(ledger.account), method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>
+  <div class="relative sm:w-72">
+    <%= form.text_field :range, value: "#{ledger.from.iso8601} to #{ledger.to.iso8601}", placeholder: "Select date range", autocomplete: "off",
+        class: "#{field_class} cursor-pointer", aria: { label: "Date range" }, data: { date_range_target: "input" } %>
+    <%= form.hidden_field :from, value: ledger.from.iso8601, data: { date_range_target: "from" } %>
+    <%= form.hidden_field :to, value: ledger.to.iso8601, data: { date_range_target: "to" } %>
+  </div>
+  <%= form.submit "Filter", class: secondary_button_class %>
+<% end %>
+
+<%= render layout: "paper", locals: { title: "General Ledger: #{ledger.account.code} #{ledger.account.name}", subtitle: "#{ledger.from.strftime("%B %-d")} – #{ledger.to.strftime("%B %-d, %Y")}" } do %>
+  <div class="mt-6 overflow-x-auto">
+    <table class="w-full min-w-[36rem] text-sm">
+      <thead>
+        <tr class="border-b border-neutral-900 text-xs text-neutral-500">
+          <th scope="col" class="pb-2 text-left font-medium">Date</th>
+          <th scope="col" class="pb-2 pl-3 text-left font-medium">Entry</th>
+          <th scope="col" class="pb-2 pl-3 text-left font-medium">Description</th>
+          <th scope="col" class="w-24 pb-2 pl-3 text-right font-medium">Debit</th>
+          <th scope="col" class="w-24 pb-2 pl-3 text-right font-medium">Credit</th>
+          <th scope="col" class="w-28 pb-2 pl-3 text-right font-medium">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="text-neutral-500">
+          <td class="py-1.5"><%= ledger.from.strftime("%b %-d") %></td>
+          <td class="py-1.5 pl-3"></td>
+          <th scope="row" class="py-1.5 pl-3 text-left font-normal">Opening balance</th>
+          <td class="py-1.5 pl-3"></td>
+          <td class="py-1.5 pl-3"></td>
+          <td class="py-1.5 pl-3 text-right tabular-nums"><%= statement_figure(ledger.opening_balance) %></td>
+        </tr>
+        <% ledger.lines.each do |line| %>
+          <tr class="text-neutral-700">
+            <td class="py-1.5 whitespace-nowrap"><%= line.entry.effective_date.strftime("%b %-d") %></td>
+            <td class="py-1.5 pl-3 font-mono text-xs">#<%= line.entry.number %></td>
+            <th scope="row" class="py-1.5 pl-3 text-left font-normal">
+              <%= link_to line.entry.description || "Entry ##{line.entry.number}", journal_entry_path(line.entry), class: "hover:underline" %>
+              <% if line.counterparty %><span class="text-neutral-400"> · <%= line.counterparty.name %></span><% end %>
+            </th>
+            <td class="py-1.5 pl-3 text-right tabular-nums"><%= line.debit.zero? ? "" : statement_figure(line.debit) %></td>
+            <td class="py-1.5 pl-3 text-right tabular-nums"><%= line.credit.zero? ? "" : statement_figure(line.credit) %></td>
+            <td class="py-1.5 pl-3 text-right tabular-nums text-neutral-950"><%= statement_figure(line.balance) %></td>
+          </tr>
+        <% end %>
+        <tr class="font-semibold text-neutral-950">
+          <th scope="row" colspan="5" class="pt-4 text-left">Closing balance</th>
+          <td class="pt-4 pl-3 text-right tabular-nums"><span id="closing-balance" class="inline-block min-w-full border-t border-b-[3px] border-double border-neutral-400 border-b-neutral-900 pb-0.5"><%= statement_figure(ledger.closing_balance) %></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+<% end %>

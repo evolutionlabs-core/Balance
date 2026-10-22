@@ -1,0 +1,43 @@
+<% symbol = Currency.symbol(@onboarding_data["currency_code"]) %>
+<% balances = @onboarding_data.fetch("balances", {}) %>
+
+<% content_for :title, "Opening balances — Balance" %>
+
+<div class="mb-6">
+  <p class="mb-2 text-sm font-medium text-balance-teal-700"><%= @onboarding_data["workspace_name"] %></p>
+  <h1 class="text-3xl font-medium tracking-tight text-neutral-950 sm:text-4xl">What do you have and owe?</h1>
+  <p class="mt-2 max-w-lg text-base leading-7 text-neutral-500">Enter what each account holds on the date below. Leave anything you don't have empty. You can skip this and start from zero.</p>
+</div>
+
+<%= form_with url: onboarding_step_path(:balances), method: :patch, class: "max-w-lg space-y-5" do %>
+  <div>
+    <%= label_tag :opening_balance_date, "Balances as of", class: field_label_class %>
+    <%= text_field_tag :opening_balance_date, @onboarding_data.fetch("opening_balance_date", Date.current.iso8601), autocomplete: "off",
+        class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+  </div>
+
+  <% @balance_accounts.group_by { |account| account[:base_type] }.each do |base_type, accounts| %>
+    <fieldset>
+      <legend class="mb-2 text-sm font-medium text-neutral-900"><%= base_type == "asset" ? "What you have" : "What you owe" %></legend>
+      <div class="divide-y divide-neutral-200 border-y border-neutral-200">
+        <% accounts.each do |account| %>
+          <div class="flex items-center justify-between gap-4 py-2.5">
+            <%= label_tag "balances_#{account[:key]}", account[:name], class: "text-sm text-neutral-800" %>
+            <div class="relative w-40 shrink-0">
+              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-neutral-500"><%= symbol %></span>
+              <%= text_field_tag "balances[#{account[:key]}]", balances[account[:key]], id: "balances_#{account[:key]}", placeholder: "0.00",
+                  inputmode: "decimal", autocomplete: "off", class: "#{field_class} pl-10 text-right tabular-nums" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </fieldset>
+  <% end %>
+
+  <p class="text-sm text-neutral-500">Money customers owe you and bills you owe are added later as invoices and bills, so they stay linked to each customer and vendor.</p>
+
+  <div class="flex items-center justify-between pt-2">
+    <%= link_to "Back", onboarding_step_path(:details), class: ghost_button_class %>
+    <%= submit_tag "Create workspace", class: primary_button_class %>
+  </div>
+<% end %>

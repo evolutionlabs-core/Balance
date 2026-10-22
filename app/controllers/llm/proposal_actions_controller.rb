@@ -23,7 +23,7 @@ class Llm::ProposalActionsController < ApplicationController
           Array(@superseded_proposals).each { |proposal| streams << turbo_stream.remove("proposal_#{proposal.id}") }
           if @generated_proposal
             streams << turbo_stream.append(
-              "llm_messages", partial: "llm/messages/proposals/journal_entry",
+              "llm_messages", partial: "llm/messages/proposals/entry",
               locals: { proposal: @generated_proposal }
             )
           end

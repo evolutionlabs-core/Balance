@@ -15,36 +15,32 @@
       description: "Send the client an upfront view of what you plan to spend.",
       action: link_to("New estimate", new_project_project_estimate_path(@project), class: primary_button_class(size: :sm)) %>
 <% else %>
-  <div class="mt-4 overflow-x-auto border-y border-neutral-200">
-    <table class="min-w-full">
-      <thead class="bg-white">
-        <tr>
-          <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Estimate</th>
-          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500">Total</th>
-          <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500">Status</th>
-          <th class="px-4 py-3 text-right text-xs font-medium text-neutral-500"><span class="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody class="bg-white">
-        <% @estimates.each do |estimate| %>
-          <tr class="border-t border-neutral-200">
-            <td class="p-0 text-sm font-medium whitespace-nowrap text-neutral-900">
-              <%= link_to estimate.number, project_estimate_path(estimate), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-right text-sm tabular-nums whitespace-nowrap text-neutral-600">
-              <%= link_to minor_currency(estimate.total_minor, estimate.currency_code), project_estimate_path(estimate), class: "block px-4 py-4" %>
-            </td>
-            <td class="p-0 text-sm whitespace-nowrap">
-              <%= link_to project_estimate_path(estimate), class: "block px-4 py-4" do %>
-                <%= estimate_status_badge(estimate) %>
-              <% end %>
-            </td>
-            <td class="px-4 py-4 text-right text-sm whitespace-nowrap">
-              <%= link_to "Edit", edit_project_estimate_path(estimate), class: "font-medium text-[#0f7082] hover:underline" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <% @estimates.each do |estimate| %>
+      <%= render "shared/mobile_card", title: estimate.number, url: project_estimate_path(estimate),
+          trailing: mobile_card_amount(minor_currency(estimate.total_minor, estimate.currency_code)),
+          footer: estimate_status_badge(estimate),
+          action: render("projects/estimates/actions_menu", estimate: estimate) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [ { label: "Estimate" }, { label: "Total", align: :right }, { label: "Status" }, { label: "Actions", align: :right } ] } do %>
+    <% @estimates.each do |estimate| %>
+      <tr class="<%= table_row_class %>">
+        <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+          <%= link_to estimate.number, project_estimate_path(estimate), class: table_cell_link_class %>
+        </td>
+        <td class="<%= table_cell_class(align: :right, link: true) %> tabular-nums whitespace-nowrap">
+          <%= link_to minor_currency(estimate.total_minor, estimate.currency_code), project_estimate_path(estimate), class: table_cell_link_class %>
+        </td>
+        <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+          <%= link_to project_estimate_path(estimate), class: table_cell_link_class do %>
+            <%= estimate_status_badge(estimate) %>
+          <% end %>
+        </td>
+        <td class="<%= table_cell_class(align: :right) %> py-2 whitespace-nowrap">
+          <%= render "projects/estimates/actions_menu", estimate: estimate %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
 <% end %>

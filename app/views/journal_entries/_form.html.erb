@@ -1,17 +1,19 @@
-<%= form_with model: journal_entry,
-    url: journal_entries_path,
+<%= form_with model: entry_form,
+    url: draft.persisted? ? journal_entry_draft_path(draft) : journal_entry_drafts_path,
+    method: draft.persisted? ? :patch : :post,
+    scope: :entry,
     class: "flex min-h-0 flex-1 flex-col",
     data: { controller: "journal-entry-lines", action: "submit->journal-entry-lines#validate" } do |form| %>
-  <%= render "shared/modal/header", title: "New journal entry" %>
+  <%= render "shared/modal/header", title: draft.persisted? ? "Edit draft" : "New journal entry" %>
 
   <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-    <%= render "shared/form_errors", record: journal_entry %>
+    <%= render "shared/form_errors", record: entry_form %>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-[0.8fr_1.6fr]">
       <div>
-        <%= form.label :entry_date, "Date", class: field_label_class %>
-        <%= form.text_field :entry_date,
-            value: journal_entry.entry_date || Date.current,
+        <%= form.label :effective_date, "Date", class: field_label_class %>
+        <%= form.text_field :effective_date,
+            value: entry_form.effective_date || Date.current,
             required: true,
             autocomplete: "off",
             class: "#{field_class} cursor-pointer",
@@ -28,6 +30,17 @@
       </div>
     </div>
 
+    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[0.8fr_1.6fr]">
+      <div>
+        <%= form.label :reference, class: field_label_class %>
+        <%= form.text_field :reference, placeholder: "Optional", autocomplete: "off", class: field_class %>
+      </div>
+      <div>
+        <%= form.label :tags, class: field_label_class %>
+        <%= form.text_field :tags, value: entry_form.tags.join(", "), placeholder: "Comma separated, e.g. office, q4", autocomplete: "off", class: field_class %>
+      </div>
+    </div>
+
     <div class="mt-6">
       <div class="hidden grid-cols-[minmax(13rem,2fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_4.5rem] gap-2 border-b border-neutral-200 pb-2 sm:grid">
         <span class="text-xs font-medium text-neutral-500">Account</span>
@@ -37,13 +50,15 @@
       </div>
 
       <div data-journal-entry-lines-target="lines">
-        <%= form.fields_for :journal_entry_lines do |line_form| %>
-          <%= render "journal_entries/line_fields", form: line_form, protected: line_form.index.to_i < 2 %>
+        <% entry_form.lines.each_with_index do |_line, index| %>
+          <%= form.fields_for :lines, entry_form.lines[index], index: index do |line_form| %>
+            <%= render "journal_entries/line_fields", form: line_form, protected: index < 2 %>
+          <% end %>
         <% end %>
       </div>
 
       <template data-journal-entry-lines-target="template">
-        <%= form.fields_for :journal_entry_lines, JournalEntryLine.new, child_index: "__INDEX__" do |line_form| %>
+        <%= form.fields_for :lines, JournalEntries::ManualEntry::Line.new, index: "__INDEX__" do |line_form| %>
           <%= render "journal_entries/line_fields", form: line_form, protected: false %>
         <% end %>
       </template>
@@ -72,11 +87,12 @@
   </div>
 
   <div class="flex shrink-0 items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/60 px-6 py-4">
-    <p class="hidden text-xs text-neutral-500 sm:block">Entries cannot be edited after recording.</p>
+    <p class="hidden text-xs text-neutral-500 sm:block">You can review before anything is posted.</p>
     <div class="ml-auto flex gap-2">
       <button type="button" data-action="modal#close" class="<%= secondary_button_class %>">Cancel</button>
-      <%= form.submit "Record entry",
-          disabled: true,
+      <%= button_tag "Save draft", type: "submit", name: "intent", value: "draft", formnovalidate: true,
+          class: secondary_button_class, data: { journal_entry_lines_target: "draftButton" } %>
+      <%= button_tag "Review", type: "submit", name: "intent", value: "review", disabled: true,
           class: "#{primary_button_class} disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400",
           data: { journal_entry_lines_target: "submit" } %>
     </div>

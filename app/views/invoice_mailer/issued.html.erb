@@ -1,0 +1,1 @@
+<%= render "invoice_mailer/email", invoice: @invoice, message: @message, link: @link, sender_name: InvoiceDelivery.new(invoice: @invoice).sender_name %>

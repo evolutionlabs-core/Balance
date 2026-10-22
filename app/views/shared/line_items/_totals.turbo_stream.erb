@@ -1,0 +1,6 @@
+<%= turbo_stream.update "#{scope}_balance_due", minor_currency(document.total_minor, document.currency_code) %>
+<%= turbo_stream.update "#{scope}_subtotal", minor_currency(document.subtotal_minor, document.currency_code) %>
+<%= turbo_stream.update "#{scope}_total", minor_currency(document.total_minor, document.currency_code) %>
+<% if document.respond_to?(:discount_minor) %>
+  <%= turbo_stream.update "#{scope}_discount", document.discounted? ? "−#{minor_currency(document.discount_minor, document.currency_code)}" : "—" %>
+<% end %>

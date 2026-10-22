@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
+  scope :client, as: :client do
+    resources :invoices, only: :show, param: :token, controller: "client_invoices"
+  end
+
   resources :models, only: %i[index show], controller: "llm/models"
   resource :model_catalog, only: %i[update], controller: "llm/model_catalogs"
 
@@ -11,6 +17,9 @@ Rails.application.routes.draw do
     end
   end
 
+  get "estimate_reviews/:token", to: "estimate_reviews#show", as: :estimate_review
+  post "estimate_reviews/:token", to: "estimate_reviews#create"
+
   resource :session, only: %i[new create destroy]
   resource :registration, only: %i[new create]
   resources :passwords, param: :token, only: %i[new create edit update]
@@ -19,35 +28,76 @@ Rails.application.routes.draw do
   patch "onboarding/:step", to: "onboarding#update"
 
   resource :overview, only: %i[show]
-  resources :expenses, only: %i[index new create show edit update] do
-    resource :posting, only: %i[create], controller: "expense_postings"
+  resource :feedback, only: %i[new create]
+  get "reports/balance_sheet", to: "reports#balance_sheet", as: :balance_sheet
+  get "reports/income_statement", to: "reports#income_statement", as: :income_statement
+  get "reports/cash_flow", to: "reports#cash_flow", as: :cash_flow
+  get "reports/trial_balance", to: "reports#trial_balance", as: :trial_balance
+  get "reports/general_ledger", to: "reports#general_ledger", as: :general_ledger
+  get "reports/general_ledger/:account_id", to: "reports#general_ledger_account", as: :general_ledger_account
+  get "reports/aged_receivables", to: "reports#aged_receivables", as: :aged_receivables
+  get "reports/aged_payables", to: "reports#aged_payables", as: :aged_payables
+  resources :expenses, only: %i[index new create show] do
+    resource :void, only: %i[new create], controller: "expenses/voids"
   end
 
   resource :expense_report, only: %i[show]
-  resources :journal_entries, only: %i[index new create]
-  resources :accounts, only: %i[index new create edit update destroy]
+  resources :journal_entries, only: %i[index new show] do
+    resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
+    resource :template, only: %i[new create], controller: "journal_entries/templates"
+  end
+  resources :entry_templates, only: %i[index destroy]
+  resources :journal_entry_drafts, only: %i[index show create edit update destroy] do
+    resource :posting, only: %i[create], controller: "journal_entry_drafts/postings"
+  end
+  resources :accounts, path: "accounts", only: %i[index new create edit update] do
+    resource :archival, only: %i[create destroy], controller: "accounts/archivals"
+  end
+  resources :services, only: %i[index new create edit update]
   resources :customers, only: %i[index new create edit update show]
   resource :workspace, only: %i[edit update]
 
-  resources :invoices, only: %i[index new create show edit update]
+  resources :invoices, only: %i[index new create show edit update] do
+    resource :issuance, only: %i[create], controller: "invoices/issuances"
+    resource :payment, only: %i[new create], controller: "invoices/payments"
+    resources :payments, only: [], controller: "invoices/payments" do
+      resource :reversal, only: %i[create], controller: "invoices/payment_reversals"
+    end
+    resource :void, only: %i[new create], controller: "invoices/voids"
+    resource :duplicate, only: %i[create], controller: "invoices/duplicates"
+  end
+  resources :vendors, only: %i[index new create show edit update]
+  resources :bills, only: %i[index new create show edit update] do
+    resource :issuance, only: %i[new create], controller: "bills/issuances"
+    resource :payment, only: %i[new create], controller: "bills/payments"
+    resources :payments, only: [], controller: "bills/payments" do
+      resource :reversal, only: %i[create], controller: "bills/payment_reversals"
+    end
+    resource :void, only: %i[new create], controller: "bills/voids"
+  end
   scope :invoice, module: :invoices, as: :invoice do
     resources :customers, only: %i[index new create show edit update]
     resource :workspace, only: %i[edit update]
     resources :lines, only: %i[new destroy]
     resource :calculation, only: :create
+    resource :preview, only: :create
   end
 
   resources :projects, only: %i[index new create show edit update] do
     scope module: :projects, as: :project do
       resources :estimates, shallow: true, only: %i[index new create show edit update destroy] do
+        resource :review_link, only: %i[create]
         resource :delivery, only: %i[create]
         resource :approval, only: %i[create]
         resource :decline, only: %i[create]
         resource :reopening, only: %i[create]
+        resource :conversion, only: %i[create]
       end
       resources :estimate_lines, path: "estimates/lines", only: %i[new destroy]
       resource :estimate_calculation, path: "estimates/calculation", only: %i[create], controller: "estimate_calculations"
       resource :estimate_workspace, path: "estimates/workspace", only: %i[edit update], controller: "estimate_workspaces"
+      resources :invoices, only: %i[index]
+      resource :budget, only: %i[edit update]
       resources :tasks, only: %i[index new create edit update destroy]
       resources :time_entries, only: %i[index new create edit update destroy]
       resources :activities, only: %i[index]

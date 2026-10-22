@@ -13,6 +13,30 @@
       <%= form.label :address, "Business address", class: field_label_class %>
       <%= form.text_area :address, rows: 3, placeholder: "Address", class: field_class %>
     </div>
+    <div>
+      <%= form.label :default_sales_account_id, "Default income account", class: field_label_class %>
+      <%= form.collection_select :default_sales_account_id, workspace.income_accounts.ordered, :id, :name,
+          { include_blank: "Choose when posting" }, { class: field_class } %>
+      <p class="mt-1 text-xs text-neutral-500">Used for invoice lines without a service. You can change the account before posting.</p>
+    </div>
+    <div>
+      <%= form.label :default_deposit_account_id, "Default deposit account", class: field_label_class %>
+      <%= form.collection_select :default_deposit_account_id, workspace.deposit_accounts.ordered, :id, :name,
+          {}, { class: field_class } %>
+      <p class="mt-1 text-xs text-neutral-500">Where customer payments land when you mark an invoice as paid.</p>
+    </div>
+    <div>
+      <%= form.label :default_payment_terms, "Default terms", class: field_label_class %>
+      <%= form.select :default_payment_terms, PaymentTerms.choices(include_custom: false), {}, class: field_class %>
+    </div>
+    <div>
+      <%= form.label :payment_instructions, "Payment details", class: field_label_class %>
+      <%= form.text_area :payment_instructions, rows: 3, placeholder: "Bank, account number, account name", class: field_class %>
+    </div>
+    <div>
+      <%= form.label :default_invoice_note, "Default note to customer", class: field_label_class %>
+      <%= form.text_area :default_invoice_note, rows: 2, placeholder: "Thank you for your business", class: field_class %>
+    </div>
   </div>
 
   <%= render "shared/modal/footer", form: form, submit_label: "Save changes" %>

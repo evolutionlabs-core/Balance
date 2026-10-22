@@ -73,7 +73,7 @@ class SidebarTest < ApplicationSystemTestCase
     assert_no_selector "#sidebar-panel", visible: true
 
     find('button[aria-label="Open navigation"]').click
-    find('button[aria-label="Close navigation"]').click
+    within("#sidebar-panel") { find('button[aria-label="Close navigation"]').click }
     assert_no_selector "#sidebar-panel", visible: true
     assert_equal "Open navigation", active_element_label
   end
@@ -203,6 +203,26 @@ class SidebarTest < ApplicationSystemTestCase
     assert_selector 'button[aria-label="Expand sidebar"]'
     find('button[aria-label="Expand sidebar"]').click
     assert_equal "false", page.evaluate_script("localStorage.getItem('balance:sidebar-collapsed')")
+  end
+
+  test "collapsed desktop rail does not clip the account menu" do
+    resize_to(1440, 900)
+    visit overview_path
+    find('button[aria-label="Collapse sidebar"]').click
+    assert_selector '[data-controller="sidebar"][data-rail="collapsed"]'
+    assert_selector 'button[aria-label="Expand sidebar"]'
+
+    account_button.click
+
+    assert_selector "#account-menu", visible: true
+    assert page.evaluate_script(<<~JS)
+      (() => {
+        const panel = document.getElementById("sidebar-panel").getBoundingClientRect()
+        const menu = document.getElementById("account-menu")
+        const box = menu.getBoundingClientRect()
+        return menu.contains(document.elementFromPoint(panel.right + 8, box.top + 20))
+      })()
+    JS
   end
 
   test "resizing to desktop clears drawer overlays and scroll locks" do

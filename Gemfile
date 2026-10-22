@@ -25,6 +25,7 @@ gem "chartkick"
 # Define explicit JSON response shapes without coupling them to controllers.
 gem "blueprinter", "~> 1.3"
 # Generate downloadable invoice PDFs without a browser process.
+gem "csv"
 gem "prawn"
 gem "prawn-table"
 # State machines for domain lifecycles (estimate status).
@@ -53,7 +54,9 @@ gem "thruster", require: false
 gem "dotenv-rails"
 
 # Unified LLM client with tool-calling, used against a local LM Studio server [https://rubyllm.com]
-gem "ruby_llm"
+gem "ruby_llm", "~> 2.1"
+# RubyLLM 2.1 allows JSON 3; Rails before 8.1.4 needs JSON 2.
+gem "json", "< 3"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -72,6 +75,9 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Catch outgoing email in development and browse it at /letter_opener
+  gem "letter_opener_web"
 end
 
 group :test do

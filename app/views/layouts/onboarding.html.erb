@@ -31,7 +31,7 @@
             <% complete = @steps.index(@step) > index %>
             <div class="flex flex-1 items-center gap-3 border-t px-1 py-3 lg:flex-none <%= active ? "border-balance-teal-700 text-neutral-950" : "border-neutral-200 text-neutral-400" %>">
               <span class="text-xs font-medium tabular-nums"><%= format("%02d", index + 1) %></span>
-              <span class="hidden text-sm font-medium sm:block"><%= { "workspace_type" => "Workspace", "details" => "Details", "accounts" => "Accounts" }.fetch(step) %></span>
+              <span class="hidden text-sm font-medium sm:block"><%= { "workspace_type" => "Workspace", "details" => "Details", "balances" => "Balances" }.fetch(step) %></span>
               <% if complete %><span class="ml-auto text-xs text-balance-teal-700">Done</span><% end %>
             </div>
           <% end %>
@@ -39,7 +39,7 @@
       </aside>
 
       <main class="flex items-start bg-white px-5 py-8 sm:px-10 sm:py-10 lg:min-h-screen lg:px-20 lg:py-16">
-        <div class="onboarding-enter mx-auto w-full max-w-2xl">
+        <div class="mx-auto w-full max-w-2xl animate-[onboarding-enter_260ms_ease-out_both] motion-reduce:animate-none">
           <%= yield %>
         </div>
       </main>

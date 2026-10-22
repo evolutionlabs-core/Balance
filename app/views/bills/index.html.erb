@@ -1,0 +1,29 @@
+<% content_for :title, "Bills" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Bills" } ] %>
+<% end %>
+
+<% bill_actions = link_to(new_bill_path, class: primary_button_class(size: :compact)) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New bill
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Bills",
+    description: "Track what you owe vendors and record payments against it.",
+    action: bill_actions %>
+
+<% if @bills.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/receipt.svg",
+      title: "No bills yet",
+      description: "Record a vendor bill as a draft, then enter it to add it to accounts payable.",
+      action: bill_actions %>
+<% else %>
+  <%= render layout: "shared/mobile_list", locals: { frame_class: "mt-4" } do %>
+    <%= render partial: "bills/bill_card", collection: @bills, as: :bill %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: bill_table_columns } do %>
+    <%= render @bills %>
+  <% end %>
+<% end %>

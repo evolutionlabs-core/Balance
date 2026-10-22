@@ -1,0 +1,76 @@
+<% can_void = invoice.may_mark_voided? %>
+<% shared = invoice.sent? || invoice.paid? %>
+<% collecting = invoice.sent? && invoice.balance_due_kobo.positive? %>
+<% download_pdf = capture do %>
+  <%= inline_svg_tag "icons/download.svg", class: "h-4 w-4 flex-none" %>Download PDF
+<% end %>
+<% duplicate = capture do %>
+  <%= inline_svg_tag "icons/copy.svg", class: "h-4 w-4 flex-none" %>Duplicate
+<% end %>
+
+<% menu_items = capture do %>
+  <% if invoice.draft? %>
+    <%= link_to download_pdf, invoice_path(invoice, format: :pdf), role: "menuitem", class: menu_item_class, data: { turbo: false } %>
+    <button type="submit" form="invoice-delivery" name="delivery[send_email]" value="0" role="menuitem" class="<%= menu_item_class %>"
+        data-turbo-confirm="Mark invoice <%= invoice.invoice_number %> as sent without emailing it?">
+      <%= inline_svg_tag "icons/check.svg", class: "h-4 w-4 flex-none" %>
+      Mark as sent
+    </button>
+  <% end %>
+  <% if invoice.draft? || collecting %>
+    <%= button_to duplicate, invoice_duplicate_path(invoice), method: :post, role: "menuitem", class: menu_item_class, form: { class: "contents" } %>
+  <% end %>
+  <% if shared %>
+    <%= render "invoices/share_item", invoice: invoice, issue: false %>
+    <%= render "invoices/copy_link_item", invoice: invoice %>
+  <% end %>
+  <% if can_void %>
+    <%= link_to new_invoice_void_path(invoice), role: "menuitem", class: "#{menu_item_class} text-red-700 hover:text-red-800", data: { turbo_frame: "modal" } do %>
+      <%= inline_svg_tag "icons/x.svg", class: "h-4 w-4 flex-none" %>
+      Void invoice
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="flex flex-wrap items-center gap-2">
+  <% if invoice.draft? %>
+    <%= link_to edit_invoice_path(invoice), class: secondary_button_class(size: :compact) do %>
+      <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4" %>Edit
+    <% end %>
+    <div data-controller="menu" data-action="keydown->menu#dismiss" class="relative inline-block text-left">
+      <button type="button" data-menu-target="button" data-action="menu#toggle" aria-haspopup="menu" aria-expanded="false"
+          class="<%= primary_button_class(size: :compact) %>">
+        Send invoice<%= inline_svg_tag "icons/chevron-down.svg", class: "h-4 w-4", aria: { hidden: true } %>
+      </button>
+      <div data-menu-target="menu" role="menu" class="hidden w-64 rounded-md border border-neutral-200 bg-white p-1 text-left shadow-md">
+        <button type="submit" form="invoice-delivery" name="delivery[send_email]" value="1" role="menuitem"
+            class="<%= menu_item_class %>" data-invoice-review-target="sendButton" data-action="invoice-review#send">
+          <%= inline_svg_tag "icons/mail.svg", class: "h-4 w-4 flex-none" %>
+          Send email
+        </button>
+        <%= render "invoices/share_item", invoice: invoice, issue: true %>
+      </div>
+    </div>
+  <% elsif collecting %>
+    <%= link_to download_pdf, invoice_path(invoice, format: :pdf), class: secondary_button_class(size: :compact), data: { turbo: false } %>
+    <%= link_to new_invoice_payment_path(invoice), class: primary_button_class(size: :compact), data: { turbo_frame: "modal" } do %>
+      <%= inline_svg_tag "icons/banknote.svg", class: "h-4 w-4" %>Receive payment
+    <% end %>
+  <% else %>
+    <%= button_to duplicate, invoice_duplicate_path(invoice), method: :post, class: secondary_button_class(size: :compact), form: { class: "contents" } %>
+    <%= link_to download_pdf, invoice_path(invoice, format: :pdf), class: primary_button_class(size: :compact), data: { turbo: false } %>
+  <% end %>
+
+  <% if menu_items.present? %>
+    <div data-controller="menu" data-action="keydown->menu#dismiss" class="relative inline-block text-left">
+      <button type="button" data-menu-target="button" data-action="menu#toggle"
+          class="inline-flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-950"
+          aria-label="More invoice actions" aria-haspopup="menu" aria-expanded="false">
+        <%= inline_svg_tag "icons/dots-vertical.svg", class: "h-4 w-4" %>
+      </button>
+      <div data-menu-target="menu" role="menu" class="hidden w-52 rounded-md border border-neutral-200 bg-white p-1 text-left shadow-md">
+        <%= menu_items %>
+      </div>
+    </div>
+  <% end %>
+</div>

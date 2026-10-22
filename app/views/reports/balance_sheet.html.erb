@@ -1,0 +1,29 @@
+<% content_for :title, "Balance sheet" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Balance sheet" } ] %>
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Balance sheet",
+    description: "What you own, what you owe, and what is left, at a point in time.",
+    action: (report_export_link if @statement) %>
+
+<%= render "period_menu", url: balance_sheet_path, as_of: @as_of, attribute: :compare, choices: ReportPeriod::BALANCE_SHEET_COMPARISONS, selected: @comparison %>
+
+<% if @statement.nil? %>
+  <%= render "shared/empty_state",
+      icon: "icons/gauge.svg",
+      title: "No accounts yet",
+      description: "Your balance sheet appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <%= render "statement", statement: @statement, title: "Balance Sheet",
+        subtitle: "As of #{@as_of.strftime("%B %-d, %Y")}",
+        footnote: "Current year earnings run from January 1; profit from earlier years is shown in retained earnings until the books are closed." %>
+
+  <% unless @statement.total(:balanced).all? %>
+    <p class="mt-4 flex items-center gap-2 text-sm text-red-700">
+      <%= inline_svg_tag "icons/minus-circle.svg", class: "h-4 w-4 flex-none" %>
+      Out of balance: total assets do not equal total liabilities and <%= current_workspace.personal? ? "net worth" : "equity" %>.
+    </p>
+  <% end %>
+<% end %>

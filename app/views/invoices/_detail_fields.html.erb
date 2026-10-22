@@ -1,14 +1,26 @@
-    <div>
-      <%= form.label :issue_date, "Invoice date", class: field_label_class %>
-      <%= form.text_field :issue_date, form: local_assigns[:form_id], autocomplete: "off", class: "#{field_class} cursor-pointer",
-          data: { controller: "date-picker", date_picker_allow_future_value: true } %>
-    </div>
-    <div>
-      <%= form.label :due_date, "Due date", class: field_label_class %>
-      <%= form.text_field :due_date, form: local_assigns[:form_id], autocomplete: "off", class: "#{field_class} cursor-pointer",
-          data: { controller: "date-picker", date_picker_allow_future_value: true } %>
-    </div>
-    <div class="sm:col-span-2">
-      <%= form.label :currency_code, "Currency", class: field_label_class %>
-      <%= form.select :currency_code, [ [ "Nigerian naira (NGN)", "NGN" ] ], {}, form: "new_invoice_form", class: field_class %>
-    </div>
+<div data-controller="payment-terms" data-payment-terms-days-value="<%= PaymentTerms::DAYS.to_json %>" class="contents">
+  <div class="sm:col-span-2">
+    <%= form.label :payment_terms, "Terms", class: field_label_class %>
+    <%= render "shared/select_menu", form: form, attribute: :payment_terms,
+        options: options_for_select(PaymentTerms.choices, form.object.payment_terms || "custom"), prompt: nil, form_id: local_assigns[:form_id],
+        select_data: { payment_terms_target: "terms", action: "change->payment-terms#apply" } %>
+  </div>
+  <div>
+    <%= form.label :issue_date, "Invoice date", class: field_label_class %>
+    <%= form.text_field :issue_date, form: local_assigns[:form_id], autocomplete: "off", class: "#{field_class} cursor-pointer",
+        data: { controller: "date-picker", date_picker_allow_future_value: true, payment_terms_target: "issueDate", action: "change->payment-terms#apply" } %>
+  </div>
+  <div>
+    <%= form.label :due_date, "Due date", class: field_label_class %>
+    <%= form.text_field :due_date, form: local_assigns[:form_id], autocomplete: "off", class: "#{field_class} cursor-pointer",
+        data: { controller: "date-picker", date_picker_allow_future_value: true, payment_terms_target: "dueDate", action: "change->payment-terms#markCustom" } %>
+  </div>
+  <div class="sm:col-span-2">
+    <%= form.label :reference, "PO / reference", class: field_label_class %>
+    <%= form.text_field :reference, form: local_assigns[:form_id], autocomplete: "off", class: field_class %>
+  </div>
+  <div class="sm:col-span-2">
+    <p class="<%= field_label_class %>">Currency</p>
+    <p class="text-sm text-neutral-900"><%= Currency.label(form.object.currency_code) %></p>
+  </div>
+</div>

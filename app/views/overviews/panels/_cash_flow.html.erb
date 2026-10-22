@@ -1,0 +1,47 @@
+<% flow = overview.cash_flow %>
+<% opened_on = overview.date_range.begin - 1 %>
+<% time_unit = overview.days > 90 ? "month" : "day" %>
+
+<section class="<%= overview_panel_class %>" aria-labelledby="cash-flow-heading">
+  <h2 id="cash-flow-heading" class="text-base font-semibold text-neutral-950"><%= overview.t("cash_flow.title") %></h2>
+  <p class="mt-1 text-sm text-neutral-500"><%= overview.t("cash_flow.description") %></p>
+
+  <div class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem]">
+    <div class="min-w-0" role="img" aria-label="<%= overview.t("cash_flow.chart_label", from: overview.date_range.begin.strftime("%b %-d"), to: overview.date_range.end.strftime("%b %-d, %Y")) %>">
+      <%= area_chart flow.series, height: "260px", colors: [ OverviewsHelper::CHART_CASH_COLOR ], points: false, curve: false, legend: false, **overview_chart_money_options(overview),
+          dataset: { borderWidth: 2, backgroundColor: "rgba(15, 112, 130, 0.12)" },
+          library: {
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { type: "time", time: { unit: time_unit, displayFormats: { day: "MMM d", month: "MMM yyyy" }, tooltipFormat: "MMM d, yyyy" }, grid: { display: false }, ticks: { maxTicksLimit: 7 } },
+              y: { border: { display: false }, grid: { color: "#f0f0f0" } }
+            }
+          } %>
+    </div>
+
+    <dl class="grid grid-cols-2 gap-x-4 gap-y-4 border-t border-neutral-100 pt-5 text-sm lg:grid-cols-1 lg:content-center lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+      <div>
+        <dt class="text-neutral-500"><%= overview.t("cash_flow.opening", date: opened_on.strftime("%b %-d, %Y")) %></dt>
+        <dd class="mt-1 text-base font-semibold tabular-nums text-neutral-950"><%= money(flow.opening_kobo, overview.workspace.currency_code) %></dd>
+      </div>
+      <div>
+        <dt class="flex items-center gap-1.5 text-neutral-500">
+          <span class="size-2.5 rounded-sm" style="background-color: <%= OverviewsHelper::INCOME_COLOR %>" aria-hidden="true"></span>
+          <%= overview.t("cash_flow.incoming") %>
+        </dt>
+        <dd class="mt-1 text-base font-semibold tabular-nums text-neutral-950">+ <%= money(flow.incoming_kobo, overview.workspace.currency_code) %></dd>
+      </div>
+      <div>
+        <dt class="flex items-center gap-1.5 text-neutral-500">
+          <span class="size-2.5 rounded-sm" style="background-color: <%= OverviewsHelper::EXPENSE_COLOR %>" aria-hidden="true"></span>
+          <%= overview.t("cash_flow.outgoing") %>
+        </dt>
+        <dd class="mt-1 text-base font-semibold tabular-nums text-neutral-950">− <%= money(flow.outgoing_kobo, overview.workspace.currency_code) %></dd>
+      </div>
+      <div>
+        <dt class="text-neutral-500"><%= overview.t("cash_flow.closing", date: overview.date_range.end.strftime("%b %-d, %Y")) %></dt>
+        <dd class="mt-1 text-base font-semibold tabular-nums <%= flow.closing_kobo.negative? ? "text-red-700" : "text-neutral-950" %>">= <%= money(flow.closing_kobo, overview.workspace.currency_code) %></dd>
+      </div>
+    </dl>
+  </div>
+</section>

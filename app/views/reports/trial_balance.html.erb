@@ -1,0 +1,51 @@
+<% content_for :title, "Trial balance" %>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Reports" }, { label: "Trial balance" } ] %>
+<% end %>
+
+<%= render "shared/page_header", title: "Trial balance", description: "Every account with a balance, in debit and credit columns that must agree.",
+    action: (report_export_link if @trial_balance) %>
+
+<% if @trial_balance.nil? %>
+  <%= render "shared/empty_state", icon: "icons/gauge.svg", title: "No accounts yet",
+      description: "Your trial balance appears here once your chart of accounts is provisioned." %>
+<% else %>
+  <%= render layout: "paper", locals: { title: "Trial Balance", subtitle: "As of #{@trial_balance.as_of.strftime("%B %-d, %Y")}" } do %>
+    <table class="mt-6 w-full text-sm">
+      <thead>
+        <tr class="border-b border-neutral-900 text-xs text-neutral-500">
+          <th scope="col" class="pb-2 text-left font-medium">Account</th>
+          <th scope="col" class="w-28 pb-2 pl-3 text-right font-medium sm:w-36">Debit</th>
+          <th scope="col" class="w-28 pb-2 pl-3 text-right font-medium sm:w-36">Credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @trial_balance.rows.each do |row| %>
+          <tr>
+            <th scope="row" class="py-1.5 text-left font-normal text-neutral-700">
+              <span class="mr-2 hidden font-mono text-xs text-neutral-400 sm:inline"><%= row.account.code %></span>
+              <%= link_to row.account.name, general_ledger_account_path(row.account), class: "hover:underline" %>
+            </th>
+            <td class="py-1.5 pl-3 text-right tabular-nums text-neutral-700"><%= row.debit.zero? ? "–" : statement_figure(row.debit) %></td>
+            <td class="py-1.5 pl-3 text-right tabular-nums text-neutral-700"><%= row.credit.zero? ? "–" : statement_figure(row.credit) %></td>
+          </tr>
+        <% end %>
+        <% if @trial_balance.rows.empty? %>
+          <tr><td colspan="3" class="py-4 text-neutral-500">No account has a balance yet.</td></tr>
+        <% end %>
+        <tr class="font-semibold text-neutral-950">
+          <th scope="row" class="pt-4 text-left">Total</th>
+          <% { "total-debit" => @trial_balance.total_debit, "total-credit" => @trial_balance.total_credit }.each do |id, total| %>
+            <td class="pt-4 pl-3 text-right tabular-nums">
+              <span id="<%= id %>" class="inline-block min-w-full border-t border-b-[3px] border-double border-neutral-400 border-b-neutral-900 pb-0.5"><%= statement_figure(total) %></span>
+            </td>
+          <% end %>
+        </tr>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% unless @trial_balance.balanced? %>
+    <p class="mt-4 text-sm text-red-700">Out of balance: total debits do not equal total credits.</p>
+  <% end %>
+<% end %>

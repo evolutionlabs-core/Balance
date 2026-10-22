@@ -2,7 +2,7 @@ module Llm::MessagesHelper
   PROPOSAL_PARTIALS = {
     "account_creation" => "llm/messages/proposals/account_creation",
     "reversal_confirmation" => "llm/messages/proposals/reversal_confirmation",
-    "journal_entry" => "llm/messages/proposals/journal_entry"
+    "entry" => "llm/messages/proposals/entry"
   }.freeze
 
   TOOL_LABELS = {

@@ -1,0 +1,78 @@
+<%= form_with model: bill, class: "space-y-8", data: { controller: "amount-lines" } do |form| %>
+  <div class="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-neutral-950"><%= bill.persisted? ? "Edit bill" : "New bill" %></h1>
+      <p class="mt-1 text-sm text-neutral-500">Record what a vendor billed you. Nothing posts to your books until you enter the bill.</p>
+    </div>
+    <div class="sm:text-right">
+      <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-neutral-950"><%= currency_symbol(bill.currency_code) %><span data-amount-lines-target="total"><%= minor_amount(bill.total_kobo) %></span></p>
+    </div>
+  </div>
+
+  <%= render "shared/form_errors", record: bill %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <%= form.label :vendor_id, "Vendor", class: field_label_class %>
+      <%= render "shared/select_menu", form: form, attribute: :vendor_id,
+          options: options_from_collection_for_select(@vendors, :id, :name, bill.vendor_id),
+          prompt: "Select vendor", searchable: true,
+          search_placeholder: "Search vendors…", empty_message: "No vendors found",
+          select_data: {}, required: true %>
+    </div>
+    <div>
+      <%= form.label :bill_number, "Vendor's bill number", class: field_label_class %>
+      <%= form.text_field :bill_number, placeholder: "Optional", autocomplete: "off", class: field_class %>
+    </div>
+    <div>
+      <%= form.label :bill_date, "Bill date", class: field_label_class %>
+      <%= form.text_field :bill_date, value: bill.bill_date || Date.current, required: true, autocomplete: "off",
+          class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+    </div>
+    <div>
+      <%= form.label :due_date, "Due date", class: field_label_class %>
+      <%= form.text_field :due_date, value: bill.due_date, autocomplete: "off",
+          class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :notes, class: field_label_class %>
+    <%= form.text_field :notes, placeholder: "Add context about this bill", class: field_class %>
+  </div>
+
+  <section>
+    <div class="amount-line-columns hidden gap-3 border-b border-neutral-200 pb-2 sm:grid">
+      <span class="text-xs font-medium text-neutral-500">Account</span>
+      <span class="text-xs font-medium text-neutral-500">Description</span>
+      <span class="text-right text-xs font-medium text-neutral-500">Amount</span>
+      <span></span>
+    </div>
+
+    <div data-amount-lines-target="lines">
+      <%= form.fields_for :bill_lines, include_id: false do |line_form| %>
+        <%= render "shared/amount_line_fields", form: line_form, account_label: "Account",
+            account_options: bill_line_account_options(current_workspace, line_form.object.account_id),
+            description_placeholder: "What was billed?", remove_label: "Remove line" %>
+      <% end %>
+    </div>
+
+    <template data-amount-lines-target="template">
+      <%= form.fields_for :bill_lines, BillLine.new, child_index: "__INDEX__" do |line_form| %>
+        <%= render "shared/amount_line_fields", form: line_form, account_label: "Account",
+            account_options: bill_line_account_options(current_workspace, line_form.object.account_id),
+            description_placeholder: "What was billed?", remove_label: "Remove line" %>
+      <% end %>
+    </template>
+
+    <button type="button" data-action="amount-lines#addLine" class="mt-3 <%= secondary_button_class(size: :sm) %>">
+      <%= inline_svg_tag "icons/plus.svg", class: "h-3.5 w-3.5" %>Add line
+    </button>
+  </section>
+
+  <div class="flex items-center justify-end gap-2 border-t border-neutral-200 pt-5">
+    <%= link_to "Cancel", bill.persisted? ? bill_path(bill) : bills_path, class: secondary_button_class %>
+    <%= form.submit "Save draft", class: primary_button_class %>
+  </div>
+<% end %>

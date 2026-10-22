@@ -5,8 +5,9 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     @user = users(:one)
     @user.update!(password: "password")
     @workspace = workspaces(:ada_store)
-    @bank = @workspace.accounts.create!(name: "Workflow Bank", base_type: "asset", account_type: "Cash & Liquid Assets", detail_type: "Checking Account")
-    @category = @workspace.accounts.create!(name: "Workflow Materials", base_type: "expense", account_type: "Personal Outflows", detail_type: "Transportation")
+    ledger = @workspace.provision_ledger!
+    income = ledger.accounts.find_by!(name: "Other Income")
+    @workspace.update!(default_sales_account: income)
     @customer = @workspace.customers.create!(name: "Workflow Customer", customer_type: "business", email: "workflow@example.com")
     sign_in(@user)
   end
@@ -52,7 +53,7 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
     assert_equal "Modal Edit Villa Renamed", project.reload.name
   end
 
-  test "creates an estimate in the full-page editor and sends it" do
+  test "creates and converts a free-form estimate" do
     project = @workspace.projects.create!(customer: @customer, name: "Estimate Villa")
     visit project_project_estimates_path(project)
 
@@ -68,6 +69,22 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
 
     estimate = Estimate.order(:id).last
     assert_selector "a[href='#{project_estimate_path(estimate, format: :pdf)}']", text: "Download"
+    click_on "Mark as sent"
+    assert_text "Estimate #{estimate.number} sent."
+    find("button[aria-label='Client actions']").click
+    click_on "Approve manually"
+    assert_text "Estimate #{estimate.number} approved."
+    click_on "Convert to Invoice"
+    assert_current_path %r{\A/invoices/\d+\z}
+    assert_selector "article", text: "Hosting"
+    invoice = @workspace.invoices.find_by!(estimate: estimate)
+    assert_equal 6_000_000, invoice.total_minor
+    assert_nil invoice.invoice_lines.sole.service
+    assert invoice.draft?
+    find("button[aria-label='More invoice actions']").click
+    accept_confirm { click_button "Mark as sent" }
+    assert_text "Invoice #{invoice.invoice_number} marked as sent."
+    assert invoice.reload.sent?
   end
 
   test "creates a task then logs time against it from the task row" do

@@ -1,0 +1,37 @@
+<% content_for :title, "Drafts" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Journal entries", path: journal_entries_path }, { label: "Drafts" } ] %>
+<% end %>
+
+<% new_entry = link_to(new_journal_entry_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New entry
+<% end %>
+
+<%= render "shared/page_header", title: "Drafts", description: "Entries saved for later. Nothing here is in your books yet.", action: new_entry %>
+
+<% if @drafts.empty? %>
+  <%= render "shared/empty_state", icon: "icons/list.svg", title: "No drafts", description: "Save an entry as a draft to finish it later.", action: new_entry %>
+<% else %>
+  <%= render layout: "shared/mobile_list" do %>
+    <% @drafts.each do |draft| %>
+      <%= render "shared/mobile_card", title: draft.description.presence || "Untitled entry", url: journal_entry_draft_path(draft),
+          trailing: mobile_card_amount(money(draft.total_kobo)),
+          meta: [ draft.effective_date&.to_fs(:medium), draft.user.full_name ].compact.join(" · "),
+          action: link_to("Review", journal_entry_draft_path(draft), class: mobile_card_action_class) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "Date" }, { label: "Description" }, { label: "Saved by" }, { label: "Amount", align: :right }, { label: "Actions", align: :right }
+      ] } do %>
+    <% @drafts.each do |draft| %>
+      <tr id="<%= dom_id(draft) %>" class="<%= table_row_class %>">
+        <td class="<%= table_cell_class %> whitespace-nowrap"><%= draft.effective_date&.to_fs(:medium) || blank_cell %></td>
+        <td class="<%= table_cell_class(strong: true, link: true) %>"><%= link_to draft.description.presence || "Untitled entry", journal_entry_draft_path(draft), class: table_cell_link_class %></td>
+        <td class="<%= table_cell_class %> whitespace-nowrap"><%= draft.user.full_name %></td>
+        <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums whitespace-nowrap"><%= money(draft.total_kobo) %></td>
+        <td class="<%= table_cell_class(align: :right) %>"><%= link_to "Review", journal_entry_draft_path(draft), class: "font-medium text-balance-teal-700 hover:underline" %></td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>

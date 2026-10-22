@@ -3,7 +3,18 @@ require "test_helper"
 class Llm::ChatTurnTest < ActiveSupport::TestCase
   FakeToolCall = Struct.new(:id, :name)
 
+  # Each fake answers in one generation, like a model reply without tool calls.
+  module FakeLoop
+    def complete? = !!@answered
+    def waiting? = false
+
+    def step(&)
+      generate(&)
+    end
+  end
+
   class FakeAgent
+    include FakeLoop
     attr_reader :completions
 
     def initialize(chat, contents)
@@ -23,13 +34,15 @@ class Llm::ChatTurnTest < ActiveSupport::TestCase
     def chat = self
     def with_runtime_instructions(*, append:) = self
 
-    def complete
+    def generate
       @completions += 1
+      @answered = true
       @persisted_chat.llm_messages.create!(role: "assistant", content: @contents.shift)
     end
   end
 
   class ContextOverflowAgent
+    include FakeLoop
     attr_reader :completions
 
     def initialize(chat, fail_forever: false)
@@ -49,17 +62,19 @@ class Llm::ChatTurnTest < ActiveSupport::TestCase
     def chat = self
     def with_runtime_instructions(*, append:) = self
 
-    def complete
+    def generate
       @completions += 1
       if @fail_forever || @completions == 1
-        raise RubyLLM::ContextLengthExceededError.new(nil, "Context length exceeded")
+        raise RubyLLM::ContextLengthExceededError.new("Context length exceeded")
       end
 
+      @answered = true
       @persisted_chat.llm_messages.create!(role: "assistant", content: "Here you go.")
     end
   end
 
   class ToolLoopAgent
+    include FakeLoop
     attr_reader :completions
 
     def initialize(chat, tool_calls)
@@ -82,11 +97,12 @@ class Llm::ChatTurnTest < ActiveSupport::TestCase
     def chat = self
     def with_runtime_instructions(*, append:) = self
 
-    def complete
+    def generate
       @completions += 1
       @tool_calls.times do |number|
         @before_tool_call.call(FakeToolCall.new("tool_call_#{number}", "list_journal_entries"))
       end
+      @answered = true
       @persisted_chat.llm_messages.create!(role: "assistant", content: "Here you go.")
     end
   end
@@ -95,11 +111,9 @@ class Llm::ChatTurnTest < ActiveSupport::TestCase
     @workspace = workspaces(:ada_store)
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Test chat"
     )
-    @cash = Account.for_role!(@workspace, :cash)
-    @expense = Account.for_role!(@workspace, :uncategorized_expense)
   end
 
   def build_fat_turn(number)
@@ -197,7 +211,9 @@ class Llm::ChatTurnTest < ActiveSupport::TestCase
     agent.define_singleton_method(:with_tools) { |*, replace:| self }
     agent.define_singleton_method(:chat) { self }
     agent.define_singleton_method(:with_runtime_instructions) { |*, append:| self }
-    agent.define_singleton_method(:complete) { |&_block| raise "boom" }
+    agent.define_singleton_method(:complete?) { false }
+    agent.define_singleton_method(:waiting?) { false }
+    agent.define_singleton_method(:step) { |&_block| raise "boom" }
 
     process(agent)
 

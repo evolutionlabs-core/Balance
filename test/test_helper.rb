@@ -13,15 +13,30 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    def post_journal_entry!(workspace, debit_account:, credit_account:, amount_kobo:, entry_date: Date.current, description: "Test entry")
-      workspace.journal_entries.create!(
+    def provision_business_ledger!(workspace)
+      workspace.update!(workspace_type: "business")
+      workspace.provision_ledger!
+    end
+
+    def post_journal_entry!(workspace, debit_account:, credit_account:, amount_kobo:, effective_date: Date.current, description: nil)
+      ledger = workspace.ledgers.first || workspace.provision_ledger!
+      command = AccountingEngine::Command.new(
+        ledger: ledger,
+        effective_date: effective_date,
+        source_type: nil,
+        source_id: nil,
+        action: "create",
         description: description,
-        entry_date: entry_date,
-        journal_entry_lines_attributes: [
-          { account_id: debit_account.id, debit_kobo: amount_kobo },
-          { account_id: credit_account.id, credit_kobo: amount_kobo }
+        lines: [
+          AccountingEngine::Command::Line.new(account: debit_account, debit: amount_kobo, credit: 0),
+          AccountingEngine::Command::Line.new(account: credit_account, debit: 0, credit: amount_kobo)
         ]
       )
+
+      receipt = AccountingEngine.post(command)
+      raise "Journal entry rejected: #{receipt.errors.map(&:to_s).join(', ')}" unless receipt.success?
+
+      receipt.entry
     end
   end
 end

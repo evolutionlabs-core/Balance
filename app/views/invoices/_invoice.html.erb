@@ -1,22 +1,26 @@
-<tr class="group border-t border-neutral-200 transition-colors hover:bg-neutral-50">
-  <td data-label="Customer" class="p-0 text-sm font-medium text-neutral-900">
-    <%= link_to invoice.customer&.name || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+<tr id="<%= dom_id(invoice) %>" class="<%= table_row_class %>">
+  <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+    <%= link_to invoice.invoice_number || blank_cell, invoice_path(invoice), class: table_cell_link_class %>
   </td>
-  <td data-label="Amount" class="p-0 text-right text-sm font-medium tabular-nums whitespace-nowrap text-neutral-900">
-    <%= link_to minor_currency(invoice.total_minor, invoice.currency_code), invoice_path(invoice), class: "block px-4 py-4" %>
+  <td class="<%= table_cell_class(link: true) %>">
+    <%= link_to invoice.customer&.name || blank_cell, invoice_path(invoice), class: table_cell_link_class %>
   </td>
-  <td data-label="Status" class="p-0 text-sm whitespace-nowrap">
-    <%= link_to invoice_path(invoice), class: "block px-4 py-4" do %>
-      <%= status_badge("Draft", tone: :warning) %>
-    <% end %>
+  <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+    <%= link_to invoice.issue_date&.to_fs(:medium) || blank_cell, invoice_path(invoice), class: table_cell_link_class %>
   </td>
-  <td data-label="Date" class="p-0 text-sm whitespace-nowrap text-neutral-600">
-    <%= link_to invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+  <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+    <%= link_to invoice_path(invoice), class: table_cell_link_class do %><%= invoice_status_badge(invoice) %><% end %>
   </td>
-  <td data-label="Due" class="p-0 text-sm whitespace-nowrap text-neutral-600">
-    <%= link_to invoice.due_date&.strftime("%b %-d, %Y") || blank_cell, invoice_path(invoice), class: "block px-4 py-4" %>
+  <td class="<%= table_cell_class(align: :right, link: true) %> tabular-nums whitespace-nowrap">
+    <%= link_to minor_currency(invoice.total_minor, invoice.currency_code), invoice_path(invoice), class: table_cell_link_class %>
   </td>
-  <td data-label="Actions" class="px-4 py-4 text-right text-sm">
-    <%= link_to "Edit", edit_invoice_path(invoice), class: "font-medium text-[#0f7082] hover:underline", aria: { label: "Edit invoice" } %>
+  <td class="<%= table_cell_class(align: :right, strong: true, link: true) %> tabular-nums whitespace-nowrap">
+    <%= link_to (invoice.sent? ? minor_currency(invoice.balance_due_kobo, invoice.currency_code) : blank_cell), invoice_path(invoice), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(align: :right) %> whitespace-nowrap">
+    <div class="flex items-center justify-end gap-2">
+      <%= invoice_row_action(invoice, class: "font-medium text-balance-teal-700 hover:underline") %>
+      <%= render "invoices/row_menu", invoice: invoice %>
+    </div>
   </td>
 </tr>

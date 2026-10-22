@@ -1,7 +1,7 @@
 module ProjectsHelper
   def estimate_status_badge(estimate)
     tone = case estimate.status
-    when "approved" then :success
+    when "approved", "invoiced" then :success
     when "sent" then :warning
     when "declined" then :warning
     else :neutral
@@ -11,7 +11,7 @@ module ProjectsHelper
 
   def project_tab_link(label, path, active)
     if active
-      tag.span(label, class: "border-b-2 border-[#0f7082] px-1 pb-3 text-sm font-medium whitespace-nowrap text-neutral-950", aria: { current: "page" })
+      tag.span(label, class: "border-b-2 border-balance-teal-700 px-1 pb-3 text-sm font-medium whitespace-nowrap text-neutral-950", aria: { current: "page" })
     else
       link_to(label, path, class: "px-1 pb-3 text-sm font-medium whitespace-nowrap text-neutral-500 hover:text-neutral-950")
     end

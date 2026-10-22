@@ -3,20 +3,21 @@ require "test_helper"
 class ProposalTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
-    @cash = Account.for_role!(@workspace, :cash)
-    @expense = Account.for_role!(@workspace, :uncategorized_expense)
+    @ledger = @workspace.provision_ledger!
+    @cash = @ledger.accounts.find_by!(name: "Cash")
+    @expense = @ledger.accounts.find_by!(name: "Groceries")
     @chat = Llm::Chat.create!(
       workspace: @workspace,
-      llm_model: Llm::Model.create!(provider: "test", model_id: RubyLLM.config.default_model, name: "Test model"),
+      model: ruby_llm_models(:default),
       title: "Test chat"
     )
     @proposal = @chat.proposals.create!(
       workspace: @workspace,
-      proposal_type: "journal_entry",
+      proposal_type: "entry",
       version: 1,
       data: {
         "description" => "Office supplies",
-        "entry_date" => Date.current.to_s,
+        "effective_date" => Date.current.to_s,
         "lines" => [
           { "account_id" => @expense.id, "side" => "debit", "amount_kobo" => 250_000 },
           { "account_id" => @cash.id, "side" => "credit", "amount_kobo" => 250_000 }
@@ -25,13 +26,19 @@ class ProposalTest < ActiveSupport::TestCase
     )
   end
 
-  test "confirm! posts the entry and marks the proposal confirmed" do
+  test "confirm! posts through the engine and marks the proposal confirmed" do
     assert_difference "JournalEntry.count", 1 do
       assert_nil @proposal.confirm!(draft: build_draft)
     end
 
     assert_equal "confirmed", @proposal.reload.status
     assert_not_nil @proposal.journal_entry
+    entry = @proposal.journal_entry
+    assert_equal "Entry", entry.source_type
+    assert_equal @proposal.id, entry.source_id
+    assert_equal "create", entry.action
+    assert_equal 250_000.to_d, entry.journal_entry_lines.sum(&:debit)
+    assert_equal 250_000.to_d, entry.journal_entry_lines.sum(&:credit)
   end
 
   test "double-confirm posts exactly one entry" do
@@ -84,7 +91,8 @@ class ProposalTest < ActiveSupport::TestCase
 
   test "confirm! refuses a draft whose account belongs to another workspace" do
     other_workspace = workspaces(:bola_shop)
-    other_cash = Account.for_role!(other_workspace, :cash)
+    @other_ledger = provision_business_ledger!(other_workspace)
+    other_cash = @other_ledger.accounts.find_by!(name: "Cash")
 
     draft = build_draft(
       lines: [
@@ -95,11 +103,13 @@ class ProposalTest < ActiveSupport::TestCase
 
     assert_no_difference "JournalEntry.count" do
       result = @proposal.confirm!(draft: draft)
-      assert_includes result, "Journal entry lines account must exist"
+      assert_includes result, "Line 2: choose an account in this workspace"
     end
+
+    assert_equal "proposed", @proposal.reload.status
   end
 
-  test "a selection confirmation cannot be posted as a journal proposal" do
+  test "a selection confirmation cannot be posted as an entry proposal" do
     draft = build_draft
     @proposal.update!(proposal_type: "reversal_confirmation")
 
@@ -116,10 +126,10 @@ class ProposalTest < ActiveSupport::TestCase
       { account_id: @cash.id, side: "credit", amount_naira: "2500" }
     ]
 
-    Llm::JournalEntryProposal.from_tool(
+    Llm::EntryProposal.from_tool(
       workspace: @workspace,
       description: "Office supplies",
-      entry_date: Date.current.to_s,
+      effective_date: Date.current.to_s,
       lines: lines
     )
   end
