@@ -3,8 +3,18 @@ class InvoicesController < ApplicationController
   before_action :ensure_draft, only: %i[edit update]
   before_action :set_services, only: %i[new create edit update]
 
+  STATUS_FILTERS = {
+    "overdue" => "Overdue",
+    "not_due" => "Not due",
+    "draft" => "Draft",
+    "paid" => "Paid",
+    "voided" => "Voided"
+  }.freeze
+
   def index
-    @invoices = current_workspace.invoices.includes(:customer, :payments).order(created_at: :desc)
+    @summary = InvoiceSummary.new(current_workspace)
+    @status = params[:status].presence_in(STATUS_FILTERS.keys)
+    @invoices = filtered_invoices.includes(:customer, :payments).order(created_at: :desc, id: :desc)
   end
 
   def new
@@ -62,6 +72,31 @@ class InvoicesController < ApplicationController
   end
 
   private
+    def filtered_invoices
+      invoices = current_workspace.invoices
+      invoices = case @status
+      when "overdue", "not_due" then invoices.public_send(@status)
+      when nil then invoices
+      else invoices.where(status: @status)
+      end
+
+      if params[:q].present?
+        term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q])}%"
+        invoices = invoices.left_joins(:customer).where("invoices.invoice_number ILIKE :term OR customers.name ILIKE :term", term: term)
+      end
+
+      invoices = invoices.where(issue_date: issue_date_range) if issue_date_range
+      invoices
+    end
+
+    def issue_date_range
+      return if params[:from].blank? || params[:to].blank?
+
+      Date.iso8601(params[:from])..Date.iso8601(params[:to])
+    rescue Date::Error
+      nil
+    end
+
     def set_invoice
       @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments).find(params[:id])
     end

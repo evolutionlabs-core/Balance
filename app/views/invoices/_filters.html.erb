@@ -1,0 +1,25 @@
+<%= form_with url: invoices_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range form" } do |form| %>
+  <div class="relative min-w-0 flex-1">
+    <%= form.search_field :q, value: params[:q], placeholder: "Search customer or number", aria: { label: "Search invoices" }, class: field_class %>
+  </div>
+  <div class="sm:w-44">
+    <%= render "shared/select_menu", form: form, attribute: :status,
+        options: options_for_select([ [ "All statuses", "" ] ] + InvoicesController::STATUS_FILTERS.invert.to_a, @status.to_s),
+        prompt: nil, required: false, select_data: { action: "change->form#submit" } %>
+  </div>
+  <div class="relative sm:w-64">
+    <%= form.text_field :range,
+        value: [ params[:from], params[:to] ].compact_blank.join(" to "),
+        placeholder: "Invoice date",
+        autocomplete: "off",
+        aria: { label: "Invoice date range" },
+        class: "#{field_class} cursor-pointer",
+        data: { date_range_target: "input" } %>
+    <%= form.hidden_field :from, value: params[:from], data: { date_range_target: "from" } %>
+    <%= form.hidden_field :to, value: params[:to], data: { date_range_target: "to" } %>
+  </div>
+  <%= form.submit "Filter", class: secondary_button_class %>
+  <% if params[:q].present? || params[:from].present? || @status %>
+    <%= link_to "Clear", invoices_path, class: ghost_button_class %>
+  <% end %>
+<% end %>

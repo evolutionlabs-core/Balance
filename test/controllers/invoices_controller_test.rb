@@ -31,12 +31,45 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Customer can't be blank/
   end
 
-  test "index links rows to show and exposes a separate edit action" do
-    invoice = create_invoice
+  test "index links rows to show and offers the next step for each invoice" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
     get invoices_path
 
-    assert_select "tbody a[href=?]", invoice_path(invoice)
-    assert_select "tbody a[href=?]", edit_invoice_path(invoice), text: "Edit"
+    assert_select "tbody a[href=?]", invoice_path(draft)
+    assert_select "tbody a[href=?]", invoice_path(draft, view: "email"), text: "Send"
+    assert_select "tbody a[href=?][data-turbo-frame=modal]", new_invoice_payment_path(sent), text: "Receive payment"
+  end
+
+  test "index flags overdue invoices and totals what is owed" do
+    invoice = create_invoice
+    invoice.update!(issue_date: Date.current - 40.days, due_date: Date.current - 10.days)
+    assert invoice.issue!
+    create_invoice
+
+    get invoices_path
+
+    assert_select "tbody td", text: "Overdue 10 days"
+    assert_select "a[href=?]", invoices_path(status: "overdue"), text: /Overdue · 1/
+  end
+
+  test "index filters by status and searches by number or customer" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
+    get invoices_path(status: "draft")
+    assert_select "tbody a[href=?]", invoice_path(draft)
+    assert_select "tbody a[href=?]", invoice_path(sent), count: 0
+
+    get invoices_path(q: sent.invoice_number)
+    assert_select "tbody a[href=?]", invoice_path(sent)
+    assert_select "tbody a[href=?]", invoice_path(draft), count: 0
+
+    get invoices_path(q: "nobody")
+    assert_select "body", text: /No invoices found/
   end
 
   test "update recalculates the invoice" do

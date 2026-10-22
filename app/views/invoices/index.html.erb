@@ -13,29 +13,36 @@
     description: "Manage and track your invoices.",
     action: invoice_actions %>
 
-<% if @invoices.empty? %>
+<% if current_workspace.invoices.none? %>
   <%= render "shared/empty_state",
       icon: "icons/invoice.svg",
       title: "No invoices yet",
       description: "Create an invoice draft for a customer and preview it before sending.",
       action: invoice_actions %>
 <% else %>
-  <%= render layout: "shared/mobile_list" do %>
-    <% @invoices.each do |invoice| %>
-      <%= render "shared/mobile_card", title: invoice.customer&.name || blank_cell, url: invoice_path(invoice),
-          trailing: mobile_card_amount(minor_currency(invoice.total_minor, invoice.currency_code)),
-          footer: safe_join([
-            invoice_status_badge(invoice),
-            tag.span(invoice.issue_date&.strftime("%b %-d, %Y") || blank_cell, class: "truncate"),
-            tag.span("·", aria: { hidden: true }),
-            tag.span(safe_join([ "Due ", invoice.due_date&.strftime("%b %-d") || blank_cell ]), class: "truncate")
-          ]),
-          action: (link_to("Edit", edit_invoice_path(invoice), class: mobile_card_action_class) if invoice.draft?) %>
+  <%= render "summary", summary: @summary %>
+  <%= render "filters" %>
+
+  <% if @invoices.empty? %>
+    <%= render "shared/empty_state",
+        icon: "icons/invoice.svg",
+        title: "No invoices found",
+        description: "Try a different search or filter." %>
+  <% else %>
+    <%= render layout: "shared/mobile_list" do %>
+      <% @invoices.each do |invoice| %>
+        <%= render "shared/mobile_card", title: invoice.customer&.name || blank_cell, url: invoice_path(invoice),
+            trailing: mobile_card_amount(minor_currency(invoice.sent? ? invoice.balance_due_kobo : invoice.total_minor, invoice.currency_code)),
+            meta: [ invoice.invoice_number, invoice.issue_date&.to_fs(:medium) ].compact.join(" · "),
+            footer: invoice_status_badge(invoice),
+            action: invoice_row_action(invoice, class: mobile_card_action_class) %>
+      <% end %>
     <% end %>
-  <% end %>
-  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
-        { label: "Customer" }, { label: "Amount", align: :right }, { label: "Status" }, { label: "Date" }, { label: "Due date" }, { label: "Actions", align: :right }
-      ] } do %>
-    <%= render @invoices %>
+    <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+          { label: "No." }, { label: "Customer" }, { label: "Date" }, { label: "Status" },
+          { label: "Total", align: :right }, { label: "Balance due", align: :right }, { label: "", sr_label: "Actions" }
+        ] } do %>
+      <%= render @invoices %>
+    <% end %>
   <% end %>
 <% end %>

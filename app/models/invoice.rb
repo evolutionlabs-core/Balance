@@ -21,6 +21,10 @@ class Invoice < ApplicationRecord
   validate :at_least_one_line, if: -> { @invoice_lines_submitted }
   validate :customer_belongs_to_workspace
 
+  scope :outstanding, -> { where(status: "sent") }
+  scope :overdue, ->(on = Date.current) { outstanding.where(due_date: ...on) }
+  scope :not_due, ->(on = Date.current) { outstanding.where("invoices.due_date IS NULL OR invoices.due_date >= ?", on) }
+
   generates_token_for :client_view, expires_in: 90.days do
     [ workspace_id, invoice_number ]
   end
@@ -112,6 +116,14 @@ class Invoice < ApplicationRecord
 
   def balance_due_kobo
     [ total_minor - applied_amount_kobo, 0 ].max
+  end
+
+  def overdue?(on = Date.current)
+    sent? && due_date.present? && due_date < on && balance_due_kobo.positive?
+  end
+
+  def days_overdue(on = Date.current)
+    overdue?(on) ? (on - due_date).to_i : 0
   end
 
   def refresh_business_details
