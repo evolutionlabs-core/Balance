@@ -62,7 +62,7 @@ class Pdf::Invoice
 
     def lines
       rows = @invoice.invoice_lines.map do |line|
-        [ line.description.presence || "—", line.quantity&.to_s("F") || "—",
+        [ line.description.presence || "—", line.quantity&.to_s("F")&.delete_suffix(".0") || "—",
           line.rate_minor ? money(line.rate_minor) : "—", money(line.amount_minor) ]
       end
       @document.table([ [ "Description", "Qty", "Rate", "Amount" ], *rows ], header: true,

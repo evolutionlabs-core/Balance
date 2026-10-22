@@ -63,19 +63,19 @@
           </tr>
         </thead>
         <tbody>
-          <% invoice.invoice_lines.each do |line| %>
+          <% invoice.invoice_lines.reject(&:marked_for_destruction?).each do |line| %>
             <tr class="border-b border-neutral-200">
               <td class="py-4 text-sm text-neutral-900">
                 <p><%= line.description.presence || "—" %></p>
               </td>
-              <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity || "—" %></td>
+              <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity ? number_with_precision(line.quantity, precision: 3, strip_insignificant_zeros: true) : "—" %></td>
               <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.rate_minor ? minor_currency(line.rate_minor, invoice.currency_code) : "—" %></td>
               <td class="py-4 text-right text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(line.amount_minor, invoice.currency_code) %></td>
             </tr>
           <% end %>
         </tbody>
       </table>
-      <% if invoice.invoice_lines.empty? %>
+      <% if invoice.invoice_lines.all?(&:marked_for_destruction?) %>
         <p class="border-b border-neutral-200 py-8 text-center text-sm text-neutral-400">No line items added</p>
       <% end %>
     </div>
