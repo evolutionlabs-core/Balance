@@ -27,6 +27,39 @@ class Invoice::PostingTest < ActiveSupport::TestCase
     assert_equal 30_000, entry.journal_entry_lines.sum(&:credit)
   end
 
+  test "a discount reduces income so the receivable matches the discounted total" do
+    sales = @ledger.accounts.where(base_type: "income").where.not(id: @income.id).first!
+    design = @workspace.services.create!(name: "Design", income_account: sales)
+    invoice = @workspace.invoices.create!(user: users(:one), customer: @customer, issue_date: Date.current,
+      discount_type: "percent", discount_value: "12.5",
+      invoice_lines_attributes: [
+        { service_id: @service.id, description: "Consulting", quantity: 1, rate: "333.33" },
+        { service_id: design.id, description: "Design", quantity: 1, rate: "100.01" }
+      ])
+    assert_equal 37_917, invoice.total_minor
+
+    assert invoice.issue!
+
+    entry = JournalEntry.where(source_type: "Invoice", source_id: invoice.id, action: "issue").sole
+    assert_equal 37_917, entry.journal_entry_lines.find { |line| line.account == @ar }.debit
+    assert_equal 37_917, entry.journal_entry_lines.sum(&:credit)
+    assert_equal 29_166, entry.journal_entry_lines.find { |line| line.account == @income }.credit
+    assert_equal 8_751, entry.journal_entry_lines.find { |line| line.account == sales }.credit
+
+    assert_not invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 43_334)
+    assert invoice.record_payment!(deposit_account_id: @cash.id, received_on: Date.current, amount_kobo: 37_917)
+    assert invoice.reload.paid?
+  end
+
+  test "voiding a discounted invoice reverses its entry" do
+    @invoice.update!(discount_type: "amount", discount_value: 50)
+    assert @invoice.issue!
+
+    assert @invoice.void!
+
+    assert_equal 0, @ledger.accounts.find_by!(id: @ar.id).journal_entry_lines.sum("debit - credit")
+  end
+
   test "a closed ledger period rejects sending" do
     @ledger.close_books!(through: Date.current, actor: owner)
 

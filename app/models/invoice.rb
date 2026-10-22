@@ -2,6 +2,7 @@ class Invoice < ApplicationRecord
   include WorkspaceCurrency
   include AASM
   include Invoices::Posting
+  include Invoices::Discount
 
   STATUSES = %w[draft sent paid voided].freeze
 
@@ -18,6 +19,7 @@ class Invoice < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :customer, presence: true, unless: -> { validation_context == :editing }
   validates :invoice_number, uniqueness: { scope: :workspace_id }, allow_nil: true
+  validates :payment_terms, inclusion: { in: PaymentTerms.keys }, allow_nil: true
   validate :at_least_one_line, if: -> { @invoice_lines_submitted }
   validate :customer_belongs_to_workspace
 
@@ -29,7 +31,8 @@ class Invoice < ApplicationRecord
     [ workspace_id, invoice_number ]
   end
 
-  before_validation :populate_party_details, on: :create
+  before_validation :populate_party_details, :apply_workspace_defaults, on: :create
+  before_validation :apply_payment_terms
   before_validation :calculate_totals
   after_create :assign_invoice_number, if: -> { invoice_number.blank? }
   before_update { throw(:abort) if content_frozen? }
@@ -133,6 +136,12 @@ class Invoice < ApplicationRecord
     save!
   end
 
+  def apply_workspace_defaults
+    self.payment_terms ||= due_date.present? ? "custom" : workspace.default_payment_terms
+    self.notes = workspace.default_invoice_note if notes.nil?
+    self.payment_instructions = workspace.payment_instructions if payment_instructions.nil?
+  end
+
   def populate_party_details
     self.business_name = workspace.name if business_name.nil?
     self.business_email = user.email_address if business_email.nil?
@@ -146,6 +155,16 @@ class Invoice < ApplicationRecord
   end
 
   private
+    def apply_payment_terms
+      return if payment_terms.nil?
+
+      if due_date_changed? && !payment_terms_changed? && !issue_date_changed?
+        self.payment_terms = "custom"
+      elsif (due = PaymentTerms.due_date(payment_terms, issue_date))
+        self.due_date = due
+      end
+    end
+
     def fully_paid?
       balance_due_kobo.zero?
     end
@@ -192,7 +211,8 @@ class Invoice < ApplicationRecord
       end
 
       self.subtotal_minor = active_lines.sum { |line| line.amount_minor || 0 }
-      self.total_minor = subtotal_minor
+      calculate_discount
+      self.total_minor = subtotal_minor - discount_minor
     end
 
     def active_lines

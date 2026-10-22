@@ -29,6 +29,7 @@ class Workspace < ApplicationRecord
   validates :currency_code, inclusion: { in: Currency.codes }
   validate :currency_unchanged, on: :update
   validates :fiscal_year_start_month, inclusion: { in: 1..12 }
+  validates :default_payment_terms, inclusion: { in: PaymentTerms::DAYS.keys }
   validate :default_sales_account_is_workspace_income
   validate :default_deposit_account_is_workspace_cash
 
