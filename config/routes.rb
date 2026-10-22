@@ -60,11 +60,11 @@ Rails.application.routes.draw do
   resources :invoices, only: %i[index new create show edit update] do
     resource :issuance, only: %i[create], controller: "invoices/issuances"
     resource :payment, only: %i[new create], controller: "invoices/payments"
-    resource :settlement, only: %i[create], controller: "invoices/settlements"
     resources :payments, only: [], controller: "invoices/payments" do
       resource :reversal, only: %i[create], controller: "invoices/payment_reversals"
     end
     resource :void, only: %i[new create], controller: "invoices/voids"
+    resource :duplicate, only: %i[create], controller: "invoices/duplicates"
   end
   resources :vendors, only: %i[index new create show edit update]
   resources :bills, only: %i[index new create show edit update] do
@@ -80,6 +80,7 @@ Rails.application.routes.draw do
     resource :workspace, only: %i[edit update]
     resources :lines, only: %i[new destroy]
     resource :calculation, only: :create
+    resource :preview, only: :create
   end
 
   resources :projects, only: %i[index new create show edit update] do

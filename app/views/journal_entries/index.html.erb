@@ -20,9 +20,11 @@
     description: "Manage and review your journal entries.",
     action: new_entry %>
 
-<%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row", data: { controller: "date-range" } do |form| %>
+<%= form_with url: journal_entries_path, method: :get, class: "mt-4 flex flex-col gap-2 sm:flex-row",
+    data: { controller: "date-range form", action: "date-range:change->form#submit", turbo_frame: "journal_entries", turbo_action: "replace" } do |form| %>
   <div class="relative min-w-0 flex-1">
-    <%= form.search_field :q, value: params[:q], placeholder: "Search entries", class: field_class %>
+    <%= form.search_field :q, value: params[:q], placeholder: "Search entries", autocomplete: "off",
+        aria: { label: "Search entries" }, class: field_class, data: { action: "input->form#search" } %>
   </div>
   <div class="relative sm:w-64">
     <%= form.text_field :range,
@@ -35,21 +37,21 @@
     <%= form.hidden_field :to, value: params[:to], data: { date_range_target: "to" } %>
   </div>
   <%= form.hidden_field :tag, value: params[:tag] if params[:tag].present? %>
-  <%= form.submit "Filter", class: secondary_button_class %>
-  <% if params[:q].present? || params[:from].present? || params[:tag].present? %>
-    <%= link_to "Clear", journal_entries_path, class: ghost_button_class %>
-  <% end %>
+  <%= link_to "Clear", journal_entries_path, class: ghost_button_class, hidden: params.values_at(:q, :from, :tag).all?(&:blank?),
+      data: { form_target: "clear", turbo_frame: "_top" } %>
 <% end %>
 
 <% if params[:tag].present? %>
   <p class="mt-3 text-sm text-neutral-600">Tagged <span class="font-medium text-neutral-900"><%= params[:tag] %></span></p>
 <% end %>
 
-<% if @journal_entries.empty? %>
-  <%= render "shared/empty_state",
-      icon: "icons/list.svg",
-      title: "No entries yet",
-      description: "Entries recorded in your ledger appear here." %>
-<% else %>
-  <%= render "journal_entries/table", journal_entries: @journal_entries %>
+<%= turbo_frame_tag "journal_entries", target: "_top" do %>
+  <% if @journal_entries.empty? %>
+    <%= render "shared/empty_state",
+        icon: "icons/list.svg",
+        title: "No entries yet",
+        description: "Entries recorded in your ledger appear here." %>
+  <% else %>
+    <%= render "journal_entries/table", journal_entries: @journal_entries %>
+  <% end %>
 <% end %>

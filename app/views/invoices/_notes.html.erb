@@ -1,0 +1,17 @@
+<div class="grid content-start gap-4">
+  <div>
+    <%= label_tag :invoice_payment_instructions, "Payment details", class: field_label_class %>
+    <%= text_area_tag "invoice[payment_instructions]", invoice.payment_instructions, id: :invoice_payment_instructions, form: "new_invoice_form",
+        rows: 3, placeholder: "Bank, account number, account name", class: field_class %>
+  </div>
+  <div>
+    <%= label_tag :invoice_notes, "Note to customer", class: field_label_class %>
+    <%= text_area_tag "invoice[notes]", invoice.notes, id: :invoice_notes, form: "new_invoice_form",
+        rows: 3, placeholder: "Thank you for your business", class: field_class %>
+  </div>
+  <div>
+    <%= label_tag :invoice_internal_note, "Internal note", class: field_label_class %>
+    <%= text_area_tag "invoice[internal_note]", invoice.internal_note, id: :invoice_internal_note, form: "new_invoice_form",
+        rows: 2, placeholder: "Only visible to your team", class: field_class %>
+  </div>
+</div>

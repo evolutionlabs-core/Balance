@@ -20,6 +20,18 @@
         <dt class="text-neutral-500">Due date</dt>
         <dd class="font-medium text-neutral-950"><%= invoice.due_date&.strftime("%b %-d, %Y") || "—" %></dd>
       </div>
+      <% if PaymentTerms::DAYS.key?(invoice.payment_terms) %>
+        <div class="flex justify-between gap-8">
+          <dt class="text-neutral-500">Terms</dt>
+          <dd class="font-medium text-neutral-950"><%= PaymentTerms.label(invoice.payment_terms) %></dd>
+        </div>
+      <% end %>
+      <% if invoice.reference.present? %>
+        <div class="flex justify-between gap-8">
+          <dt class="text-neutral-500">Reference</dt>
+          <dd class="font-medium text-neutral-950"><%= invoice.reference %></dd>
+        </div>
+      <% end %>
     </dl>
   </header>
 
@@ -51,19 +63,19 @@
           </tr>
         </thead>
         <tbody>
-          <% invoice.invoice_lines.each do |line| %>
+          <% invoice.invoice_lines.reject(&:marked_for_destruction?).each do |line| %>
             <tr class="border-b border-neutral-200">
               <td class="py-4 text-sm text-neutral-900">
                 <p><%= line.description.presence || "—" %></p>
               </td>
-              <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity || "—" %></td>
+              <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.quantity ? number_with_precision(line.quantity, precision: 3, strip_insignificant_zeros: true) : "—" %></td>
               <td class="px-4 py-4 text-right text-sm tabular-nums text-neutral-600"><%= line.rate_minor ? minor_currency(line.rate_minor, invoice.currency_code) : "—" %></td>
               <td class="py-4 text-right text-sm font-medium tabular-nums text-neutral-950"><%= minor_currency(line.amount_minor, invoice.currency_code) %></td>
             </tr>
           <% end %>
         </tbody>
       </table>
-      <% if invoice.invoice_lines.empty? %>
+      <% if invoice.invoice_lines.all?(&:marked_for_destruction?) %>
         <p class="border-b border-neutral-200 py-8 text-center text-sm text-neutral-400">No line items added</p>
       <% end %>
     </div>
@@ -73,10 +85,39 @@
         <dt class="text-neutral-500">Subtotal</dt>
         <dd class="font-medium tabular-nums text-neutral-950"><%= minor_currency(invoice.subtotal_minor, invoice.currency_code) %></dd>
       </div>
+      <% if invoice.discounted? %>
+        <div class="mt-3 flex justify-between text-sm">
+          <dt class="text-neutral-500"><%= invoice.discount_label %></dt>
+          <dd class="tabular-nums text-neutral-950">−<%= minor_currency(invoice.discount_minor, invoice.currency_code) %></dd>
+        </div>
+      <% end %>
+      <% if invoice.discounted? || invoice.balance_due_kobo != invoice.total_minor %>
+        <div class="mt-3 flex justify-between text-sm">
+          <dt class="text-neutral-500">Total</dt>
+          <dd class="font-medium tabular-nums text-neutral-950"><%= minor_currency(invoice.total_minor, invoice.currency_code) %></dd>
+        </div>
+      <% end %>
       <div class="mt-4 flex justify-between border-t border-neutral-200 pt-4">
         <dt class="font-semibold text-neutral-950">Balance due</dt>
         <dd class="text-xl font-semibold tabular-nums text-neutral-950"><%= minor_currency(invoice.balance_due_kobo, invoice.currency_code) %></dd>
       </div>
     </dl>
   </section>
+
+  <% if invoice.payment_instructions.present? || invoice.notes.present? %>
+    <section class="grid gap-6 border-t border-neutral-200 px-4 py-6 text-sm sm:grid-cols-2 sm:px-8 md:px-12">
+      <% if invoice.payment_instructions.present? %>
+        <div>
+          <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Payment details</p>
+          <p class="mt-2 whitespace-pre-line text-neutral-900"><%= invoice.payment_instructions %></p>
+        </div>
+      <% end %>
+      <% if invoice.notes.present? %>
+        <div>
+          <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Note</p>
+          <p class="mt-2 whitespace-pre-line text-neutral-900"><%= invoice.notes %></p>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
 </article>

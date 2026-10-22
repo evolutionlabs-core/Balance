@@ -1,12 +1,13 @@
 <% header_class = "px-4 py-2.5 text-xs font-medium text-neutral-500" %>
 <%= turbo_frame_tag "#{scope}_line_items", class: "block" do %>
+  <% catalog = @services.select(&:active?).map { |service| { id: service.id, name: service.name, description: service.description.to_s, rate: service.default_rate&.to_s("F") } } %>
+  <script type="application/json" id="<%= scope %>_service_catalog"><%= raw json_escape(catalog.to_json) %></script>
   <div class="border-y border-neutral-200">
     <table class="line-item-editor w-full">
       <thead class="bg-white">
         <tr>
           <th scope="col" class="w-14 text-center <%= header_class %>">#</th>
-          <th scope="col" class="w-48 text-left <%= header_class %>">Service (optional)</th>
-          <th scope="col" class="text-left <%= header_class %>">Description</th>
+          <th scope="col" class="text-left <%= header_class %>">Item or description</th>
           <th scope="col" class="w-28 text-right <%= header_class %>">Qty</th>
           <th scope="col" class="w-40 text-right <%= header_class %>">Rate (<%= document.currency_code %>)</th>
           <th scope="col" class="w-40 text-right <%= header_class %>">Amount (<%= document.currency_code %>)</th>
@@ -26,14 +27,7 @@
     <% end %>
   </div>
 
-  <div class="mt-8 ml-auto max-w-sm border-t border-neutral-200 pt-4">
-    <div class="flex items-center justify-between text-sm">
-      <span class="text-neutral-500">Subtotal</span>
-      <span id="<%= scope %>_subtotal" class="font-medium tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(document.subtotal_minor, document.currency_code) %></span>
-    </div>
-    <div class="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3">
-      <span class="font-semibold text-neutral-950">Total</span>
-      <span id="<%= scope %>_total" class="text-xl font-semibold tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(document.total_minor, document.currency_code) %></span>
-    </div>
-  </div>
+  <% unless local_assigns[:totals] == false %>
+    <%= render "shared/line_items/summary", document: document, scope: scope, discount: local_assigns[:discount] %>
+  <% end %>
 <% end %>

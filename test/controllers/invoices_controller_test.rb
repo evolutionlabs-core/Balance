@@ -22,6 +22,57 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, invoice.invoice_lines.count
   end
 
+  test "review and send saves the draft and opens the email view" do
+    post invoices_path(next: "send"), params: invoice_params
+
+    assert_redirected_to invoice_path(@workspace.invoices.order(:id).last, view: "email")
+  end
+
+  test "editing a draft shows its number and lets every line be removed" do
+    invoice = create_invoice
+
+    get edit_invoice_path(invoice)
+
+    assert_select "#invoice_number", text: invoice.invoice_number
+    assert_select "tr.line-item button[value=delete]", count: 1
+    assert_select "input[name$='[rate]'][value='150.00']"
+  end
+
+  test "new invoices start with the workspace terms, payment details and note" do
+    @workspace.update!(default_payment_terms: "net_15", payment_instructions: "GTBank 0123456789", default_invoice_note: "Thanks")
+
+    get new_invoice_path
+
+    assert_select "select[name='invoice[payment_terms]'] option[selected][value=net_15]"
+    assert_select "input[name='invoice[due_date]'][value=?]", (Date.current + 15.days).iso8601
+    assert_select "textarea[name='invoice[payment_instructions]']", text: "GTBank 0123456789"
+    assert_select "textarea[name='invoice[notes]']", text: "Thanks"
+    assert_select "tr.line-item", count: 1
+  end
+
+  test "create saves terms, reference, notes and discount" do
+    post invoices_path, params: invoice_params.deep_merge(invoice: {
+      payment_terms: "net_7", due_date: "", reference: "PO-1", notes: "Thanks", internal_note: "Repeat client",
+      payment_instructions: "GTBank", discount_type: "percent", discount_value: "10"
+    })
+
+    invoice = @workspace.invoices.order(:id).last
+    assert_equal [ "net_7", invoice.issue_date + 7.days ], [ invoice.payment_terms, invoice.due_date ]
+    assert_equal [ "PO-1", "Thanks", "Repeat client", "GTBank" ], [ invoice.reference, invoice.notes, invoice.internal_note, invoice.payment_instructions ]
+    assert_equal [ 3_000, 27_000 ], [ invoice.discount_minor, invoice.total_minor ]
+  end
+
+  test "drafts without terms show Custom and keep their due date when edited" do
+    invoice = create_invoice
+    invoice.update_column(:payment_terms, nil)
+
+    get edit_invoice_path(invoice)
+    assert_select "select[name='invoice[payment_terms]'] option[selected][value=custom]"
+
+    patch invoice_path(invoice), params: { invoice: { reference: "PO-2", payment_terms: "custom" } }, as: :turbo_stream
+    assert_equal [ "PO-2", Date.current + 30.days ], [ invoice.reload.reference, invoice.due_date ]
+  end
+
   test "invalid creation returns the populated form" do
     assert_no_difference "Invoice.count" do
       post invoices_path, params: { invoice: { customer_id: "" } }
@@ -31,12 +82,45 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Customer can't be blank/
   end
 
-  test "index links rows to show and exposes a separate edit action" do
-    invoice = create_invoice
+  test "index links rows to show and offers the next step for each invoice" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
     get invoices_path
 
-    assert_select "tbody a[href=?]", invoice_path(invoice)
-    assert_select "tbody a[href=?]", edit_invoice_path(invoice), text: "Edit"
+    assert_select "tbody a[href=?]", invoice_path(draft)
+    assert_select "tbody a[href=?]", invoice_path(draft, view: "email"), text: "Send"
+    assert_select "tbody a[href=?][data-turbo-frame=modal]", new_invoice_payment_path(sent), text: "Receive payment"
+  end
+
+  test "index flags overdue invoices and totals what is owed" do
+    invoice = create_invoice
+    invoice.update!(issue_date: Date.current - 40.days, due_date: Date.current - 10.days)
+    assert invoice.issue!
+    create_invoice
+
+    get invoices_path
+
+    assert_select "tbody td", text: "Overdue 10 days"
+    assert_select "a[href=?]", invoices_path(status: "overdue"), text: /Overdue · 1/
+  end
+
+  test "index filters by status and searches by number or customer" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
+    get invoices_path(status: "draft")
+    assert_select "tbody a[href=?]", invoice_path(draft)
+    assert_select "tbody a[href=?]", invoice_path(sent), count: 0
+
+    get invoices_path(q: sent.invoice_number)
+    assert_select "tbody a[href=?]", invoice_path(sent)
+    assert_select "tbody a[href=?]", invoice_path(draft), count: 0
+
+    get invoices_path(q: "nobody")
+    assert_select "body", text: /No invoices found/
   end
 
   test "update recalculates the invoice" do
@@ -69,7 +153,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a, button", text: "Send invoice", count: 0
     assert_select "button[data-copy-value-value]", text: /Copy secure link/
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", text: /Share link/
-    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
+    assert_select "a[href='#{new_invoice_payment_path(invoice)}']", text: "Receive payment"
   end
 
   test "a draft's header offers edit and send, with download and void in the menu" do
@@ -89,19 +173,53 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
   end
 
-  test "a sent invoice's header offers download and payment, with the client link and void in the menu" do
+  test "a sent invoice's header offers receive payment and download, with the client link and void in the menu" do
     invoice = create_invoice
     assert invoice.issue!
 
     get invoice_path(invoice)
 
     assert_select "a[href='#{invoice_path(invoice, format: :pdf)}']:not([role=menuitem])", text: /Download PDF/
-    assert_select "form[action='#{invoice_settlement_path(invoice)}'] button", text: "Mark as paid"
-    assert_select "[role=menu] a[href='#{new_invoice_payment_path(invoice)}']", text: /Record partial payment/
+    assert_select "a[href='#{new_invoice_payment_path(invoice)}']:not([role=menuitem])", text: /Receive payment/
+    assert_select "a, button", text: /Mark as paid|partial payment/, count: 0
     assert_select "[role=menu] button[data-copy-value-value]", text: /Copy secure link/
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", text: /Share link/
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
+    assert_select "[role=menu] form[action='#{invoice_duplicate_path(invoice)}'] button", text: /Duplicate/
     assert_select "a", text: "Back to invoices", count: 0
+  end
+
+  test "a paid invoice leads with download and offers duplicate" do
+    invoice = create_invoice
+    assert invoice.issue!
+    assert invoice.mark_paid!
+
+    get invoice_path(invoice)
+
+    assert_select "a.bg-balance-teal-700[href='#{invoice_path(invoice, format: :pdf)}']", text: /Download PDF/
+    assert_select "form[action='#{invoice_duplicate_path(invoice)}'] button[role=menuitem]", count: 0
+    assert_select "form[action='#{invoice_duplicate_path(invoice)}'] button", text: /Duplicate/
+    assert_select "a", text: /Receive payment/, count: 0
+  end
+
+  test "each list row has a menu with the actions for its status" do
+    draft = create_invoice
+    sent = create_invoice
+    assert sent.issue!
+
+    get invoices_path
+
+    assert_select "#invoice_#{draft.id} [role=menu]" do
+      assert_select "a[href='#{edit_invoice_path(draft)}']", text: /Edit/
+      assert_select "a[href='#{invoice_path(draft, format: :pdf)}']", text: /Download PDF/
+      assert_select "form[action='#{invoice_duplicate_path(draft)}'] button", text: /Duplicate/
+      assert_select "button[data-copy-value-value]", count: 0
+    end
+    assert_select "#invoice_#{sent.id} [role=menu]" do
+      assert_select "a", text: /Edit/, count: 0
+      assert_select "button[data-copy-value-value]", text: /Copy secure link/
+      assert_select "a[href='#{new_invoice_void_path(sent)}']", text: /Void invoice/
+    end
   end
 
   test "draft invoices do not expose client links" do
@@ -112,6 +230,27 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "button[data-copy-value-value]", count: 0
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", count: 0
+  end
+
+  test "the internal note stays off everything the customer sees" do
+    invoice = create_invoice
+    invoice.update!(internal_note: "Secret margin", notes: "Thanks", payment_instructions: "GTBank 0123456789", reference: "PO-9")
+    assert invoice.issue!
+
+    get invoice_path(invoice)
+    assert_select "p", text: /Internal note · Secret margin/
+    assert_select "article", text: /Secret margin/, count: 0
+    assert_select "article", text: /GTBank 0123456789/
+    assert_select "article", text: /PO-9/
+
+    get client_invoice_path(invoice.generate_token_for(:client_view))
+    assert_response :success
+    assert_no_match "Secret margin", response.body
+    assert_match "GTBank 0123456789", response.body
+
+    mail = InvoiceMailer.with(invoice: invoice, to: "a@example.com", subject: "Invoice", message: "Hello").issued
+    assert_no_match "Secret margin", mail.body.encoded
+    assert_match "GTBank 0123456789", mail.html_part.body.decoded
   end
 
   test "show downloads the saved invoice as a PDF" do

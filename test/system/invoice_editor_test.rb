@@ -33,7 +33,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     customer = workspace.customers.create!(name: "Invoice Customer", customer_type: "business", email: "customer@example.com")
     sign_in(user)
     visit new_invoice_path
-    assert_selector "tr.line-item", count: 2
+    assert_selector "tr.line-item", count: 1
     fill_in "Customer", with: "Invoice"
     find("[role='option']", text: customer.name).click
     assert_selector "input[name='invoice[customer_id]'][value='#{customer.id}']", visible: :all
@@ -45,11 +45,13 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     find("h2", text: "Product or service").click
     assert_selector "#invoice_total", text: "NGN 300.00"
     fill_in "invoice_bill_to_email", with: "custom@example.com"
+    click_on "Add line"
+    assert_selector "tr.line-item", count: 2
     within all("tr.line-item").last do
       click_on "Remove line"
     end
     assert_selector "tr.line-item", count: 1
-    click_on "Save and preview"
+    click_on "Save draft"
 
     assert_current_path %r{\A/invoices/\d+\z}
     invoice = workspace.invoices.reload.sole
@@ -60,7 +62,7 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     end
     find("h2", text: "Product or service").click
     assert_selector "#invoice_total", text: "NGN 150.00"
-    click_on "Save and preview"
+    click_on "Save draft"
     assert_current_path invoice_path(invoice)
     assert_equal 15_000, invoice.reload.total_minor
 
@@ -77,10 +79,15 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_equal 15_000, entry.journal_entry_lines.sum(&:debit)
     assert_no_link "Edit"
 
-    click_on "Mark as paid"
-    assert_text "₦150.00 received into Checking Account."
+    click_on "Receive payment"
+    within("dialog") do
+      assert_text "Balance due NGN 150.00"
+      assert_field "Amount received", with: "150.00"
+      click_on "Receive payment"
+    end
+    assert_text "Payment recorded for invoice #{invoice.invoice_number}."
     assert_selector "dd", text: "NGN 0.00"
-    assert_no_button "Mark as paid"
+    assert_no_link "Receive payment"
     assert_equal 0, invoice.reload.balance_due_kobo
     assert invoice.reload.paid?
 
@@ -89,6 +96,51 @@ class InvoiceEditorTest < ApplicationSystemTestCase
     assert_selector "td", text: "Reversed"
     assert invoice.reload.sent?
     assert_equal 15_000, invoice.balance_due_kobo
+  end
+
+  test "finds a service by typing, removes the first line, previews and goes to review" do
+    user = users(:one)
+    user.update!(password: "password")
+    workspace = workspaces(:ada_store)
+    income = workspace.provision_ledger!.accounts.find_by!(name: "Other Income")
+    workspace.services.create!(name: "Consulting", description: "Strategy consulting", default_rate: 250, income_account: income)
+    customer = workspace.customers.create!(name: "Typing Customer", customer_type: "business", email: "typing@example.com")
+    sign_in(user)
+
+    visit new_invoice_path
+    fill_in "Customer", with: "Typing"
+    find("[role='option']", text: customer.name).click
+    within "tr.line-item" do
+      find("input[name$='[description]']").set("cons")
+      find("[role='option']", text: "Consulting").click
+      assert_field "Rate", with: "250.00"
+      assert_text "Consulting"
+    end
+    assert_selector "#invoice_total", text: "NGN 250.00"
+
+    click_on "Add line"
+    assert_selector "tr.line-item", count: 2
+    within all("tr.line-item").last do
+      find("input[name$='[description]']").set("Travel")
+      find("input[name$='[rate]']").set("50")
+    end
+    find("h2", text: "Product or service").click
+    within(all("tr.line-item").first) { click_on "Remove line" }
+    assert_selector "tr.line-item", count: 1
+    assert_selector "#invoice_total", text: "NGN 50.00"
+
+    click_on "Preview"
+    within "#invoice_preview" do
+      assert_text "Travel"
+      assert_text "Typing Customer"
+      assert_no_text "Strategy consulting"
+    end
+
+    click_on "Review and send"
+    assert_field "Send to", with: "typing@example.com"
+    invoice = workspace.invoices.reload.sole
+    assert_current_path invoice_path(invoice, view: "email")
+    assert_equal [ 5_000, [ "Travel" ] ], [ invoice.total_minor, invoice.invoice_lines.map(&:description) ]
   end
 
   private

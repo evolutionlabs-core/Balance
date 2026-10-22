@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -229,11 +229,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.bigint "customer_id"
+    t.bigint "discount_minor", default: 0, null: false
+    t.string "discount_type"
+    t.decimal "discount_value", precision: 15, scale: 2
     t.date "due_date"
     t.bigint "estimate_id"
+    t.text "internal_note"
     t.string "invoice_number"
     t.date "issue_date"
+    t.text "notes"
+    t.text "payment_instructions"
+    t.string "payment_terms"
     t.bigint "project_id"
+    t.string "reference"
     t.string "status", default: "draft", null: false
     t.bigint "subtotal_minor", default: 0, null: false
     t.bigint "total_minor", default: 0, null: false
@@ -622,10 +630,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_175137) do
     t.datetime "created_at", null: false
     t.string "currency_code", default: "NGN", null: false
     t.bigint "default_deposit_account_id"
+    t.text "default_invoice_note"
+    t.string "default_payment_terms", default: "net_30", null: false
     t.bigint "default_sales_account_id"
     t.integer "fiscal_year_start_month", default: 1, null: false
     t.string "name", null: false
     t.datetime "onboarding_completed_at"
+    t.text "payment_instructions"
     t.datetime "updated_at", null: false
     t.string "workspace_type", default: "personal", null: false
     t.index ["default_deposit_account_id"], name: "index_workspaces_on_default_deposit_account_id"

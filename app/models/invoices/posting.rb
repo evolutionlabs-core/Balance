@@ -209,9 +209,9 @@ module Invoices
       end
 
       def posted_income_lines
-        invoice_lines.reject(&:marked_for_destruction?).map do |line|
+        discounted_income_lines(invoice_lines.reject(&:marked_for_destruction?).map do |line|
           { account: line.account, amount_kobo: line.amount_minor }
-        end
+        end)
       end
 
       # A rollback restores the database but not the in-memory aasm state; put

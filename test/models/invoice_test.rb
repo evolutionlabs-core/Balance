@@ -112,6 +112,54 @@ class InvoiceTest < ActiveSupport::TestCase
     assert_raises(AASM::InvalidTransition) { invoice.pay! }
   end
 
+  test "new invoices take the workspace terms, note and payment details" do
+    @workspace.update!(default_payment_terms: "net_15", default_invoice_note: "Thanks", payment_instructions: "GTBank 0123456789")
+    invoice = build_invoice(lines: [ { description: "Design", quantity: 1, rate: 100 } ], due_date: nil)
+
+    invoice.save!
+
+    assert_equal [ "net_15", Date.current + 15.days ], [ invoice.payment_terms, invoice.due_date ]
+    assert_equal [ "Thanks", "GTBank 0123456789" ], [ invoice.notes, invoice.payment_instructions ]
+  end
+
+  test "an explicit due date keeps custom terms" do
+    invoice = build_invoice(lines: [ { description: "Design", quantity: 1, rate: 100 } ], due_date: Date.current + 3.days)
+
+    invoice.save!
+
+    assert_equal [ "custom", Date.current + 3.days ], [ invoice.payment_terms, invoice.due_date ]
+  end
+
+  test "terms move the due date with the invoice date, and editing the due date makes them custom" do
+    invoice = build_invoice(lines: [ { description: "Design", quantity: 1, rate: 100 } ], due_date: nil, payment_terms: "net_30")
+    invoice.save!
+
+    invoice.update!(issue_date: Date.current - 10.days)
+    assert_equal Date.current + 20.days, invoice.due_date
+
+    invoice.update!(due_date: Date.current + 1.day)
+    assert_equal "custom", invoice.payment_terms
+  end
+
+  test "applies a percentage or fixed discount to the total" do
+    invoice = build_invoice(lines: [ { description: "Design", quantity: 1, rate: "1000.00" } ], discount_type: "percent", discount_value: 10)
+    invoice.save!
+    assert_equal [ 100_000, 10_000, 90_000 ], [ invoice.subtotal_minor, invoice.discount_minor, invoice.total_minor ]
+
+    invoice.update!(discount_type: "amount", discount_value: "250.50")
+    assert_equal [ 25_050, 74_950 ], [ invoice.discount_minor, invoice.total_minor ]
+
+    invoice.update!(discount_value: "")
+    assert_equal [ nil, 0, 100_000 ], [ invoice.discount_type, invoice.discount_minor, invoice.total_minor ]
+  end
+
+  test "rejects a discount that wipes out the subtotal" do
+    invoice = build_invoice(lines: [ { description: "Design", quantity: 1, rate: 100 } ], discount_type: "amount", discount_value: 100)
+
+    assert_not invoice.valid?
+    assert_includes invoice.errors[:discount_value], "must be less than the subtotal"
+  end
+
   private
     def build_invoice(lines: [], **attributes)
       invoice = @workspace.invoices.build(

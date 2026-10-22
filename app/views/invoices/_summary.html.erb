@@ -1,0 +1,15 @@
+<% overdue = summary.overdue %>
+<% not_due = summary.not_due %>
+<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+  <% [ [ "Overdue", overdue, "overdue", overdue.amount_kobo.positive? ? "text-red-700" : "text-neutral-950", "" ],
+       [ "Not due yet", not_due, "not_due", "text-neutral-950", "" ] ].each do |label, total, status, tone, span| %>
+    <%= link_to invoices_path(status: status), class: "min-w-0 rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300 sm:p-5 #{span}", aria: { current: (@status == status ? "true" : nil) } do %>
+      <p class="text-sm font-medium text-neutral-500"><%= label %> · <%= total.count %></p>
+      <p class="mt-2 text-lg font-semibold tracking-tight tabular-nums lg:text-2xl <%= tone %>"><%= money(total.amount_kobo) %></p>
+    <% end %>
+  <% end %>
+  <div class="col-span-2 min-w-0 rounded-xl border border-neutral-200 bg-white p-4 sm:col-span-1 sm:p-5">
+    <p class="text-sm font-medium text-neutral-500">Paid, last 30 days</p>
+    <p class="mt-2 text-lg font-semibold tracking-tight tabular-nums text-neutral-950 lg:text-2xl"><%= money(summary.paid_recently_kobo) %></p>
+  </div>
+</div>

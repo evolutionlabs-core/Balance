@@ -15,6 +15,7 @@ class WorkspacesController < ApplicationController
 
   private
     def workspace_params
-      params.expect(workspace: [ :name, :address, :default_sales_account_id, :default_deposit_account_id ])
+      params.expect(workspace: [ :name, :address, :default_sales_account_id, :default_deposit_account_id,
+        :default_payment_terms, :payment_instructions, :default_invoice_note ])
     end
 end
