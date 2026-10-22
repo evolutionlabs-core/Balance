@@ -158,6 +158,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=menu] button[data-copy-value-value]", text: /Copy secure link/
     assert_select "[role=menu] button[data-controller=share]:not([data-share-issue-url-value])", text: /Share link/
     assert_select "[role=menu] a[href='#{new_invoice_void_path(invoice)}']", text: /Void invoice/
+    assert_select "[role=menu] form[action='#{invoice_duplicate_path(invoice)}'] button", text: /Duplicate/
     assert_select "a", text: "Back to invoices", count: 0
   end
 

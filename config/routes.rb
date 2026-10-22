@@ -65,6 +65,7 @@ Rails.application.routes.draw do
       resource :reversal, only: %i[create], controller: "invoices/payment_reversals"
     end
     resource :void, only: %i[new create], controller: "invoices/voids"
+    resource :duplicate, only: %i[create], controller: "invoices/duplicates"
   end
   resources :vendors, only: %i[index new create show edit update]
   resources :bills, only: %i[index new create show edit update] do

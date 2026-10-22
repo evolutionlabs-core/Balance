@@ -136,6 +136,19 @@ class Invoice < ApplicationRecord
     save!
   end
 
+  def duplicate(user:)
+    copy = workspace.invoices.build(
+      user: user, customer: customer, project: project, currency_code: currency_code, issue_date: Date.current,
+      payment_terms: (payment_terms if PaymentTerms::DAYS.key?(payment_terms)),
+      notes: notes, payment_instructions: payment_instructions,
+      discount_type: discount_type, discount_value: discount_value
+    )
+    invoice_lines.each do |line|
+      copy.invoice_lines.build(line.slice(:service_id, :account_id, :description, :quantity, :rate_minor, :amount_minor))
+    end
+    copy
+  end
+
   def apply_workspace_defaults
     self.payment_terms ||= due_date.present? ? "custom" : workspace.default_payment_terms
     self.notes = workspace.default_invoice_note if notes.nil?
