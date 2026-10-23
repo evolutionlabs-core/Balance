@@ -4,6 +4,7 @@ class Vendor < ApplicationRecord
   has_many :bill_payments, through: :bills, source: :payments
 
   validates :name, presence: true
+  validates :email, email: true
   validates :phone, phone: true
 
   scope :active, -> { where(active: true) }

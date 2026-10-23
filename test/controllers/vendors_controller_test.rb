@@ -38,7 +38,8 @@ class VendorsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_select "li", text: /Phone can only contain numbers/
+    assert_select "#phone_error", text: "Phone can only contain numbers, spaces, +, - and brackets"
+    assert_select "input#vendor_phone[class*='border-red-500']"
   end
 
   test "updates a vendor" do
