@@ -23,6 +23,16 @@ class Workspace::ProvisioningTest < ActiveSupport::TestCase
     assert_equal "Retained Earnings", retained.name
   end
 
+  test "picks a default income account so typed-in invoice lines can be sent" do
+    personal = Workspace.create!(name: "Freelancer", currency_code: "NGN")
+    personal.provision_ledger!
+    business = Workspace.create!(name: "Studio", currency_code: "NGN")
+    provision_business_ledger!(business)
+
+    assert_equal "Other Income", personal.reload.default_sales_account.name
+    assert_equal "Sales", business.reload.default_sales_account.name
+  end
+
   test "provisions personal ledger with template and system accounts" do
     workspace = Workspace.create!(name: "Personal Co", currency_code: "NGN")
     ledger = workspace.provision_ledger!

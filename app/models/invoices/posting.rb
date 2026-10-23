@@ -155,7 +155,12 @@ module Invoices
       end
 
       def income_line_errors
-        invoice_lines.reject(&:marked_for_destruction?).each_with_index.filter_map do |line, index|
+        lines = invoice_lines.reject(&:marked_for_destruction?)
+        if workspace.default_sales_account.nil? && lines.any? { |line| line.account.nil? }
+          return [ "Choose a default income account in Settings, or pick a service for each line" ]
+        end
+
+        lines.each_with_index.filter_map do |line, index|
           if line.account.nil?
             "Line #{index + 1}: #{line.description.presence || "item"} has no income account"
           elsif line.account.base_type != "income"

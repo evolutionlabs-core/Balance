@@ -143,7 +143,7 @@ class EstimateTest < ActiveSupport::TestCase
     assert_equal format("INV-%06d", invoice.id), invoice.invoice_number
   end
 
-  test "free-form estimates convert without requiring an income account" do
+  test "free-form estimates convert onto the workspace's default income account" do
     estimate = @workspace.estimates.create!(user: @user, customer: @customer, project: @project,
       line_items_attributes: [ { description: "Custom work", quantity: 3, rate: 125 } ])
     invoice = estimate.build_invoice(user: @user)
@@ -152,7 +152,7 @@ class EstimateTest < ActiveSupport::TestCase
     assert_equal 37_500, invoice.total_minor
     assert_equal "Custom work", invoice.invoice_lines.sole.description
     assert_nil invoice.invoice_lines.sole.service
-    assert_nil invoice.invoice_lines.sole.account
+    assert_equal @workspace.default_sales_account, invoice.invoice_lines.sole.account
     assert invoice.draft?
     assert_empty @ledger.journal_entries
   end

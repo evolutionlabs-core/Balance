@@ -92,6 +92,27 @@ class Invoices::IssuancesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Invoice #{@invoice.invoice_number} marked as sent.", flash[:notice]
   end
 
+  test "a typed-in line on a new workspace books to the default income account" do
+    invoice = @workspace.invoices.create!(user: users(:one), customer: @customer, issue_date: Date.current,
+      invoice_lines_attributes: [ { description: "Logo design", quantity: 1, rate: 500 } ])
+
+    post invoice_issuance_path(invoice), params: { delivery: { send_email: "0" } }
+
+    assert invoice.reload.sent?
+    assert_equal "Other Income", invoice.invoice_lines.sole.account.name
+  end
+
+  test "explains how to fix a missing default income account" do
+    @workspace.update!(default_sales_account: nil)
+    invoice = @workspace.invoices.create!(user: users(:one), customer: @customer, issue_date: Date.current,
+      invoice_lines_attributes: [ { description: "Logo design", quantity: 1, rate: 500 } ])
+
+    post invoice_issuance_path(invoice), params: { delivery: { send_email: "0" } }
+
+    assert invoice.reload.draft?
+    assert_equal "Choose a default income account in Settings, or pick a service for each line", flash[:alert]
+  end
+
   test "sending a sent invoice redirects with an alert" do
     @invoice.issue!
 
