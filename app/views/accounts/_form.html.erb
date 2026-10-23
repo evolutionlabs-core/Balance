@@ -1,4 +1,6 @@
-<%= form_with model: account, url: account.persisted? ? account_path(account) : accounts_path do |form| %>
+<% subtype_labels = AccountSubtypes::SUBTYPES.transform_values { |subtypes| subtypes.map { |subtype| [ subtype.humanize, subtype ] } } %>
+<%= form_with model: account, url: account.persisted? ? account_path(account) : accounts_path,
+    data: { controller: "account-subtypes", account_subtypes_map_value: subtype_labels.to_json } do |form| %>
   <%= render "shared/modal/header", title: account.persisted? ? "Edit account" : "New account" %>
 
   <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
@@ -19,18 +21,15 @@
       <%= render "shared/select_menu", form: form, attribute: :base_type,
           options: options_for_select(AccountSubtypes::SUBTYPES.keys.map { |type| [ type.humanize, type ] }, account.base_type),
           prompt: "Select type",
-          select_data: {} %>
+          select_data: { account_subtypes_target: "type", action: "change->account-subtypes#filter" } %>
     </div>
 
     <div>
       <%= form.label :subtype, "Subtype", class: field_label_class %>
       <%= render "shared/select_menu", form: form, attribute: :subtype,
-          options: grouped_options_for_select(
-            AccountSubtypes::SUBTYPES.map { |type, subtypes| [ type.humanize, subtypes.map { |subtype| [ subtype.humanize, subtype ] } ] },
-            account.subtype
-          ),
-          prompt: "Select subtype",
-          select_data: {},
+          options: options_for_select(subtype_labels.fetch(account.base_type.to_s, []), account.subtype),
+          prompt: account.base_type.present? ? "Select subtype" : "Select a type first",
+          select_data: { account_subtypes_target: "subtype" },
           searchable: true, search_placeholder: "Search subtypes…", empty_message: "No subtypes found" %>
     </div>
 

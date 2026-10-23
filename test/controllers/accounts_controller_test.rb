@@ -61,6 +61,16 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#modal"
     assert_select "select#account_base_type option", text: "Asset"
     assert_select "select#account_base_type option", text: "Expense"
+    assert_select "select#account_subtype option", count: 1
+    assert_select "select#account_subtype option", text: "Select a type first"
+  end
+
+  test "a rejected account keeps only its type's subtypes" do
+    post accounts_path, params: { account: { code: "", name: "Fuel", base_type: "expense", subtype: "fuel" } }
+
+    assert_response :unprocessable_content
+    options = css_select("select#account_subtype option").map { |option| option["value"] }.compact_blank
+    assert_equal AccountSubtypes::SUBTYPES.fetch("expense").sort, options.sort
   end
 
   test "derives the normal balance from the base type on create" do
