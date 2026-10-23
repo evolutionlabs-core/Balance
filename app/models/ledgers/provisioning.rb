@@ -12,7 +12,10 @@ module Ledgers
           ledger.accounts.create!(**account, created_by: "system")
         end
 
-        update!(default_deposit_account: ledger.accounts.find_by!(key: "bank"))
+        update!(
+          default_deposit_account: ledger.accounts.find_by!(key: "bank"),
+          default_sales_account: ledger.accounts.find_by!(key: business? ? "sales" : "other_income")
+        )
         ledger
       end
     end
