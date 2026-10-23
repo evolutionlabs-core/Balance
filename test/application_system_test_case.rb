@@ -6,6 +6,7 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   setup do
     Capybara.default_max_wait_time = 5
     page.driver.browser.execute_cdp("Emulation.setFocusEmulationEnabled", enabled: true)
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "reduce" } ])
   end
 
   teardown do
