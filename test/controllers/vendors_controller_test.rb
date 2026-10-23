@@ -32,6 +32,16 @@ class VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
+  test "rejects a phone number with letters" do
+    assert_no_difference -> { Vendor.count } do
+      post vendors_path, params: { vendor: { name: "Ikeja Paper", phone: "jxksa" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "#phone_error", text: "Phone can only contain numbers, spaces, +, - and brackets"
+    assert_select "input#vendor_phone[class*='border-red-500']"
+  end
+
   test "updates a vendor" do
     vendor = @workspace.vendors.create!(name: "Old name")
 

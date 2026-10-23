@@ -33,6 +33,15 @@ class CustomerDetailsTest < ApplicationSystemTestCase
     assert_no_selector "h2", text: "Transaction history"
   end
 
+  test "letters can't be typed into the phone field" do
+    visit customers_path
+    find("a[aria-label='Edit Ada Obi']", match: :first).click
+
+    fill_in "Phone", with: "jxksa 0803 123 4567"
+
+    assert_field "Phone", with: " 0803 123 4567"
+  end
+
   private
     def sign_in
       visit new_session_path

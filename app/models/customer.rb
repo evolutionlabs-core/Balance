@@ -9,6 +9,8 @@ class Customer < ApplicationRecord
 
   validates :name, :email, :customer_type, presence: true
   validates :customer_type, inclusion: { in: CUSTOMER_TYPES }
+  validates :email, email: true
+  validates :phone, phone: true
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:name) }

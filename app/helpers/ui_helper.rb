@@ -42,6 +42,24 @@ module UiHelper
     "block min-h-11 w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-950 shadow-none transition-colors placeholder:text-neutral-400 focus:border-balance-teal-700 focus:outline-none focus:ring-1 focus:ring-balance-teal-700 sm:text-sm"
   end
 
+  def field_class_for(record, attribute)
+    if record.errors.include?(attribute)
+      field_class.sub("border-neutral-300", "border-red-500")
+    else
+      field_class
+    end
+  end
+
+  def field_error(record, attribute)
+    return unless record.errors.include?(attribute)
+
+    tag.p(record.errors.full_messages_for(attribute).first, class: "mt-1.5 text-sm text-red-700", id: "#{attribute}_error")
+  end
+
+  def errors_except(record, *attributes)
+    record.errors.reject { |error| attributes.include?(error.attribute) }.map(&:full_message)
+  end
+
   def field_label_class
     "mb-1.5 block text-sm font-medium text-neutral-900"
   end

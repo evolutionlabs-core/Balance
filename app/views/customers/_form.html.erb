@@ -3,7 +3,7 @@
   <%= render "shared/modal/header", title: customer.persisted? ? "Edit customer" : "New customer" %>
 
   <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-    <%= render "shared/form_errors", record: customer %>
+    <%= render "shared/form_errors", record: errors_except(customer, :email, :phone) %>
 
     <section class="space-y-4">
       <div>
@@ -14,11 +14,14 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <%= form.label :email, class: field_label_class %>
-          <%= form.email_field :email, required: true, placeholder: "name@example.com", class: field_class %>
+          <%= form.email_field :email, required: true, placeholder: "name@example.com", class: field_class_for(customer, :email), autocomplete: "email",
+              aria: { invalid: customer.errors.include?(:email), describedby: ("email_error" if customer.errors.include?(:email)) } %>
+          <%= field_error(customer, :email) %>
         </div>
         <div>
           <%= form.label :phone, class: field_label_class %>
-          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class %>
+          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class_for(customer, :phone), inputmode: "tel", autocomplete: "tel", data: { controller: "phone-input", action: "input->phone-input#clean" } %>
+          <%= field_error(customer, :phone) %>
         </div>
       </div>
 

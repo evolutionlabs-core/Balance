@@ -2,7 +2,7 @@
   <%= render "shared/modal/header", title: vendor.persisted? ? "Edit vendor" : "New vendor" %>
 
   <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-    <%= render "shared/form_errors", record: vendor %>
+    <%= render "shared/form_errors", record: errors_except(vendor, :email, :phone) %>
 
     <section class="space-y-4">
       <div>
@@ -13,11 +13,14 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <%= form.label :email, class: field_label_class %>
-          <%= form.email_field :email, placeholder: "name@example.com", class: field_class %>
+          <%= form.email_field :email, placeholder: "name@example.com", class: field_class_for(vendor, :email), autocomplete: "email",
+              aria: { invalid: vendor.errors.include?(:email), describedby: ("email_error" if vendor.errors.include?(:email)) } %>
+          <%= field_error(vendor, :email) %>
         </div>
         <div>
           <%= form.label :phone, class: field_label_class %>
-          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class %>
+          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class_for(vendor, :phone), inputmode: "tel", autocomplete: "tel", data: { controller: "phone-input", action: "input->phone-input#clean" } %>
+          <%= field_error(vendor, :phone) %>
         </div>
       </div>
 

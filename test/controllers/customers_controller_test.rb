@@ -26,6 +26,17 @@ class CustomersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "12 Market Road, Lagos", customer.address
   end
 
+  test "shows an invalid email under the email field" do
+    assert_no_difference("Customer.count") do
+      post customers_path, params: { customer: { name: "Ada Supplies", customer_type: "business", email: "accounts@example" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "#email_error", text: "Email isn't a valid email address"
+    assert_select "input#customer_email[aria-invalid=true][aria-describedby=email_error]"
+    assert_select "li", text: /Email/, count: 0
+  end
+
   test "deactivates a customer without deleting it" do
     customer = @workspace.customers.create!(name: "Ada", customer_type: "business", email: "ada@example.com")
 
