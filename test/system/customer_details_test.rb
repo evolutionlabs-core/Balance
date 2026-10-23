@@ -41,4 +41,13 @@ class CustomerDetailsTest < ApplicationSystemTestCase
       click_on "Sign in"
       assert_current_path root_path
     end
+
+  test "letters can't be typed into the phone field" do
+    visit customers_path
+    find("a[aria-label='Edit Ada Obi']", match: :first).click
+
+    fill_in "Phone", with: "jxksa 0803 123 4567"
+
+    assert_field "Phone", with: " 0803 123 4567"
+  end
 end

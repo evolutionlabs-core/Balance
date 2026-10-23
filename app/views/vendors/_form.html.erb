@@ -17,7 +17,7 @@
         </div>
         <div>
           <%= form.label :phone, class: field_label_class %>
-          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class %>
+          <%= form.telephone_field :phone, placeholder: "Phone number", class: field_class, inputmode: "tel", autocomplete: "tel", data: { controller: "phone-input", action: "input->phone-input#clean" } %>
         </div>
       </div>
 
