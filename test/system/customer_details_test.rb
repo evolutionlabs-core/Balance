@@ -33,15 +33,6 @@ class CustomerDetailsTest < ApplicationSystemTestCase
     assert_no_selector "h2", text: "Transaction history"
   end
 
-  private
-    def sign_in
-      visit new_session_path
-      fill_in "Email", with: users(:one).email_address
-      fill_in "Password", with: "password"
-      click_on "Sign in"
-      assert_current_path root_path
-    end
-
   test "letters can't be typed into the phone field" do
     visit customers_path
     find("a[aria-label='Edit Ada Obi']", match: :first).click
@@ -50,4 +41,13 @@ class CustomerDetailsTest < ApplicationSystemTestCase
 
     assert_field "Phone", with: " 0803 123 4567"
   end
+
+  private
+    def sign_in
+      visit new_session_path
+      fill_in "Email", with: users(:one).email_address
+      fill_in "Password", with: "password"
+      click_on "Sign in"
+      assert_current_path root_path
+    end
 end

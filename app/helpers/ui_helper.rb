@@ -43,9 +43,11 @@ module UiHelper
   end
 
   def field_class_for(record, attribute)
-    return field_class unless record.errors.include?(attribute)
-
-    field_class.sub("border-neutral-300", "border-red-500")
+    if record.errors.include?(attribute)
+      field_class.sub("border-neutral-300", "border-red-500")
+    else
+      field_class
+    end
   end
 
   def field_error(record, attribute)
