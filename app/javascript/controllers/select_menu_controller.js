@@ -205,6 +205,7 @@ export default class extends Controller {
     const selected = option?.value
     if (this.searchInTriggerValue) {
       this.labelTarget.value = selected ? option.textContent : ""
+      if (!selected) this.labelTarget.placeholder = this.nativeTarget.options[0]?.textContent
     } else {
       this.labelTarget.textContent = selected ? option.textContent : this.nativeTarget.options[0]?.textContent
     }

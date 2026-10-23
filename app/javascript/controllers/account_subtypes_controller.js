@@ -20,8 +20,6 @@ export default class extends Controller {
     })
 
     this.subtypeTarget.replaceChildren(prompt, ...options)
-    const search = this.subtypeTarget.closest("[data-controller~='select-menu']")?.querySelector("input[role=combobox]")
-    if (search) search.placeholder = prompt.textContent
     this.subtypeTarget.dispatchEvent(new Event("select-menu:refresh", { bubbles: true }))
   }
 }
