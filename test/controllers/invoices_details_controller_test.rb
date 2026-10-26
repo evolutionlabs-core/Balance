@@ -23,16 +23,13 @@ class Invoices::DetailsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='invoice[total_minor]']", count: 0
   end
 
-  test "saves the details and lists the change on the invoice" do
+  test "saves the details" do
     patch invoice_details_path(@invoice), params: { invoice: { due_date: (Date.current + 45).iso8601, reference: "PO-7" } }
 
     assert_redirected_to invoice_path(@invoice)
-    assert_equal "PO-7", @invoice.reload.reference
-
-    get invoice_path(@invoice)
-    assert_select "#changes-heading", text: "Changes"
-    assert_select "li p", text: "Reference: — → PO-7"
-    assert_select "li p", text: /Terms: Net 30 → Custom/
+    @invoice.reload
+    assert_equal "PO-7", @invoice.reference
+    assert_equal Date.current + 45, @invoice.due_date
   end
 
   test "an invalid billing email is shown on the field" do

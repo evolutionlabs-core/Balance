@@ -6,7 +6,7 @@ class Invoices::DetailsController < ApplicationController
   end
 
   def update
-    if @invoice.revise(details_params, user: Current.user)
+    if @invoice.revise(details_params)
       redirect_out_of_frame invoice_path(@invoice)
     else
       render :edit, status: :unprocessable_content

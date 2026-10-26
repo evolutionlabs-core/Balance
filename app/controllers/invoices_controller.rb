@@ -104,7 +104,7 @@ class InvoicesController < ApplicationController
     end
 
     def set_invoice
-      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments, :credit_notes, revisions: :user).find(params[:id])
+      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments, :credit_notes).find(params[:id])
     end
 
     def ensure_draft

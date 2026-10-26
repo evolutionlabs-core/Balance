@@ -1,6 +1,6 @@
 require "test_helper"
 
-class Invoice::RevisionTest < ActiveSupport::TestCase
+class Invoice::DetailsTest < ActiveSupport::TestCase
   setup do
     @workspace = workspaces(:ada_store)
     @workspace.provision_ledger!
@@ -12,36 +12,28 @@ class Invoice::RevisionTest < ActiveSupport::TestCase
     assert @invoice.issue!
   end
 
-  test "changes the details of a sent invoice and logs what changed" do
+  test "changes the details of a sent invoice without touching its amounts or the books" do
     assert_no_difference -> { JournalEntry.count } do
-      assert @invoice.revise({ "due_date" => "2026-11-15", "reference" => "PO-7", "bill_to_email" => "billing@acme.test" }, user: users(:one))
+      assert @invoice.revise({ "due_date" => "2026-11-15", "reference" => "PO-7", "bill_to_email" => "billing@acme.test" })
     end
 
     @invoice.reload
     assert_equal Date.new(2026, 11, 15), @invoice.due_date
     assert_equal "custom", @invoice.payment_terms
+    assert_equal "PO-7", @invoice.reference
+    assert_equal "billing@acme.test", @invoice.bill_to_email
     assert_equal 30_000, @invoice.total_minor
     assert_equal [ 30_000 ], @invoice.invoice_lines.map(&:amount_minor)
-
-    revision = @invoice.revisions.sole
-    assert_equal users(:one), revision.user
-    assert_equal @workspace, revision.workspace
-    assert_equal({
-      "due_date" => [ "2026-10-31", "2026-11-15" ],
-      "payment_terms" => [ "net_30", "custom" ],
-      "reference" => [ nil, "PO-7" ],
-      "bill_to_email" => [ "acme@example.com", "billing@acme.test" ]
-    }, revision.field_changes)
   end
 
   test "changing the terms recalculates the due date from the invoice date" do
-    assert @invoice.revise({ "payment_terms" => "net_60" }, user: users(:one))
+    assert @invoice.revise({ "payment_terms" => "net_60" })
 
     assert_equal Date.new(2026, 11, 30), @invoice.reload.due_date
   end
 
   test "amounts stay locked" do
-    assert @invoice.revise({ "discount_value" => "50", "notes" => "Thanks" }, user: users(:one))
+    assert @invoice.revise({ "discount_value" => "50", "notes" => "Thanks" })
     assert_equal 30_000, @invoice.reload.total_minor
 
     assert_not @invoice.update(discount_type: "amount", discount_value: 50)
@@ -49,30 +41,22 @@ class Invoice::RevisionTest < ActiveSupport::TestCase
     assert_equal 30_000, @invoice.reload.total_minor
   end
 
-  test "details only change through a logged revision" do
+  test "details only change through the edit details form" do
     assert_not @invoice.update(reference: "PO-7")
     @customer.update!(email: "accounts@acme.test")
     assert_raises(ActiveRecord::RecordNotSaved) { @invoice.reload.change_customer(@customer) }
 
     assert_nil @invoice.reload.reference
     assert_equal "acme@example.com", @invoice.bill_to_email
-    assert_empty @invoice.revisions
   end
 
-  test "an invalid billing email or an early due date is refused without logging" do
-    assert_no_difference -> { InvoiceRevision.count } do
-      assert_not @invoice.revise({ "bill_to_email" => "acme at example" }, user: users(:one))
-      assert_includes @invoice.errors[:bill_to_email], "isn't a valid email address"
+  test "an invalid billing email or an early due date is refused" do
+    assert_not @invoice.revise({ "bill_to_email" => "acme at example" })
+    assert_includes @invoice.errors[:bill_to_email], "isn't a valid email address"
 
-      assert_not @invoice.reload.revise({ "due_date" => "2026-09-30" }, user: users(:one))
-      assert_includes @invoice.errors[:due_date], "can't be before the invoice date"
-    end
-  end
-
-  test "saving without changes logs nothing" do
-    assert_no_difference -> { InvoiceRevision.count } do
-      assert @invoice.revise({ "reference" => "", "notes" => @invoice.notes }, user: users(:one))
-    end
+    assert_not @invoice.reload.revise({ "due_date" => "2026-09-30" })
+    assert_includes @invoice.errors[:due_date], "can't be before the invoice date"
+    assert_equal Date.new(2026, 10, 31), @invoice.reload.due_date
   end
 
   test "voided invoices stay fully locked" do

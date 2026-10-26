@@ -240,18 +240,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_110000) do
     t.index ["workspace_id"], name: "index_invoice_payments_on_workspace_id"
   end
 
-  create_table "invoice_revisions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.jsonb "field_changes", default: {}, null: false
-    t.bigint "invoice_id", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.bigint "workspace_id", null: false
-    t.index ["invoice_id"], name: "index_invoice_revisions_on_invoice_id"
-    t.index ["user_id"], name: "index_invoice_revisions_on_user_id"
-    t.index ["workspace_id"], name: "index_invoice_revisions_on_workspace_id"
-  end
-
   create_table "invoices", force: :cascade do |t|
     t.text "bill_to_address"
     t.string "bill_to_email"
@@ -711,9 +699,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_110000) do
   add_foreign_key "invoice_payments", "invoices"
   add_foreign_key "invoice_payments", "journal_entries"
   add_foreign_key "invoice_payments", "workspaces"
-  add_foreign_key "invoice_revisions", "invoices"
-  add_foreign_key "invoice_revisions", "users"
-  add_foreign_key "invoice_revisions", "workspaces"
   add_foreign_key "invoices", "customers"
   add_foreign_key "invoices", "estimates"
   add_foreign_key "invoices", "projects"

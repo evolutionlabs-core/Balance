@@ -15,7 +15,6 @@ class Invoice < ApplicationRecord
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
   has_many :payments, class_name: "InvoicePayment", dependent: :restrict_with_error
   has_many :credit_notes, -> { order(:id) }, dependent: :restrict_with_error
-  has_many :revisions, -> { order(:created_at, :id) }, class_name: "InvoiceRevision", dependent: :restrict_with_error
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :blank_line_attributes?
 
@@ -110,17 +109,10 @@ class Invoice < ApplicationRecord
     sent? || paid?
   end
 
-  def revise(attributes, user:)
+  def revise(attributes)
     @revising = true
     assign_attributes(attributes.to_h.slice(*EDITABLE_AFTER_SENDING))
-
-    transaction do
-      raise ActiveRecord::Rollback unless save(context: :revision)
-
-      field_changes = saved_changes.slice(*EDITABLE_AFTER_SENDING).reject { |_field, (from, to)| from.blank? && to.blank? }
-      revisions.create!(workspace: workspace, user: user, field_changes: field_changes) if field_changes.any?
-      true
-    end.present?
+    save(context: :revision)
   ensure
     @revising = false
   end

@@ -36,7 +36,7 @@ class InvoiceCorrectionsTest < ApplicationSystemTestCase
     assert_text "Balance due\nNGN 300.00"
   end
 
-  test "changes the due date of a sent invoice and shows the change" do
+  test "changes the reference of a sent invoice" do
     visit invoice_path(@invoice)
     find("button[aria-label='More invoice actions']").click
     click_on "Edit details"
@@ -47,7 +47,8 @@ class InvoiceCorrectionsTest < ApplicationSystemTestCase
       click_on "Save"
     end
 
-    within("section", text: "Changes") { assert_text "Reference: — → PO-7" }
+    assert_no_selector "#modal dialog"
+    assert_text "PO-7"
   end
 
   private
