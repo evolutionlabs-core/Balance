@@ -49,7 +49,7 @@ class CreditNotesController < ApplicationController
 
     def credit_note_params
       params.expect(credit_note: [
-        :customer_id, :invoice_id, :issued_on, :notes, :discount_type, :discount_value,
+        :customer_id, :invoice_id, :issued_on, :notes,
         lines_attributes: [ [ :service_id, :description, :quantity, :rate, :amount ] ]
       ])
     end

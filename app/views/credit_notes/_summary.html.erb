@@ -1,0 +1,19 @@
+<% invoice = credit_note.invoice %>
+<div class="self-start border-t border-neutral-200 pt-4">
+  <div class="flex items-center justify-between text-sm">
+    <span class="text-neutral-500">Subtotal</span>
+    <span id="credit_note_subtotal" class="font-medium tabular-nums text-neutral-950" data-document-editor-target="subtotal"><%= minor_currency(credit_note.subtotal_minor, credit_note.currency_code) %></span>
+  </div>
+  <% if invoice&.discounted? %>
+    <input type="hidden" value="<%= (invoice.discount_minor * 100 / invoice.subtotal_minor.to_r).to_f %>" data-document-editor-target="discountValue">
+    <input type="hidden" value="percent" data-document-editor-target="discountType">
+    <div class="mt-3 flex items-center justify-between text-sm">
+      <span class="text-neutral-500">Discount <span class="text-neutral-400">· same share as the invoice</span></span>
+      <span id="credit_note_discount" class="tabular-nums text-neutral-950" data-document-editor-target="discount">−<%= minor_currency(credit_note.discount_minor, credit_note.currency_code) %></span>
+    </div>
+  <% end %>
+  <div class="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3">
+    <span class="font-semibold text-neutral-950">Total credit</span>
+    <span id="credit_note_total" class="text-xl font-semibold tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(credit_note.total_minor, credit_note.currency_code) %></span>
+  </div>
+</div>

@@ -34,7 +34,6 @@ class CreditNote < ApplicationRecord
     credit_note = invoice.workspace.credit_notes.build(
       user: user, customer: invoice.customer, invoice: invoice, issued_on: Date.current, currency_code: invoice.currency_code,
       bill_to_name: invoice.bill_to_name, bill_to_email: invoice.bill_to_email, bill_to_address: invoice.bill_to_address,
-      discount_type: invoice.discount_type, discount_value: invoice.discount_value,
       subtotal_minor: invoice.subtotal_minor, discount_minor: invoice.discount_minor, total_minor: invoice.total_minor
     )
     invoice.invoice_lines.each do |line|
@@ -78,6 +77,14 @@ class CreditNote < ApplicationRecord
       self.subtotal_minor = active_lines.sum { |line| line.amount_minor || 0 }
       calculate_discount
       self.total_minor = subtotal_minor - discount_minor
+    end
+
+    def calculate_discount
+      self.discount_minor = if invoice&.discounted?
+        (invoice.discount_minor * subtotal_minor / invoice.subtotal_minor.to_r).round
+      else
+        0
+      end
     end
 
     def active_lines

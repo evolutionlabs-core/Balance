@@ -61,7 +61,7 @@
           <%= form.label :notes, "Note to customer", class: field_label_class %>
           <%= form.text_area :notes, form: "new_credit_note_form", rows: 3, placeholder: "Credit for 2 returned items", class: field_class %>
         </div>
-        <%= render "shared/line_items/summary", document: credit_note, scope: "credit_note", discount: credit_note.discounted?, class_name: "self-start" %>
+        <%= render "credit_notes/summary", credit_note: credit_note %>
       </section>
     <% end %>
   </article>

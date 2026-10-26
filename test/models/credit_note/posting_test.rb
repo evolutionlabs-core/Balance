@@ -46,6 +46,32 @@ class CreditNote::PostingTest < ActiveSupport::TestCase
     assert_equal 0, receivable_balance
   end
 
+  test "a partial credit from a discounted invoice takes the same share of the discount" do
+    invoice = sent_invoice(lines: [ [ @consulting, 3, 100 ], [ @design, 1, 100 ] ], discount: 100)
+
+    consulting_only = CreditNote.from_invoice(invoice, user: users(:one))
+    consulting_only.lines.last.mark_for_destruction
+    assert consulting_only.issue!
+    assert_equal [ 30_000, 7_500, 22_500 ], [ consulting_only.subtotal_minor, consulting_only.discount_minor, consulting_only.total_minor ]
+    assert_equal({ @income => [ 22_500, 0 ], @ar => [ 0, 22_500 ] }, entry_lines(consulting_only.journal_entry))
+
+    design_only = CreditNote.from_invoice(invoice, user: users(:one))
+    design_only.lines.first.mark_for_destruction
+    assert design_only.issue!
+    assert_equal 7_500, design_only.total_minor
+    assert invoice.reload.paid?
+    assert_equal 0, receivable_balance
+  end
+
+  test "live totals use the invoice's discount share" do
+    invoice = sent_invoice(lines: [ [ @consulting, 3, 100 ], [ @design, 1, 100 ] ], discount: 100)
+
+    calculation = CreditNote::Calculation.new(@workspace, users(:one),
+      { "invoice_id" => invoice.id, "lines_attributes" => { "0" => { "description" => "Consulting", "quantity" => "3", "rate" => "100", "amount" => "300" } } })
+
+    assert_equal 22_500, calculation.credit_note.total_minor
+  end
+
   test "credit beyond the invoice balance stays with the customer and settles their next invoice" do
     invoice = sent_invoice(lines: [ [ @consulting, 1, 100 ] ])
     credit_note = new_credit_note(invoice: invoice, amount: 150)
