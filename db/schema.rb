@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -83,6 +83,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
     t.index ["vendor_id"], name: "index_bills_on_vendor_id"
     t.index ["workspace_id", "status"], name: "index_bills_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_bills_on_workspace_id"
+  end
+
+  create_table "credit_notes", force: :cascade do |t|
+    t.bigint "amount_minor", null: false
+    t.datetime "created_at", null: false
+    t.bigint "invoice_id", null: false
+    t.date "issued_on", null: false
+    t.bigint "journal_entry_id"
+    t.string "number"
+    t.text "reason", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "void_journal_entry_id"
+    t.datetime "voided_at"
+    t.bigint "workspace_id", null: false
+    t.index ["invoice_id"], name: "index_credit_notes_on_invoice_id"
+    t.index ["journal_entry_id"], name: "index_credit_notes_on_journal_entry_id", unique: true
+    t.index ["user_id"], name: "index_credit_notes_on_user_id"
+    t.index ["void_journal_entry_id"], name: "index_credit_notes_on_void_journal_entry_id", unique: true
+    t.index ["workspace_id", "number"], name: "index_credit_notes_on_workspace_id_and_number", unique: true
+    t.index ["workspace_id"], name: "index_credit_notes_on_workspace_id"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -217,6 +238,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
     t.index ["journal_entry_id"], name: "index_invoice_payments_on_journal_entry_id"
     t.index ["reverses_invoice_payment_id"], name: "index_invoice_payments_on_reverses_invoice_payment_id", unique: true
     t.index ["workspace_id"], name: "index_invoice_payments_on_workspace_id"
+  end
+
+  create_table "invoice_revisions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "field_changes", default: {}, null: false
+    t.bigint "invoice_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["invoice_id"], name: "index_invoice_revisions_on_invoice_id"
+    t.index ["user_id"], name: "index_invoice_revisions_on_user_id"
+    t.index ["workspace_id"], name: "index_invoice_revisions_on_workspace_id"
   end
 
   create_table "invoices", force: :cascade do |t|
@@ -653,6 +686,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
   add_foreign_key "bills", "users"
   add_foreign_key "bills", "vendors"
   add_foreign_key "bills", "workspaces"
+  add_foreign_key "credit_notes", "invoices"
+  add_foreign_key "credit_notes", "journal_entries"
+  add_foreign_key "credit_notes", "journal_entries", column: "void_journal_entry_id"
+  add_foreign_key "credit_notes", "users"
+  add_foreign_key "credit_notes", "workspaces"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "entry_templates", "users"
   add_foreign_key "entry_templates", "workspaces"
@@ -673,6 +711,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
   add_foreign_key "invoice_payments", "invoices"
   add_foreign_key "invoice_payments", "journal_entries"
   add_foreign_key "invoice_payments", "workspaces"
+  add_foreign_key "invoice_revisions", "invoices"
+  add_foreign_key "invoice_revisions", "users"
+  add_foreign_key "invoice_revisions", "workspaces"
   add_foreign_key "invoices", "customers"
   add_foreign_key "invoices", "estimates"
   add_foreign_key "invoices", "projects"

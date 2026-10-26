@@ -66,7 +66,7 @@ class AgedBalances
 
     def open_documents
       case side
-      when :receivables then workspace.invoices.where(status: "sent").includes(:payments)
+      when :receivables then workspace.invoices.where(status: "sent").includes(:payments, :credit_notes)
       when :payables then workspace.bills.where(status: "open").includes(:payments)
       end
     end

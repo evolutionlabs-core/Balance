@@ -5,6 +5,7 @@ class Invoice < ApplicationRecord
   include Invoices::Discount
 
   STATUSES = %w[draft sent paid voided].freeze
+  EDITABLE_AFTER_SENDING = %w[payment_terms due_date reference bill_to_email notes internal_note].freeze
 
   belongs_to :workspace
   belongs_to :user
@@ -13,6 +14,8 @@ class Invoice < ApplicationRecord
   belongs_to :project, optional: true
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
   has_many :payments, class_name: "InvoicePayment", dependent: :restrict_with_error
+  has_many :credit_notes, -> { order(:id) }, dependent: :restrict_with_error
+  has_many :revisions, -> { order(:created_at, :id) }, class_name: "InvoiceRevision", dependent: :restrict_with_error
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :blank_line_attributes?
 
@@ -22,6 +25,8 @@ class Invoice < ApplicationRecord
   validates :payment_terms, inclusion: { in: PaymentTerms.keys }, allow_nil: true
   validate :at_least_one_line, if: -> { @invoice_lines_submitted }
   validate :customer_belongs_to_workspace
+  validates :bill_to_email, email: true, on: :revision
+  validate :due_date_not_before_issue_date, on: :revision
 
   scope :outstanding, -> { where(status: "sent") }
   scope :overdue, ->(on = Date.current) { outstanding.where(due_date: ...on) }
@@ -35,7 +40,7 @@ class Invoice < ApplicationRecord
   before_validation :apply_payment_terms
   before_validation :calculate_totals
   after_create :assign_invoice_number, if: -> { invoice_number.blank? }
-  before_update { throw(:abort) if content_frozen? }
+  before_update :ensure_content_editable
   before_destroy { throw(:abort) unless draft? }
 
   aasm column: :status do
@@ -101,6 +106,22 @@ class Invoice < ApplicationRecord
     end
   end
 
+  def revisable?
+    sent? || paid?
+  end
+
+  def revise(attributes, user:)
+    assign_attributes(attributes.to_h.slice(*EDITABLE_AFTER_SENDING))
+
+    transaction do
+      raise ActiveRecord::Rollback unless save(context: :revision)
+
+      field_changes = saved_changes.slice(*EDITABLE_AFTER_SENDING).reject { |_field, (from, to)| from.blank? && to.blank? }
+      revisions.create!(workspace: workspace, user: user, field_changes: field_changes) if field_changes.any?
+      true
+    end.present?
+  end
+
   def change_customer(new_customer)
     self.customer = new_customer
     use_customer_details
@@ -117,8 +138,16 @@ class Invoice < ApplicationRecord
     end
   end
 
+  def credited_amount_minor
+    if credit_notes.loaded?
+      credit_notes.reject(&:voided?).sum(&:amount_minor)
+    else
+      credit_notes.active.sum(:amount_minor)
+    end
+  end
+
   def balance_due_kobo
-    [ total_minor - applied_amount_kobo, 0 ].max
+    [ total_minor - applied_amount_kobo - credited_amount_minor, 0 ].max
   end
 
   def overdue?(on = Date.current)
@@ -183,15 +212,30 @@ class Invoice < ApplicationRecord
     end
 
     def nothing_applied?
-      applied_amount_kobo.zero?
+      applied_amount_kobo.zero? && credited_amount_minor.zero?
+    end
+
+    def ensure_content_editable
+      if content_frozen?
+        errors.add(:base, "Only the terms, due date, reference, billing email and notes can change after an invoice is sent")
+        throw(:abort)
+      end
     end
 
     def content_frozen?
-      status_in_database != "draft" && content_changed?
+      changed_content = changes.keys - %w[status updated_at]
+
+      case status_in_database
+      when "draft" then false
+      when "sent", "paid" then (changed_content - EDITABLE_AFTER_SENDING).any?
+      else changed_content.any?
+      end
     end
 
-    def content_changed?
-      (changes.keys - %w[status updated_at]).any?
+    def due_date_not_before_issue_date
+      return if due_date.nil? || due_date >= issue_date
+
+      errors.add(:due_date, "can't be before the invoice date")
     end
 
     def customer_belongs_to_workspace

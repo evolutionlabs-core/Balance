@@ -9,6 +9,12 @@
 <% end %>
 
 <% menu_items = capture do %>
+  <% if invoice.revisable? %>
+    <%= link_to edit_invoice_details_path(invoice), role: "menuitem", class: menu_item_class, data: { turbo_frame: "modal" } do %>
+      <%= inline_svg_tag "icons/edit.svg", class: "h-4 w-4 flex-none" %>
+      Edit details
+    <% end %>
+  <% end %>
   <% if invoice.draft? %>
     <%= link_to download_pdf, invoice_path(invoice, format: :pdf), role: "menuitem", class: menu_item_class, data: { turbo: false } %>
     <button type="submit" form="invoice-delivery" name="delivery[send_email]" value="0" role="menuitem" class="<%= menu_item_class %>"
@@ -23,6 +29,12 @@
   <% if shared %>
     <%= render "invoices/share_item", invoice: invoice, issue: false %>
     <%= render "invoices/copy_link_item", invoice: invoice %>
+  <% end %>
+  <% if collecting %>
+    <%= link_to new_invoice_credit_note_path(invoice), role: "menuitem", class: menu_item_class, data: { turbo_frame: "modal" } do %>
+      <%= inline_svg_tag "icons/minus-circle.svg", class: "h-4 w-4 flex-none" %>
+      Credit note
+    <% end %>
   <% end %>
   <% if can_void %>
     <%= link_to new_invoice_void_path(invoice), role: "menuitem", class: "#{menu_item_class} text-red-700 hover:text-red-800", data: { turbo_frame: "modal" } do %>

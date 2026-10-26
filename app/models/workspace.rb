@@ -19,6 +19,7 @@ class Workspace < ApplicationRecord
   has_many :estimates, dependent: :destroy
   has_many :services, dependent: :destroy
   has_many :invoice_payments, dependent: :restrict_with_error
+  has_many :credit_notes, dependent: :restrict_with_error
   has_many :vendors, dependent: :destroy
   has_many :bills, dependent: :destroy
   has_many :bill_payments, dependent: :restrict_with_error

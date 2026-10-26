@@ -25,7 +25,7 @@ class InvoiceSummary
 
   private
     def outstanding
-      @outstanding ||= @workspace.invoices.outstanding.includes(:payments).to_a.select { |invoice| invoice.balance_due_kobo.positive? }
+      @outstanding ||= @workspace.invoices.outstanding.includes(:payments, :credit_notes).to_a.select { |invoice| invoice.balance_due_kobo.positive? }
     end
 
     def total(invoices)

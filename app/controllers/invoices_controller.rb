@@ -16,7 +16,7 @@ class InvoicesController < ApplicationController
   def index
     @summary = InvoiceSummary.new(current_workspace)
     @status = params[:status].presence_in(STATUS_FILTERS.keys)
-    @invoices = filtered_invoices.includes(:customer, :payments).order(created_at: :desc, id: :desc)
+    @invoices = filtered_invoices.includes(:customer, :payments, :credit_notes).order(created_at: :desc, id: :desc)
   end
 
   def new
@@ -104,7 +104,7 @@ class InvoicesController < ApplicationController
     end
 
     def set_invoice
-      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments).find(params[:id])
+      @invoice = current_workspace.invoices.includes(:workspace, :customer, :invoice_lines, :payments, :credit_notes, revisions: :user).find(params[:id])
     end
 
     def ensure_draft

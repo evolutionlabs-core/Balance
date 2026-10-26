@@ -1,0 +1,15 @@
+<% if invoice.revisions.any? %>
+  <section class="mt-6" aria-labelledby="changes-heading">
+    <h2 id="changes-heading" class="text-base font-semibold text-neutral-950">Changes</h2>
+    <ul class="mt-3 divide-y divide-neutral-200 border-y border-neutral-200">
+      <% invoice.revisions.each do |revision| %>
+        <li class="px-4 py-3 text-sm">
+          <p class="text-neutral-500"><%= revision.created_at.strftime("%b %-d, %Y") %> · <%= revision.user.full_name %></p>
+          <% invoice_revision_changes(revision).each do |label, from, to| %>
+            <p class="mt-1 text-neutral-900"><span class="text-neutral-500"><%= label %>:</span> <%= from %> → <%= to %></p>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

@@ -83,8 +83,16 @@ class Pdf::Invoice
       @document.move_down 24
       rows = [ [ "Subtotal", money(@invoice.subtotal_minor) ] ]
       rows << [ @invoice.discount_label, "−#{money(@invoice.discount_minor)}" ] if @invoice.discounted?
-      rows << [ "Total due", money(@invoice.total_minor) ]
-      @document.table(rows, position: :right, width: 260, column_widths: [ 100, 160 ],
+      credit_notes = @invoice.credit_notes.reject(&:voided?)
+      if credit_notes.any? || @invoice.applied_amount_kobo.positive?
+        rows << [ "Total", money(@invoice.total_minor) ]
+        credit_notes.each { |credit_note| rows << [ "Credit note #{credit_note.number}\n#{credit_note.reason}", "−#{money(credit_note.amount_minor)}" ] }
+        rows << [ "Paid", "−#{money(@invoice.applied_amount_kobo)}" ] if @invoice.applied_amount_kobo.positive?
+        rows << [ "Balance due", money(@invoice.balance_due_kobo) ]
+      else
+        rows << [ "Total due", money(@invoice.total_minor) ]
+      end
+      @document.table(rows, position: :right, width: 300, column_widths: [ 170, 130 ],
         cell_style: { borders: [], padding: [ 12, 0 ] }) do |table|
         table.column(1).align = :right
         last = rows.size - 1
