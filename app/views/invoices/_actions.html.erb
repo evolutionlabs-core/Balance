@@ -30,10 +30,10 @@
     <%= render "invoices/share_item", invoice: invoice, issue: false %>
     <%= render "invoices/copy_link_item", invoice: invoice %>
   <% end %>
-  <% if collecting %>
-    <%= link_to new_invoice_credit_note_path(invoice), role: "menuitem", class: menu_item_class, data: { turbo_frame: "modal" } do %>
+  <% if shared %>
+    <%= link_to new_credit_note_path(invoice_id: invoice.id), role: "menuitem", class: menu_item_class do %>
       <%= inline_svg_tag "icons/minus-circle.svg", class: "h-4 w-4 flex-none" %>
-      Credit note
+      Create credit note
     <% end %>
   <% end %>
   <% if can_void %>

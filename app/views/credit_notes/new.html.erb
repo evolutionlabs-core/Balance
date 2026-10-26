@@ -1,0 +1,7 @@
+<% content_for :title, "New credit note" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Credit notes", path: credit_notes_path }, { label: "New credit note" } ] %>
+<% end %>
+
+<%= render "credit_notes/editor", credit_note: @credit_note %>

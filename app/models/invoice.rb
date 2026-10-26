@@ -14,7 +14,7 @@ class Invoice < ApplicationRecord
   belongs_to :project, optional: true
   has_many :invoice_lines, -> { order(:position) }, dependent: :destroy
   has_many :payments, class_name: "InvoicePayment", dependent: :restrict_with_error
-  has_many :credit_notes, -> { order(:id) }, dependent: :restrict_with_error
+  has_many :credit_applications, dependent: :restrict_with_error
 
   accepts_nested_attributes_for :invoice_lines, allow_destroy: true, reject_if: :blank_line_attributes?
 
@@ -134,10 +134,23 @@ class Invoice < ApplicationRecord
   end
 
   def credited_amount_minor
-    if credit_notes.loaded?
-      credit_notes.reject(&:voided?).sum(&:amount_minor)
+    if credit_applications.loaded?
+      credit_applications.sum(&:amount_minor)
     else
-      credit_notes.active.sum(:amount_minor)
+      credit_applications.sum(:amount_minor)
+    end
+  end
+
+  def apply_credit(credit_note)
+    lock!
+    payments.reset
+    credit_applications.reset
+    amount_minor = [ credit_note.unapplied_minor, balance_due_kobo ].min
+
+    if sent? && amount_minor.positive?
+      credit_applications.create!(workspace: workspace, credit_note: credit_note, amount_minor: amount_minor)
+      credit_applications.reset
+      pay! if may_pay?
     end
   end
 
@@ -207,7 +220,7 @@ class Invoice < ApplicationRecord
     end
 
     def nothing_applied?
-      applied_amount_kobo.zero? && credited_amount_minor.zero?
+      applied_amount_kobo.zero?
     end
 
     def ensure_content_editable

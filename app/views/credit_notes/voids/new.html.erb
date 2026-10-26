@@ -1,0 +1,12 @@
+<%= render "shared/modal" do %>
+  <%= form_with url: credit_note_void_path(@credit_note), method: :post, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Void credit note" %>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: @credit_note %>
+      <p class="text-sm text-neutral-600">The invoices it was applied to go back to owing the full amount. This cannot be undone.</p>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Void credit note" %>
+  <% end %>
+<% end %>

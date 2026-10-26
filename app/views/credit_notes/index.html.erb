@@ -1,0 +1,37 @@
+<% content_for :title, "Credit notes" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Credit notes" } ] %>
+<% end %>
+
+<% new_credit_note = link_to(new_credit_note_path, class: primary_button_class(size: :compact)) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New credit note
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Credit notes",
+    description: "Credits you've given customers.",
+    action: new_credit_note %>
+
+<% if @credit_notes.empty? %>
+  <%= render "shared/empty_state",
+      icon: "icons/minus-circle.svg",
+      title: "No credit notes yet",
+      description: "Credit a customer for returns or mistakes. Start from an invoice's menu, or create one here.",
+      action: new_credit_note %>
+<% else %>
+  <%= render layout: "shared/mobile_list" do %>
+    <% @credit_notes.each do |credit_note| %>
+      <%= render "shared/mobile_card", title: credit_note.customer.name, url: credit_note_path(credit_note),
+          trailing: mobile_card_amount(minor_currency(credit_note.total_minor, credit_note.currency_code)),
+          meta: [ credit_note.number, credit_note.issued_on.to_fs(:medium) ].join(" · "),
+          footer: credit_note_status_badge(credit_note) %>
+    <% end %>
+  <% end %>
+  <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
+        { label: "No." }, { label: "Customer" }, { label: "Date" }, { label: "Status" },
+        { label: "Total", align: :right }, { label: "Credit left", align: :right }
+      ] } do %>
+    <%= render @credit_notes %>
+  <% end %>
+<% end %>

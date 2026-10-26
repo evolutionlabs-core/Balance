@@ -1,0 +1,16 @@
+<% if invoice.credit_applications.any? %>
+  <section class="mt-6" aria-labelledby="credits-heading">
+    <h2 id="credits-heading" class="text-base font-semibold text-neutral-950">Credits</h2>
+    <%= render layout: "shared/table", locals: { frame_class: "mt-3", columns: [ { label: "Credit note" }, { label: "Date" }, { label: "Amount", align: :right } ] } do %>
+      <% invoice.credit_applications.each do |application| %>
+        <tr class="<%= table_row_class %>">
+          <td class="<%= table_cell_class(link: true) %>">
+            <%= link_to application.credit_note.number, credit_note_path(application.credit_note), class: table_cell_link_class %>
+          </td>
+          <td class="<%= table_cell_class %> whitespace-nowrap"><%= application.credit_note.issued_on.strftime("%b %-d, %Y") %></td>
+          <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums"><%= money(application.amount_minor, invoice.currency_code) %></td>
+        </tr>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>

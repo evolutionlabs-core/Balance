@@ -1,0 +1,28 @@
+<% content_for :title, "Credit note #{@credit_note.number}" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Credit notes", path: credit_notes_path }, { label: @credit_note.number } ] %>
+<% end %>
+
+<% actions = capture do %>
+  <div class="flex flex-wrap items-center gap-2">
+    <%= link_to credit_note_path(@credit_note, format: :pdf), class: secondary_button_class(size: :compact), data: { turbo: false } do %>
+      <%= inline_svg_tag "icons/download.svg", class: "h-4 w-4" %>Download PDF
+    <% end %>
+    <% unless @credit_note.voided? %>
+      <%= link_to "Void", new_credit_note_void_path(@credit_note), class: secondary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="mx-auto max-w-6xl">
+  <div class="mb-5">
+    <%= render "shared/page_header",
+        title: "Credit note #{@credit_note.number}",
+        description: safe_join([ credit_note_status_badge(@credit_note), @credit_note.customer.name ], " "),
+        action: actions %>
+  </div>
+
+  <%= render "credit_notes/document", credit_note: @credit_note %>
+  <%= render "credit_notes/applications", credit_note: @credit_note %>
+</div>

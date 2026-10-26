@@ -1,0 +1,23 @@
+<% unless credit_note.voided? %>
+  <section class="mt-6" aria-labelledby="applied-heading">
+    <h2 id="applied-heading" class="text-base font-semibold text-neutral-950">Applied to</h2>
+    <% if credit_note.applications.any? %>
+      <%= render layout: "shared/table", locals: { frame_class: "mt-3", columns: [ { label: "Invoice" }, { label: "Amount", align: :right } ] } do %>
+        <% credit_note.applications.each do |application| %>
+          <tr class="<%= table_row_class %>">
+            <td class="<%= table_cell_class(link: true) %>">
+              <%= link_to application.invoice.invoice_number, invoice_path(application.invoice), class: table_cell_link_class %>
+            </td>
+            <td class="<%= table_cell_class(align: :right, strong: true) %> tabular-nums"><%= money(application.amount_minor, credit_note.currency_code) %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if credit_note.unapplied_minor.positive? %>
+      <p class="mt-3 text-sm text-neutral-600">
+        <span class="font-medium text-neutral-950"><%= money(credit_note.unapplied_minor, credit_note.currency_code) %></span>
+        left as credit for <%= credit_note.customer.name %>'s next invoice.
+      </p>
+    <% end %>
+  </section>
+<% end %>

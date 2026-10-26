@@ -1,0 +1,20 @@
+<tr id="<%= dom_id(credit_note) %>" class="<%= table_row_class %>">
+  <td class="<%= table_cell_class(strong: true, link: true) %> whitespace-nowrap">
+    <%= link_to credit_note.number, credit_note_path(credit_note), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(link: true) %>">
+    <%= link_to credit_note.customer.name, credit_note_path(credit_note), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+    <%= link_to credit_note.issued_on.to_fs(:medium), credit_note_path(credit_note), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(link: true) %> whitespace-nowrap">
+    <%= link_to credit_note_path(credit_note), class: table_cell_link_class do %><%= credit_note_status_badge(credit_note) %><% end %>
+  </td>
+  <td class="<%= table_cell_class(align: :right, link: true) %> tabular-nums whitespace-nowrap">
+    <%= link_to minor_currency(credit_note.total_minor, credit_note.currency_code), credit_note_path(credit_note), class: table_cell_link_class %>
+  </td>
+  <td class="<%= table_cell_class(align: :right, strong: true, link: true) %> tabular-nums whitespace-nowrap">
+    <%= link_to (credit_note.unapplied_minor.positive? ? minor_currency(credit_note.unapplied_minor, credit_note.currency_code) : blank_cell), credit_note_path(credit_note), class: table_cell_link_class %>
+  </td>
+</tr>

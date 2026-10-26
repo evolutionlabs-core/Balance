@@ -5,11 +5,8 @@
     <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
       <%= render "shared/form_errors", record: errors_except(@invoice, :bill_to_email, :due_date) %>
       <p class="text-sm text-neutral-600">
-        Amounts are locked after sending.
-        <% if @invoice.sent? && @invoice.balance_due_kobo.positive? %>
-          To lower what's owed, use a
-          <%= link_to "credit note", new_invoice_credit_note_path(@invoice), class: "font-medium text-balance-teal-700 hover:underline" %>.
-        <% end %>
+        Amounts are locked after sending. To lower what's owed, create a
+        <%= link_to "credit note", new_credit_note_path(invoice_id: @invoice.id), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "_top" } %>.
       </p>
 
       <div class="grid gap-4 sm:grid-cols-2" data-controller="payment-terms"

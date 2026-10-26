@@ -1,0 +1,74 @@
+<% invoice = credit_note.invoice %>
+<div class="mx-auto max-w-6xl" data-controller="document-editor form" data-document-editor-currency-value="<%= credit_note.currency_code %>">
+  <%= form_with model: credit_note, url: credit_note_calculation_path, method: :post, id: "new_credit_note_form" do %>
+  <% end %>
+
+  <article class="border border-neutral-200 bg-white shadow-sm">
+    <div class="flex flex-col gap-5 border-b border-neutral-200 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-10 md:px-12">
+      <p class="text-2xl font-semibold tracking-tight text-balance-teal-700">CREDIT NOTE</p>
+      <div class="sm:text-right">
+        <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Total credit</p>
+        <p id="credit_note_balance_due" class="mt-1 text-2xl font-semibold tabular-nums text-neutral-950" data-document-editor-target="total"><%= minor_currency(credit_note.total_minor, credit_note.currency_code) %></p>
+      </div>
+    </div>
+
+    <div id="credit_note_errors"><%= render "shared/form_errors", record: credit_note %></div>
+
+    <%= fields_for :credit_note, credit_note do |form| %>
+      <div class="grid gap-6 bg-balance-teal-50 px-4 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.2fr_1fr] md:px-12">
+        <div>
+          <% if invoice %>
+            <%= form.hidden_field :customer_id, form: "new_credit_note_form" %>
+            <%= form.hidden_field :invoice_id, form: "new_credit_note_form" %>
+            <p class="<%= field_label_class %>">Customer</p>
+            <p class="text-sm font-medium text-neutral-950"><%= credit_note.customer.name %></p>
+            <p class="mt-3 text-sm text-neutral-600">
+              Saving lowers what <%= credit_note.customer.name %> owes on
+              <%= link_to invoice.invoice_number, invoice_path(invoice), class: "font-medium text-balance-teal-700 hover:underline" %>.
+              Anything left over stays as credit for their next invoice.
+            </p>
+          <% else %>
+            <%= form.label :customer_id, "Customer", class: field_label_class %>
+            <%= render "shared/select_menu", form: form, attribute: :customer_id, form_id: "new_credit_note_form",
+                options: options_from_collection_for_select(@customers, :id, :name, credit_note.customer_id),
+                prompt: "Choose a customer", searchable: true, search_placeholder: "Search customers…",
+                empty_message: "No customers found", select_data: {} %>
+            <p class="mt-3 text-sm text-neutral-600">Saving applies this credit to the customer's oldest unpaid invoices. Anything left over stays as credit for their next invoice.</p>
+          <% end %>
+        </div>
+        <div>
+          <%= form.label :issued_on, "Credit note date", class: field_label_class %>
+          <%= form.text_field :issued_on, form: "new_credit_note_form", required: true, autocomplete: "off",
+              class: "#{field_class} cursor-pointer", data: { controller: "date-picker" } %>
+        </div>
+      </div>
+
+      <section class="px-4 py-6 sm:px-6 sm:py-7 md:px-10">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold text-neutral-950">What you're crediting</h2>
+          <p class="mt-1 text-sm text-neutral-500"><%= invoice ? "Copied from the invoice. Remove or lower anything you're not crediting." : "Type to find a service, or describe the credit." %></p>
+        </div>
+
+        <%= render layout: "shared/line_items/table", locals: { document: credit_note, scope: "credit_note", add_path: new_credit_note_line_path, add_label: "Add line", totals: false } do %>
+          <% credit_note.lines.each_with_index do |line, index| %>
+            <%= render "credit_notes/new_line", line: line, index: index, first: index.zero? %>
+          <% end %>
+        <% end %>
+      </section>
+
+      <section class="grid gap-8 border-t border-neutral-200 px-4 py-6 sm:px-6 sm:py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:px-10">
+        <div>
+          <%= form.label :notes, "Note to customer", class: field_label_class %>
+          <%= form.text_area :notes, form: "new_credit_note_form", rows: 3, placeholder: "Credit for 2 returned items", class: field_class %>
+        </div>
+        <%= render "shared/line_items/summary", document: credit_note, scope: "credit_note", discount: credit_note.discounted?, class_name: "self-start" %>
+      </section>
+    <% end %>
+  </article>
+
+  <div class="sticky bottom-0 z-20 mt-4 flex items-center justify-between gap-2 border border-neutral-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur sm:px-6">
+    <%= link_to "Cancel", invoice ? invoice_path(invoice) : credit_notes_path, class: ghost_button_class %>
+    <%= button_tag "Save credit note", form: "new_credit_note_form", formaction: credit_notes_path(format: :html),
+        class: primary_button_class, data: { turbo_frame: "_top" } %>
+  </div>
+</div>

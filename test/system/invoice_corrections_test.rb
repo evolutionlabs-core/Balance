@@ -15,25 +15,31 @@ class InvoiceCorrectionsTest < ApplicationSystemTestCase
     sign_in(@user)
   end
 
-  test "credits part of a sent invoice and voids the credit" do
+  test "credits part of a sent invoice from its menu and voids the credit" do
     visit invoice_path(@invoice)
     find("button[aria-label='More invoice actions']").click
-    click_on "Credit note"
+    click_on "Create credit note"
 
-    within("#modal") do
-      fill_in "Amount", with: "100.00"
-      fill_in "Reason", with: "Returned one item"
-      click_on "Issue credit note"
-    end
+    assert_text "Saving lowers what Acme owes on #{@invoice.invoice_number}"
+    find("input[aria-label='Quantity']").fill_in(with: "1")
+    find("input[aria-label='Quantity']").send_keys(:tab)
+    click_on "Save credit note"
 
-    assert_no_selector "#modal dialog"
-    within("section", text: "Credit notes") { assert_text "Returned one item" }
-    assert_text "Balance due\nNGN 200.00"
+    assert_selector "h1", text: /Credit note CN-/
+    within("section", text: "Applied to") { assert_link @invoice.invoice_number }
 
-    accept_confirm { click_on "Void" }
+    click_on @invoice.invoice_number
+    assert_text "Credit applied"
+    assert_text "Balance due\nNGN 150.00"
+
+    assert_link CreditNote.last.number
+    visit credit_note_path(CreditNote.last)
+    click_on "Void"
+    assert_selector "#modal", text: "Void credit note"
+    within("#modal") { click_on "Void credit note" }
 
     assert_text "Voided"
-    assert_text "Balance due\nNGN 300.00"
+    assert_equal 30_000, @invoice.reload.balance_due_kobo
   end
 
   test "changes the reference of a sent invoice" do

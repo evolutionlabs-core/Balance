@@ -18,7 +18,7 @@ class Invoices::DetailsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "p", text: /Amounts are locked after sending/
-    assert_select "a[href=?]", new_invoice_credit_note_path(@invoice), text: "credit note"
+    assert_select "a[href=?]", new_credit_note_path(invoice_id: @invoice.id), text: "credit note"
     assert_select "input[name='invoice[due_date]']"
     assert_select "input[name='invoice[total_minor]']", count: 0
   end

@@ -2,6 +2,7 @@ module Invoices
   module Posting
     extend ActiveSupport::Concern
     include AccountingEngine::Postable
+    include IncomeLineChecks
 
     def issue!
       posted = Invoice.transaction do
@@ -12,7 +13,7 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        line_errors = income_line_errors
+        line_errors = income_line_errors(invoice_lines.reject(&:marked_for_destruction?))
         unless line_errors.empty?
           line_errors.each { |error| errors.add(:base, error) }
           raise ActiveRecord::Rollback
@@ -22,6 +23,8 @@ module Invoices
         send_to_client!
 
         post_issue_entry
+        apply_customer_credits
+        true
       end
 
       restore_status unless posted
@@ -98,57 +101,6 @@ module Invoices
       reversed.present?
     end
 
-    def issue_credit_note!(amount_minor:, issued_on:, reason:, user:)
-      issued = Invoice.transaction do
-        lock!
-        payments.reset
-        credit_notes.reset
-
-        if credit_rejected?(amount_minor, issued_on)
-          raise ActiveRecord::Rollback
-        end
-
-        credit_note = credit_notes.build(workspace: workspace, user: user, amount_minor: amount_minor, issued_on: issued_on, reason: reason)
-        unless credit_note.save
-          credit_note.errors.full_messages.each { |message| errors.add(:base, message) }
-          raise ActiveRecord::Rollback
-        end
-
-        entry = post_credit_note(credit_note)
-        credit_note.update!(journal_entry_id: entry.id)
-
-        credit_notes.reset
-        pay! if may_pay?
-        true
-      end
-
-      restore_status unless issued
-      issued.present?
-    end
-
-    def void_credit_note!(credit_note)
-      voided = Invoice.transaction do
-        lock!
-
-        if credit_note.voided?
-          errors.add(:base, "This credit note has already been voided")
-          raise ActiveRecord::Rollback
-        end
-
-        entry = reverse_in_ledger!(credit_note.journal_entry, on: Date.current, source_type: "CreditNote", source_id: credit_note.id,
-          action: "void", description: "Credit note #{credit_note.number} voided")
-        credit_note.update!(voided_at: Time.current, void_journal_entry_id: entry.id)
-
-        payments.reset
-        credit_notes.reset
-        reopen! if may_reopen?
-        true
-      end
-
-      restore_status unless voided
-      voided.present?
-    end
-
     def void!
       voided = Invoice.transaction do
         lock!
@@ -160,6 +112,7 @@ module Invoices
 
         if sent?
           post_void_entry
+          credit_applications.each(&:destroy!)
         end
 
         mark_voided!
@@ -172,16 +125,8 @@ module Invoices
 
     private
       def payment_rejected?(amount_kobo, received_on)
-        settlement_rejected?(amount_kobo, received_on, label: "Payment", unsent_message: "Only a sent invoice with a balance can receive payment")
-      end
-
-      def credit_rejected?(amount_minor, issued_on)
-        settlement_rejected?(amount_minor, issued_on, label: "Credit", unsent_message: "Only a sent invoice with a balance can be credited")
-      end
-
-      def settlement_rejected?(amount_minor, on, label:, unsent_message:)
         unless sent?
-          errors.add(:base, unsent_message)
+          errors.add(:base, "Only a sent invoice with a balance can receive payment")
           return true
         end
 
@@ -190,45 +135,27 @@ module Invoices
           return true
         end
 
-        unless amount_minor.is_a?(Integer) && amount_minor.positive?
-          errors.add(:base, "#{label} amount must be positive")
+        unless amount_kobo.is_a?(Integer) && amount_kobo.positive?
+          errors.add(:base, "Payment amount must be positive")
           return true
         end
 
-        if amount_minor > balance_due_kobo
-          errors.add(:base, "#{label} amount must be no more than the balance due")
+        if amount_kobo > balance_due_kobo
+          errors.add(:base, "Payment amount must be no more than the balance due")
           return true
         end
 
-        if on.nil?
-          errors.add(:base, "#{label} date is required")
-        elsif on > Date.current
-          errors.add(:base, "#{label} date can't be in the future")
-        elsif on < issue_date
-          errors.add(:base, "#{label} date can't be before the invoice date")
+        if received_on.nil?
+          errors.add(:base, "Payment date is required")
+        elsif received_on > Date.current
+          errors.add(:base, "Payment date can't be in the future")
+        elsif received_on < issue_date
+          errors.add(:base, "Payment date can't be before the invoice date")
         else
           return false
         end
 
         true
-      end
-
-      def income_line_errors
-        lines = invoice_lines.reject(&:marked_for_destruction?)
-
-        if workspace.default_sales_account.nil? && lines.any? { |line| line.account.nil? }
-          [ "Choose a default income account in Settings, or pick a service for each line" ]
-        else
-          lines.each_with_index.filter_map do |line, index|
-            if line.account.nil?
-              "Line #{index + 1}: #{line.description.presence || "item"} has no income account"
-            elsif line.account.base_type != "income"
-              "Line #{index + 1}: account #{line.account.name} is not an income account"
-            elsif line.account.ledger.workspace_id != workspace_id
-              "Line #{index + 1}: account #{line.account.name} belongs to another workspace"
-            end
-          end
-        end
       end
 
       def post_issue_entry
@@ -244,6 +171,12 @@ module Invoices
         )
       end
 
+      def apply_customer_credits
+        customer.credit_notes.active.order(:issued_on, :id).each do |credit_note|
+          apply_credit(credit_note)
+        end
+      end
+
       def post_application(application, deposit_account, received_on)
         record_in_ledger!(
           AccountingEngine::Builders::InvoicePayment,
@@ -256,36 +189,6 @@ module Invoices
           source_id: application.id,
           description: "Payment received for invoice #{invoice_number}"
         )
-      end
-
-      def post_credit_note(credit_note)
-        record_in_ledger!(
-          AccountingEngine::Builders::CreditNote,
-          attributes: {
-            issued_on: credit_note.issued_on,
-            customer: customer,
-            income_lines: credited_income_lines(credit_note.amount_minor)
-          },
-          source_id: credit_note.id,
-          description: "Credit note #{credit_note.number} for invoice #{invoice_number}"
-        )
-      end
-
-      def credited_income_lines(amount_minor)
-        income = issue_entry.journal_entry_lines.select { |line| line.credit.positive? }
-        income_total = income.sum(&:credit)
-
-        remaining = amount_minor
-        shares = income.map do |line|
-          share = (amount_minor * line.credit / income_total.to_r).floor
-          remaining -= share
-          share
-        end
-        shares[income.index(income.max_by(&:credit))] += remaining
-
-        income.zip(shares).filter_map do |line, share|
-          { account: line.account, amount_kobo: share } if share.positive?
-        end
       end
 
       def post_void_entry
