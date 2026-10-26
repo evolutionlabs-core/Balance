@@ -16,7 +16,7 @@ class InvoicesController < ApplicationController
   def index
     @summary = InvoiceSummary.new(current_workspace)
     @status = params[:status].presence_in(STATUS_FILTERS.keys)
-    @invoices = filtered_invoices.includes(:customer, :payments).order(created_at: :desc, id: :desc)
+    @pagy, @invoices = pagy(filtered_invoices.includes(:customer, :payments).order(created_at: :desc, id: :desc), limit: 20)
   end
 
   def new

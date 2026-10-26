@@ -45,6 +45,7 @@
           ] } do %>
         <%= render @invoices %>
       <% end %>
+      <%= render "shared/pagination", pagy: @pagy %>
     <% end %>
   <% end %>
 <% end %>

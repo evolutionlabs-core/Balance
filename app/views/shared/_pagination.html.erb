@@ -1,0 +1,14 @@
+<% if pagy.pages > 1 %>
+  <nav class="mt-3 flex items-center justify-between gap-4 text-sm text-neutral-500" aria-label="Pagination">
+    <p class="tabular-nums"><%= number_with_delimiter(pagy.from) %>–<%= number_with_delimiter(pagy.to) %> of <%= number_with_delimiter(pagy.count) %></p>
+    <div class="flex items-center gap-2">
+      <% { previous: "Previous", next: "Next" }.each do |direction, label| %>
+        <% if pagy.public_send(direction) %>
+          <%= link_to label, pagy.page_url(direction), class: secondary_button_class(size: :compact), rel: (direction == :previous ? "prev" : "next") %>
+        <% else %>
+          <span class="<%= secondary_button_class(size: :compact) %> pointer-events-none opacity-50" aria-disabled="true"><%= label %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </nav>
+<% end %>

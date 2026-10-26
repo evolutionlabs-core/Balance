@@ -123,6 +123,29 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", text: /No invoices found/
   end
 
+  test "index shows 20 invoices per page and keeps the filters when paging" do
+    invoices = Array.new(21) { create_invoice }
+
+    get invoices_path(status: "draft")
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{invoices_path}?status=draft&page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get invoices_path(status: "draft", page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tbody a[href=?]", invoice_path(invoices.first)
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when everything fits on one page" do
+    create_invoice
+
+    get invoices_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "update recalculates the invoice" do
     invoice = create_invoice
     line = invoice.invoice_lines.first

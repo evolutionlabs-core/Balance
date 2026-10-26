@@ -28,6 +28,8 @@ gem "blueprinter", "~> 1.3"
 gem "csv"
 gem "prawn"
 gem "prawn-table"
+# Paginate long tables without patching models [https://github.com/ddnexus/pagy]
+gem "pagy", "~> 43.8"
 # State machines for domain lifecycles (estimate status).
 gem "aasm"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
