@@ -65,6 +65,12 @@ Rails.application.routes.draw do
     end
     resource :void, only: %i[new create], controller: "invoices/voids"
     resource :duplicate, only: %i[create], controller: "invoices/duplicates"
+    resource :details, only: %i[edit update], controller: "invoices/details"
+  end
+  resources :credit_note_lines, path: "credit_notes/lines", only: %i[new destroy]
+  resource :credit_note_calculation, path: "credit_notes/calculation", only: %i[create]
+  resources :credit_notes, only: %i[index show new create] do
+    resource :void, only: %i[new create], controller: "credit_notes/voids"
   end
   resources :vendors, only: %i[index new create show edit update]
   resources :bills, only: %i[index new create show edit update] do

@@ -50,7 +50,7 @@ class InvoicePayment < ApplicationRecord
       applied_without_self = invoice.payments.reject { |payment| payment == self }
         .sum(&:effective_amount_kobo)
 
-      return if amount_kobo <= invoice.total_minor - applied_without_self
+      return if amount_kobo <= invoice.total_minor - invoice.credited_amount_minor - applied_without_self
 
       errors.add(:amount_kobo, "cannot exceed the invoice balance")
     end

@@ -2,6 +2,7 @@ module Invoices
   module Posting
     extend ActiveSupport::Concern
     include AccountingEngine::Postable
+    include IncomeLineChecks
 
     def issue!
       posted = Invoice.transaction do
@@ -12,7 +13,7 @@ module Invoices
           raise ActiveRecord::Rollback
         end
 
-        line_errors = income_line_errors
+        line_errors = income_line_errors(invoice_lines.reject(&:marked_for_destruction?))
         unless line_errors.empty?
           line_errors.each { |error| errors.add(:base, error) }
           raise ActiveRecord::Rollback
@@ -22,6 +23,8 @@ module Invoices
         send_to_client!
 
         post_issue_entry
+        apply_customer_credits
+        true
       end
 
       restore_status unless posted
@@ -109,6 +112,7 @@ module Invoices
 
         if sent?
           post_void_entry
+          credit_applications.each(&:destroy!)
         end
 
         mark_voided!
@@ -154,24 +158,6 @@ module Invoices
         true
       end
 
-      def income_line_errors
-        lines = invoice_lines.reject(&:marked_for_destruction?)
-
-        if workspace.default_sales_account.nil? && lines.any? { |line| line.account.nil? }
-          [ "Choose a default income account in Settings, or pick a service for each line" ]
-        else
-          lines.each_with_index.filter_map do |line, index|
-            if line.account.nil?
-              "Line #{index + 1}: #{line.description.presence || "item"} has no income account"
-            elsif line.account.base_type != "income"
-              "Line #{index + 1}: account #{line.account.name} is not an income account"
-            elsif line.account.ledger.workspace_id != workspace_id
-              "Line #{index + 1}: account #{line.account.name} belongs to another workspace"
-            end
-          end
-        end
-      end
-
       def post_issue_entry
         record_in_ledger!(
           AccountingEngine::Builders::Invoice,
@@ -183,6 +169,12 @@ module Invoices
           source_id: id,
           description: "Invoice #{invoice_number}"
         )
+      end
+
+      def apply_customer_credits
+        customer.credit_notes.active.order(:issued_on, :id).each do |credit_note|
+          apply_credit(credit_note)
+        end
       end
 
       def post_application(application, deposit_account, received_on)

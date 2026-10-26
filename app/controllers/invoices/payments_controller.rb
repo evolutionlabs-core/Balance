@@ -20,7 +20,7 @@ class Invoices::PaymentsController < ApplicationController
 
   private
     def set_invoice
-      @invoice = current_workspace.invoices.includes(:customer, :payments).find(params[:invoice_id])
+      @invoice = current_workspace.invoices.includes(:customer, :payments, :credit_applications).find(params[:invoice_id])
     end
 
     def ensure_payable_invoice

@@ -24,7 +24,7 @@ class AgedBalances
     @rows ||= (open_by_counterparty.keys | ledger_by_counterparty.keys).map do |id|
       documents = open_by_counterparty.fetch(id, [])
       buckets = BUCKETS.keys.index_with { 0 }
-      documents.each { |document| buckets[bucket_for(document)] += document.balance_due_kobo }
+      documents.each { |document| buckets[bucket_for(document)] += open_amount(document) }
 
       Row.new(
         counterparty: counterparties[id],
@@ -60,13 +60,15 @@ class AgedBalances
 
     def open_by_counterparty
       @open_by_counterparty ||= open_documents
-        .select { |document| document.balance_due_kobo.positive? }
+        .reject { |document| open_amount(document).zero? }
         .group_by { |document| document.public_send(counterparty_key) }
     end
 
     def open_documents
       case side
-      when :receivables then workspace.invoices.where(status: "sent").includes(:payments)
+      when :receivables
+        workspace.invoices.where(status: "sent").includes(:payments, :credit_applications) +
+          workspace.credit_notes.active.includes(:applications)
       when :payables then workspace.bills.where(status: "open").includes(:payments)
       end
     end
@@ -82,10 +84,18 @@ class AgedBalances
       end
     end
 
+    def open_amount(document)
+      case document
+      when CreditNote then -document.unapplied_minor
+      else document.balance_due_kobo
+      end
+    end
+
     def due_on(document)
-      case side
-      when :receivables then document.due_date || document.issue_date
-      when :payables then document.due_date || document.bill_date
+      case document
+      when CreditNote then document.issued_on
+      when Invoice then document.due_date || document.issue_date
+      when Bill then document.due_date || document.bill_date
       end
     end
 

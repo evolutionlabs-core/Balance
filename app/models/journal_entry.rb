@@ -32,6 +32,7 @@ class JournalEntry < ApplicationRecord
     case source_type
     when "Invoice" then workspace.invoices.find_by(id: source_id)
     when "InvoicePayment" then workspace.invoice_payments.find_by(id: source_id)&.invoice
+    when "CreditNote" then workspace.credit_notes.find_by(id: source_id)
     when "Bill" then workspace.bills.find_by(id: source_id)
     when "BillPayment" then workspace.bill_payments.find_by(id: source_id)&.bill
     when "Expense" then workspace.expenses.find_by(id: source_id)

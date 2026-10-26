@@ -8,11 +8,13 @@ module InvoicesHelper
       "Draft"
     elsif invoice.voided?
       "Voided"
+    elsif (invoice.paid? || invoice.balance_due_kobo.zero?) && invoice.applied_amount_kobo.zero? && invoice.credited_amount_minor.positive?
+      "Credited"
     elsif invoice.paid? || invoice.balance_due_kobo.zero?
       "Paid"
     elsif invoice.overdue?
       "Overdue #{pluralize(invoice.days_overdue, "day")}"
-    elsif invoice.balance_due_kobo < invoice.total_minor
+    elsif invoice.applied_amount_kobo.positive?
       "Partially paid"
     elsif invoice.due_date.nil?
       "Sent"

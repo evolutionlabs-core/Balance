@@ -1,0 +1,54 @@
+<%= render "shared/modal" do %>
+  <%= form_with model: @invoice, scope: :invoice, url: invoice_details_path(@invoice), method: :patch, class: "flex min-h-0 flex-1 flex-col" do |form| %>
+    <%= render "shared/modal/header", title: "Edit details" %>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+      <%= render "shared/form_errors", record: errors_except(@invoice, :bill_to_email, :due_date) %>
+      <p class="text-sm text-neutral-600">
+        Amounts are locked after sending. To lower what's owed, create a
+        <%= link_to "credit note", new_credit_note_path(invoice_id: @invoice.id), class: "font-medium text-balance-teal-700 hover:underline", data: { turbo_frame: "_top" } %>.
+      </p>
+
+      <div class="grid gap-4 sm:grid-cols-2" data-controller="payment-terms"
+          data-payment-terms-days-value="<%= PaymentTerms::DAYS.to_json %>" data-payment-terms-issue-date-value="<%= @invoice.issue_date&.iso8601 %>">
+        <div>
+          <%= form.label :payment_terms, "Terms", class: field_label_class %>
+          <%= render "shared/select_menu", form: form, attribute: :payment_terms,
+              options: options_for_select(PaymentTerms.choices, @invoice.payment_terms || "custom"), prompt: nil,
+              select_data: { payment_terms_target: "terms", action: "change->payment-terms#apply" } %>
+        </div>
+        <div>
+          <%= form.label :due_date, "Due date", class: field_label_class %>
+          <%= form.text_field :due_date, autocomplete: "off", class: "#{field_class_for(@invoice, :due_date)} cursor-pointer",
+              aria: { invalid: @invoice.errors.include?(:due_date), describedby: ("due_date_error" if @invoice.errors.include?(:due_date)) },
+              data: { controller: "date-picker", date_picker_allow_future_value: true, payment_terms_target: "dueDate", action: "change->payment-terms#markCustom" } %>
+          <%= field_error(@invoice, :due_date) %>
+        </div>
+      </div>
+
+      <div>
+        <%= form.label :bill_to_email, "Billing email", class: field_label_class %>
+        <%= form.email_field :bill_to_email, autocomplete: "off", class: field_class_for(@invoice, :bill_to_email),
+            aria: { invalid: @invoice.errors.include?(:bill_to_email), describedby: ("bill_to_email_error" if @invoice.errors.include?(:bill_to_email)) } %>
+        <%= field_error(@invoice, :bill_to_email) %>
+      </div>
+
+      <div>
+        <%= form.label :reference, "PO / reference", class: field_label_class %>
+        <%= form.text_field :reference, autocomplete: "off", class: field_class %>
+      </div>
+
+      <div>
+        <%= form.label :notes, "Note to customer", class: field_label_class %>
+        <%= form.text_area :notes, rows: 3, class: field_class %>
+      </div>
+
+      <div>
+        <%= form.label :internal_note, "Internal note", class: field_label_class %>
+        <%= form.text_area :internal_note, rows: 2, placeholder: "Only visible to your team", class: field_class %>
+      </div>
+    </div>
+
+    <%= render "shared/modal/footer", form: form, submit_label: "Save" %>
+  <% end %>
+<% end %>

@@ -3,6 +3,7 @@ class Customer < ApplicationRecord
 
   belongs_to :workspace
   has_many :invoices, dependent: :restrict_with_error
+  has_many :credit_notes, dependent: :restrict_with_error
   has_many :projects, dependent: :restrict_with_error
   has_many :estimates, dependent: :restrict_with_error
   has_many :invoice_payments, through: :invoices

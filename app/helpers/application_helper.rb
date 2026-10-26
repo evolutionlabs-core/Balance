@@ -9,6 +9,7 @@ module ApplicationHelper
       ] },
       { label: "Sales", items: [
         { path: invoices_path, svg: "icons/invoice.svg", text: "Invoices" },
+        { path: credit_notes_path, svg: "icons/minus-circle.svg", text: "Credit notes" },
         { path: customers_path, svg: "icons/users.svg", text: "Customers" },
         { path: services_path, svg: "icons/project.svg", text: "Services" },
         { path: projects_path, svg: "icons/services.svg", text: "Projects" }

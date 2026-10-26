@@ -12,6 +12,7 @@ module JournalEntriesHelper
   def journal_entry_document_label(document)
     case document
     when Invoice then "Invoice #{document.invoice_number}"
+    when CreditNote then "Credit note #{document.number}"
     when Bill then document.display_name
     when Expense then "Expense"
     end

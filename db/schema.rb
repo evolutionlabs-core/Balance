@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -83,6 +83,66 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
     t.index ["vendor_id"], name: "index_bills_on_vendor_id"
     t.index ["workspace_id", "status"], name: "index_bills_on_workspace_id_and_status"
     t.index ["workspace_id"], name: "index_bills_on_workspace_id"
+  end
+
+  create_table "credit_applications", force: :cascade do |t|
+    t.bigint "amount_minor", null: false
+    t.datetime "created_at", null: false
+    t.bigint "credit_note_id", null: false
+    t.bigint "invoice_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workspace_id", null: false
+    t.index ["credit_note_id", "invoice_id"], name: "index_credit_applications_on_credit_note_id_and_invoice_id", unique: true
+    t.index ["credit_note_id"], name: "index_credit_applications_on_credit_note_id"
+    t.index ["invoice_id"], name: "index_credit_applications_on_invoice_id"
+    t.index ["workspace_id"], name: "index_credit_applications_on_workspace_id"
+  end
+
+  create_table "credit_note_lines", force: :cascade do |t|
+    t.bigint "account_id"
+    t.bigint "amount_minor", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.bigint "credit_note_id", null: false
+    t.string "description", null: false
+    t.integer "position", default: 0, null: false
+    t.decimal "quantity", precision: 15, scale: 3
+    t.bigint "rate_minor"
+    t.bigint "service_id"
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_credit_note_lines_on_account_id"
+    t.index ["credit_note_id"], name: "index_credit_note_lines_on_credit_note_id"
+    t.index ["service_id"], name: "index_credit_note_lines_on_service_id"
+  end
+
+  create_table "credit_notes", force: :cascade do |t|
+    t.text "bill_to_address"
+    t.string "bill_to_email"
+    t.string "bill_to_name"
+    t.datetime "created_at", null: false
+    t.string "currency_code", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "discount_minor", default: 0, null: false
+    t.string "discount_type"
+    t.decimal "discount_value", precision: 15, scale: 2
+    t.bigint "invoice_id"
+    t.date "issued_on", null: false
+    t.bigint "journal_entry_id"
+    t.text "notes"
+    t.string "number"
+    t.bigint "subtotal_minor", default: 0, null: false
+    t.bigint "total_minor", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "void_journal_entry_id"
+    t.datetime "voided_at"
+    t.bigint "workspace_id", null: false
+    t.index ["customer_id"], name: "index_credit_notes_on_customer_id"
+    t.index ["invoice_id"], name: "index_credit_notes_on_invoice_id"
+    t.index ["journal_entry_id"], name: "index_credit_notes_on_journal_entry_id", unique: true
+    t.index ["user_id"], name: "index_credit_notes_on_user_id"
+    t.index ["void_journal_entry_id"], name: "index_credit_notes_on_void_journal_entry_id", unique: true
+    t.index ["workspace_id", "number"], name: "index_credit_notes_on_workspace_id_and_number", unique: true
+    t.index ["workspace_id"], name: "index_credit_notes_on_workspace_id"
   end
 
   create_table "customers", force: :cascade do |t|
@@ -653,6 +713,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_100000) do
   add_foreign_key "bills", "users"
   add_foreign_key "bills", "vendors"
   add_foreign_key "bills", "workspaces"
+  add_foreign_key "credit_applications", "credit_notes"
+  add_foreign_key "credit_applications", "invoices"
+  add_foreign_key "credit_applications", "workspaces"
+  add_foreign_key "credit_note_lines", "accounts"
+  add_foreign_key "credit_note_lines", "credit_notes"
+  add_foreign_key "credit_note_lines", "services"
+  add_foreign_key "credit_notes", "customers"
+  add_foreign_key "credit_notes", "invoices"
+  add_foreign_key "credit_notes", "journal_entries"
+  add_foreign_key "credit_notes", "journal_entries", column: "void_journal_entry_id"
+  add_foreign_key "credit_notes", "users"
+  add_foreign_key "credit_notes", "workspaces"
   add_foreign_key "customers", "workspaces"
   add_foreign_key "entry_templates", "users"
   add_foreign_key "entry_templates", "workspaces"

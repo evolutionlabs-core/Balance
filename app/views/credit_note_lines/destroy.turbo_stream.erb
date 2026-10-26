@@ -1,0 +1,2 @@
+<%= turbo_stream.remove "new_credit_note_line_#{params[:id]}" %>
+<%= render "shared/line_items/totals", document: @calculation.credit_note, scope: "credit_note" %>
