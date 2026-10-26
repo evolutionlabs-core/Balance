@@ -111,6 +111,7 @@ class Invoice < ApplicationRecord
   end
 
   def revise(attributes, user:)
+    @revising = true
     assign_attributes(attributes.to_h.slice(*EDITABLE_AFTER_SENDING))
 
     transaction do
@@ -120,6 +121,8 @@ class Invoice < ApplicationRecord
       revisions.create!(workspace: workspace, user: user, field_changes: field_changes) if field_changes.any?
       true
     end.present?
+  ensure
+    @revising = false
   end
 
   def change_customer(new_customer)
@@ -227,7 +230,7 @@ class Invoice < ApplicationRecord
 
       case status_in_database
       when "draft" then false
-      when "sent", "paid" then (changed_content - EDITABLE_AFTER_SENDING).any?
+      when "sent", "paid" then (changed_content - (@revising ? EDITABLE_AFTER_SENDING : [])).any?
       else changed_content.any?
       end
     end

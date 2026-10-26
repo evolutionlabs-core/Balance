@@ -49,6 +49,16 @@ class Invoice::RevisionTest < ActiveSupport::TestCase
     assert_equal 30_000, @invoice.reload.total_minor
   end
 
+  test "details only change through a logged revision" do
+    assert_not @invoice.update(reference: "PO-7")
+    @customer.update!(email: "accounts@acme.test")
+    assert_raises(ActiveRecord::RecordNotSaved) { @invoice.reload.change_customer(@customer) }
+
+    assert_nil @invoice.reload.reference
+    assert_equal "acme@example.com", @invoice.bill_to_email
+    assert_empty @invoice.revisions
+  end
+
   test "an invalid billing email or an early due date is refused without logging" do
     assert_no_difference -> { InvoiceRevision.count } do
       assert_not @invoice.revise({ "bill_to_email" => "acme at example" }, user: users(:one))
