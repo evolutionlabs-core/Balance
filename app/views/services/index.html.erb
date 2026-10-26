@@ -4,8 +4,9 @@
   <%= render "shared/breadcrumb", data: [ { label: "Services" } ] %>
 <% end %>
 
-<% new_service = link_to "New service", new_service_path,
-    class: primary_button_class(size: :compact), data: { turbo_frame: "modal" } %>
+<% new_service = link_to(new_service_path, class: primary_button_class(size: :compact), data: { turbo_frame: "modal" }) do %>
+  <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>New service
+<% end %>
 
 <%= render "shared/page_header",
     title: "Services",
