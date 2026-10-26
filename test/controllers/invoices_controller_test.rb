@@ -89,6 +89,7 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
 
     get invoices_path
 
+    assert_select "thead th", text: "Action"
     assert_select "tbody a[href=?]", invoice_path(draft)
     assert_select "tbody a[href=?]", invoice_path(draft, view: "email"), text: "Send"
     assert_select "tbody a[href=?][data-turbo-frame=modal]", new_invoice_payment_path(sent), text: "Receive payment"

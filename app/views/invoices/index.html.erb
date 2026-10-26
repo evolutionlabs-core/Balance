@@ -41,7 +41,7 @@
       <% end %>
       <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: [
             { label: "No." }, { label: "Customer" }, { label: "Date" }, { label: "Status" },
-            { label: "Total", align: :right }, { label: "Balance due", align: :right }, { label: "", sr_label: "Actions" }
+            { label: "Total", align: :right }, { label: "Balance due", align: :right }, { label: "Action", align: :right }
           ] } do %>
         <%= render @invoices %>
       <% end %>
