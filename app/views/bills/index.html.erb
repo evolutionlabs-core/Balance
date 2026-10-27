@@ -26,4 +26,5 @@
   <%= render layout: "shared/table", locals: { frame_class: "mt-4 hidden sm:block", columns: bill_table_columns } do %>
     <%= render @bills %>
   <% end %>
+  <%= render "shared/pagination", pagy: @pagy %>
 <% end %>

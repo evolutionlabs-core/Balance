@@ -2,7 +2,7 @@ class ServicesController < ApplicationController
   before_action :set_service, only: %i[edit update]
 
   def index
-    @services = current_workspace.services.includes(:income_account).ordered
+    @pagy, @services = pagy(current_workspace.services.includes(:income_account).ordered, limit: 20)
   end
 
   def new
