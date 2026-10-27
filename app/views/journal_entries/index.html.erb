@@ -53,5 +53,6 @@
         description: "Entries recorded in your ledger appear here." %>
   <% else %>
     <%= render "journal_entries/table", journal_entries: @journal_entries %>
+    <%= render "shared/pagination", pagy: @pagy %>
   <% end %>
 <% end %>

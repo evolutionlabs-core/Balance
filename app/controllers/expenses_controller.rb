@@ -2,9 +2,9 @@ class ExpensesController < ApplicationController
   before_action :set_expense, only: %i[show]
 
   def index
-    @expenses = current_workspace.expenses
+    @pagy, @expenses = pagy(current_workspace.expenses
       .includes(:payment_account, expense_lines: :account)
-      .order(payment_date: :desc, id: :desc)
+      .order(payment_date: :desc, id: :desc), limit: 20)
   end
 
   def new
