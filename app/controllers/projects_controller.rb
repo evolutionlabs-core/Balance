@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[show edit update]
 
   def index
-    @pagy, @projects = pagy(current_workspace.projects.includes(:customer).ordered.order(:id), limit: 20)
+    @pagy, @projects = pagy(current_workspace.projects.includes(:customer).ordered.order(:id))
   end
 
   def new

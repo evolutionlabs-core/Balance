@@ -6,7 +6,7 @@ class BillsController < ApplicationController
   before_action :set_vendors, only: %i[new create edit update]
 
   def index
-    @pagy, @bills = pagy(current_workspace.bills.includes(:vendor, :payments).order(created_at: :desc, id: :desc), limit: 20)
+    @pagy, @bills = pagy(current_workspace.bills.includes(:vendor, :payments).order(created_at: :desc, id: :desc))
   end
 
   def new

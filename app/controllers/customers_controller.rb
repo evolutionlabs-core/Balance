@@ -2,7 +2,7 @@ class CustomersController < ApplicationController
   before_action :set_customer, only: %i[show edit update]
 
   def index
-    @pagy, @customers = pagy(current_workspace.customers.ordered.order(:id), limit: 20)
+    @pagy, @customers = pagy(current_workspace.customers.ordered.order(:id))
   end
 
   def new
