@@ -4,7 +4,7 @@ class VendorsController < ApplicationController
   before_action :set_vendor, only: %i[show edit update]
 
   def index
-    @vendors = current_workspace.vendors.ordered
+    @pagy, @vendors = pagy(current_workspace.vendors.ordered.order(:id), limit: 20)
   end
 
   def new

@@ -16,6 +16,29 @@ class VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Lagos Landlords", response.body
   end
 
+  test "index shows 20 vendors per page" do
+    vendors = (1..21).map { |number| @workspace.vendors.create!(name: format("Kit Supplier %02d", number)) }
+
+    get vendors_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{vendors_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get vendors_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tbody a[href=?]", vendor_path(vendors.last)
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every vendor fits on one page" do
+    @workspace.vendors.create!(name: "Touchline Kits")
+
+    get vendors_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "creates a vendor" do
     assert_difference -> { @workspace.vendors.count } => 1 do
       post vendors_path, params: { vendor: { name: "Ikeja Paper", email: "sales@ikeja.test", active: "1" } }
