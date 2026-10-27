@@ -49,6 +49,29 @@ class CustomersControllerTest < ActionDispatch::IntegrationTest
     assert Customer.exists?(customer.id)
   end
 
+  test "index shows 20 customers per page" do
+    customers = (1..21).map { |number| @workspace.customers.create!(name: format("Customer %02d", number), customer_type: "business", email: "customer#{number}@example.com") }
+
+    get customers_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{customers_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get customers_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tbody a[href=?]", customer_path(customers.last)
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every customer fits on one page" do
+    @workspace.customers.create!(name: "Ada", customer_type: "business", email: "ada@example.com")
+
+    get customers_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "cannot access another workspace customer" do
     customer = workspaces(:bola_shop).customers.create!(name: "Other", customer_type: "business", email: "other@example.com")
 
