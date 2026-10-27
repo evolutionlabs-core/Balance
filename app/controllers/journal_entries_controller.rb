@@ -11,7 +11,7 @@ class JournalEntriesController < ApplicationController
     end
     @journal_entries = @journal_entries.where(effective_date: parsed_date_range) if parsed_date_range
     @journal_entries = @journal_entries.where(":tag = ANY(journal_entries.tags)", tag: params[:tag]) if params[:tag].present?
-    @journal_entries = @journal_entries.order(effective_date: :desc, id: :desc)
+    @pagy, @journal_entries = pagy(@journal_entries.order(effective_date: :desc, id: :desc))
   end
 
   def show

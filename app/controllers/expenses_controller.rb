@@ -5,6 +5,7 @@ class ExpensesController < ApplicationController
     @expenses = current_workspace.expenses
       .includes(:payment_account, expense_lines: :account)
       .order(payment_date: :desc, id: :desc)
+    @pagy, @expenses = pagy(@expenses)
   end
 
   def new

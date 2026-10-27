@@ -18,6 +18,29 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to project_path(Project.last)
   end
 
+  test "index shows 20 projects per page" do
+    projects = (1..21).map { |number| @workspace.projects.create!(customer: @customer, name: format("Stadium build %02d", number)) }
+
+    get projects_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{projects_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get projects_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(projects.last)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every project fits on one page" do
+    @workspace.projects.create!(customer: @customer, name: "Training ground")
+
+    get projects_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "edit excludes the project budget" do
     project = @workspace.projects.create!(customer: @customer, name: "Villa")
 

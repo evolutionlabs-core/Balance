@@ -26,6 +26,29 @@ class Projects::TimeEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", text: entry.hours.to_s
   end
 
+  test "index shows 20 time entries per page" do
+    entries = (1..21).map { |number| @project.time_entries.create!(task: @task, occurred_on: Date.current, hours: 1, description: format("Penalty drill %02d", number)) }
+
+    get project_project_time_entries_path(@project)
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{project_project_time_entries_path(@project)}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get project_project_time_entries_path(@project, page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tbody a[href=?]", edit_project_project_time_entry_path(@project, entries.last)
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every time entry fits on one page" do
+    @project.time_entries.create!(task: @task, occurred_on: Date.current, hours: 1, description: "Penalty drill")
+
+    get project_project_time_entries_path(@project)
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "new preselects the task when logging time from a task" do
     get new_project_project_time_entry_path(@project, task_id: @task.id)
 

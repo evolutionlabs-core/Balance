@@ -3,7 +3,7 @@ class Projects::TimeEntriesController < ApplicationController
   before_action :set_time_entry, only: %i[edit update destroy]
 
   def index
-    @time_entries = @project.time_entries.ordered.includes(:task)
+    @pagy, @time_entries = pagy(@project.time_entries.ordered.includes(:task))
   end
 
   def new

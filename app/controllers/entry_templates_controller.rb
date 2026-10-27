@@ -1,6 +1,6 @@
 class EntryTemplatesController < ApplicationController
   def index
-    @templates = current_workspace.entry_templates.ordered
+    @pagy, @templates = pagy(current_workspace.entry_templates.ordered.order(:id))
     @accounts = current_workspace.accounts.where(id: @templates.flat_map { |template| template.lines.map { |line| line["account_id"] } }).index_by(&:id)
   end
 

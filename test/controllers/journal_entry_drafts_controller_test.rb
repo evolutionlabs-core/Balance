@@ -179,6 +179,29 @@ class JournalEntryDraftsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", journal_entry_drafts_path, text: "Drafts (1)"
   end
 
+  test "index shows 20 drafts per page" do
+    drafts = (1..21).map { |number| create_draft(description: format("Transfer fee %02d", number)) }
+
+    get journal_entry_drafts_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{journal_entry_drafts_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get journal_entry_drafts_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(drafts.first)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every draft fits on one page" do
+    create_draft(description: "Transfer fee")
+
+    get journal_entry_drafts_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "only opens drafts in the current workspace" do
     other = workspaces(:bola_shop).journal_entry_drafts.create!(user: users(:one), description: "Theirs")
 

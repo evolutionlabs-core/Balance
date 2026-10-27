@@ -3,7 +3,7 @@ class JournalEntryDraftsController < ApplicationController
   before_action :ensure_unposted, only: %i[show edit update destroy]
 
   def index
-    @drafts = current_workspace.journal_entry_drafts.unposted.includes(:user).order(updated_at: :desc)
+    @pagy, @drafts = pagy(current_workspace.journal_entry_drafts.unposted.includes(:user).order(updated_at: :desc, id: :desc))
   end
 
   def show

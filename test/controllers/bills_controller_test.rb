@@ -18,6 +18,29 @@ class BillsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Lagos Landlords", response.body
   end
 
+  test "index shows 20 bills per page" do
+    bills = (1..21).map { |number| create_bill(bill_number: format("KIT-%02d", number)) }
+
+    get bills_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{bills_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get bills_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(bills.first)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every bill fits on one page" do
+    create_bill
+
+    get bills_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "renders the new bill form" do
     get new_bill_path
 
@@ -127,9 +150,9 @@ class BillsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    def create_bill
+    def create_bill(bill_number: nil)
       @workspace.bills.create!(
-        user: users(:three), vendor: @vendor, bill_date: Date.current,
+        user: users(:three), vendor: @vendor, bill_number: bill_number, bill_date: Date.current,
         bill_lines_attributes: [ { account_id: @rent.id, description: "Office rent", amount: "500.00" } ]
       )
     end

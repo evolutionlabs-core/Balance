@@ -153,6 +153,35 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr##{dom_id(other)}", count: 0
   end
 
+  test "index shows 20 entries per page and keeps the search when paging" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
+    entries = (1..21).map { |number| post_journal_entry!(@workspace, debit_account: groceries, credit_account: cash, amount_kobo: 100_00, description: format("Matchday tickets %02d", number)) }
+    other = post_journal_entry!(@workspace, debit_account: groceries, credit_account: cash, amount_kobo: 100_00, description: "Half-time pies")
+
+    get journal_entries_path(q: "Matchday")
+    assert_select "tbody tr[id^=journal_entry_]", count: 20
+    assert_select "tr##{dom_id(other)}", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{journal_entries_path}?q=Matchday&page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get journal_entries_path(q: "Matchday", page: 2)
+    assert_select "tbody tr[id^=journal_entry_]", count: 1
+    assert_select "tr##{dom_id(entries.first)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every entry fits on one page" do
+    cash = @ledger.accounts.find_by!(name: "Cash")
+    groceries = @ledger.accounts.find_by!(name: "Groceries")
+    post_journal_entry!(@workspace, debit_account: groceries, credit_account: cash, amount_kobo: 100_00, description: "Half-time pies")
+
+    get journal_entries_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "normalises tags" do
     assert_equal %w[office q4], EntryTags.parse(" Office, q4,, OFFICE ")
     assert_equal 10, EntryTags.parse((1..15).map { |n| "tag#{n}" }.join(",")).size

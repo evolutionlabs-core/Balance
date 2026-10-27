@@ -85,6 +85,29 @@ class EntryTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to entry_templates_path
   end
 
+  test "index shows 20 templates per page" do
+    templates = (1..21).map { |number| create_template(format("Season ticket %02d", number)) }
+
+    get entry_templates_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{entry_templates_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get entry_templates_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(templates.last)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every template fits on one page" do
+    create_template("Season ticket")
+
+    get entry_templates_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "templates stay in their workspace" do
     other = workspaces(:bola_shop).entry_templates.create!(user: users(:one), name: "Theirs",
       lines: [ { "account_id" => "1", "debit" => "1.00", "credit" => "" }, { "account_id" => "2", "debit" => "", "credit" => "1.00" } ])
@@ -95,4 +118,10 @@ class EntryTemplatesControllerTest < ActionDispatch::IntegrationTest
     delete entry_template_path(other)
     assert_response :not_found
   end
+
+  private
+    def create_template(name)
+      @workspace.entry_templates.create!(user: users(:one), name: name,
+        lines: [ { "account_id" => @groceries.id.to_s, "debit" => "125.00", "credit" => "" }, { "account_id" => @cash.id.to_s, "debit" => "", "credit" => "125.00" } ])
+    end
 end

@@ -88,6 +88,29 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Rent", @workspace.expenses.order(:id).last.journal_entry.description
   end
 
+  test "index shows 20 expenses per page" do
+    expenses = (1..21).map { |number| record_expense(format("Stadium rent %02d", number)) }
+
+    get expenses_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{expenses_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get expenses_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(expenses.first)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every expense fits on one page" do
+    record_expense("Stadium rent")
+
+    get expenses_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "cannot access another workspace expense" do
     other_workspace = workspaces(:bola_shop)
     other_ledger = provision_business_ledger!(other_workspace)
@@ -103,6 +126,13 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+    def record_expense(memo)
+      expense = @workspace.expenses.build(payment_date: Date.current, payment_account: @bank, memo: memo)
+      expense.expense_lines.build(account: @housing, description: memo, amount_kobo: 10_000_00, position: 0)
+      expense.record_entry!
+      expense
+    end
+
     def expense_params
       {
         expense: {

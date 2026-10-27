@@ -72,6 +72,29 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", project_estimate_path(estimate, format: :pdf), text: "Download PDF"
   end
 
+  test "index shows 20 estimates per page" do
+    estimates = Array.new(21) { @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer) }
+
+    get project_project_estimates_path(@project)
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{project_project_estimates_path(@project)}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get project_project_estimates_path(@project, page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tbody a[href=?]", project_estimate_path(estimates.first)
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every estimate fits on one page" do
+    @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
+
+    get project_project_estimates_path(@project)
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "lists the lifecycle actions allowed for each estimate" do
     sent = @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
     sent.send_to_client!

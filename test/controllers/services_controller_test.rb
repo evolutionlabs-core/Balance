@@ -22,6 +22,29 @@ class ServicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", text: /Hidden service/, count: 0
   end
 
+  test "index shows 20 services per page" do
+    services = (1..21).map { |number| @workspace.services.create!(name: format("Coaching session %02d", number), income_account: @income_account) }
+
+    get services_path
+    assert_select "tbody tr", count: 20
+    assert_select "nav[aria-label=Pagination]", text: /1–20 of 21/
+    assert_select "nav a[href=?]", "#{services_path}?page=2", text: "Next"
+    assert_select "nav a", text: "Previous", count: 0
+
+    get services_path(page: 2)
+    assert_select "tbody tr", count: 1
+    assert_select "tr##{dom_id(services.last)}"
+    assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
+  end
+
+  test "index hides pagination when every service fits on one page" do
+    @workspace.services.create!(name: "Scouting report", income_account: @income_account)
+
+    get services_path
+
+    assert_select "nav[aria-label=Pagination]", count: 0
+  end
+
   test "creates a service" do
     assert_difference("@workspace.services.count", 1) do
       post services_path, params: { service: {

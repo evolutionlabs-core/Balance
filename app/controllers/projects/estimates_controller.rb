@@ -5,7 +5,7 @@ class Projects::EstimatesController < ApplicationController
   before_action :set_services, only: %i[new create edit update]
 
   def index
-    @estimates = @project.estimates.includes(:customer).ordered
+    @pagy, @estimates = pagy(@project.estimates.includes(:customer).ordered)
   end
 
   def show
