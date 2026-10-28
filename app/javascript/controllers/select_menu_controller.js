@@ -29,9 +29,13 @@ export default class extends Controller {
     this.openHandler = (event) => {
       if (event.detail.controller !== this) this.close()
     }
+    this.beforeCacheHandler = () => {
+      if (!this.menu.classList.contains("hidden")) this.close()
+    }
     document.addEventListener("click", this.outsideHandler)
     document.addEventListener("keydown", this.escapeHandler)
     document.addEventListener("select-menu:open", this.openHandler)
+    document.addEventListener("turbo:before-cache", this.beforeCacheHandler)
     document.addEventListener("scroll", this.repositionHandler, true)
     window.addEventListener("resize", this.repositionHandler)
   }
@@ -40,9 +44,10 @@ export default class extends Controller {
     document.removeEventListener("click", this.outsideHandler)
     document.removeEventListener("keydown", this.escapeHandler)
     document.removeEventListener("select-menu:open", this.openHandler)
+    document.removeEventListener("turbo:before-cache", this.beforeCacheHandler)
     document.removeEventListener("scroll", this.repositionHandler, true)
     window.removeEventListener("resize", this.repositionHandler)
-    this.menu.remove()
+    if (!this.element.contains(this.menu)) this.menu.remove()
   }
 
   toggle(event) {
