@@ -172,14 +172,18 @@ class JournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every entry fits on one page" do
+  test "index shows pagination with both directions disabled when every entry fits on one page" do
     cash = @ledger.accounts.find_by!(name: "Cash")
     groceries = @ledger.accounts.find_by!(name: "Groceries")
     post_journal_entry!(@workspace, debit_account: groceries, credit_account: cash, amount_kobo: 100_00, description: "Half-time pies")
 
     get journal_entries_path
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "normalises tags" do

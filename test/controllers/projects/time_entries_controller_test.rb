@@ -41,12 +41,16 @@ class Projects::TimeEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every time entry fits on one page" do
+  test "index shows pagination with both directions disabled when every time entry fits on one page" do
     @project.time_entries.create!(task: @task, occurred_on: Date.current, hours: 1, description: "Penalty drill")
 
     get project_project_time_entries_path(@project)
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "new preselects the task when logging time from a task" do

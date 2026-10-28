@@ -33,12 +33,16 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every project fits on one page" do
+  test "index shows pagination with both directions disabled when every project fits on one page" do
     @workspace.projects.create!(customer: @customer, name: "Training ground")
 
     get projects_path
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "edit excludes the project budget" do

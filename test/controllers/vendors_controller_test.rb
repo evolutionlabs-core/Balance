@@ -31,12 +31,16 @@ class VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every vendor fits on one page" do
+  test "index shows pagination with both directions disabled when every vendor fits on one page" do
     @workspace.vendors.create!(name: "Touchline Kits")
 
     get vendors_path
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "creates a vendor" do
