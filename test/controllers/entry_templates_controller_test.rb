@@ -100,12 +100,16 @@ class EntryTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every template fits on one page" do
+  test "index shows pagination with both directions disabled when every template fits on one page" do
     create_template("Season ticket")
 
     get entry_templates_path
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "templates stay in their workspace" do

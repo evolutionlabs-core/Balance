@@ -139,12 +139,16 @@ class InvoicesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when everything fits on one page" do
+  test "index shows pagination with both directions disabled when everything fits on one page" do
     create_invoice
 
     get invoices_path
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "update recalculates the invoice" do

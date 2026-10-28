@@ -87,12 +87,16 @@ class Projects::EstimatesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Pagination]", text: /21–21 of 21/
   end
 
-  test "index hides pagination when every estimate fits on one page" do
+  test "index shows pagination with both directions disabled when every estimate fits on one page" do
     @project.estimates.create!(workspace: @workspace, user: @user, customer: @customer)
 
     get project_project_estimates_path(@project)
 
-    assert_select "nav[aria-label=Pagination]", count: 0
+    assert_select "nav[aria-label=Pagination]", text: /\A\s*1–/ do
+      assert_select "span[aria-disabled=true]", text: "Previous"
+      assert_select "span[aria-disabled=true]", text: "Next"
+      assert_select "a", count: 0
+    end
   end
 
   test "lists the lifecycle actions allowed for each estimate" do
