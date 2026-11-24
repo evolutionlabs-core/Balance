@@ -4,7 +4,7 @@ Balance is financial software. Every change must preserve accounting correctness
 
 ## Development environment
 
-Balance uses Ruby 3.4.8, PostgreSQL, and the dependencies declared in the repository. The supported local setup uses Docker:
+Balance uses Ruby 3.4.13, PostgreSQL, and the dependencies declared in the repository. The supported local setup uses Docker:
 
 ```sh
 docker compose up --build
