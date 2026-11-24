@@ -65,6 +65,10 @@ class Beerus
         raise Error, error.message
       end
 
+      def api_url
+        ENV.fetch("BEERUS_API_URL", "http://connect.localhost:7443")
+      end
+
       def build_request(method, uri, body, access_token)
         request = method == :post ? Net::HTTP::Post.new(uri) : Net::HTTP::Get.new(uri)
         request["Beerus-Client-ID"] = ENV.fetch("BEERUS_CLIENT_ID")
@@ -78,10 +82,6 @@ class Beerus
         end
 
         request
-      end
-
-      def api_url
-        ENV.fetch("BEERUS_API_URL", "http://connect.localhost:7443")
       end
   end
 end
