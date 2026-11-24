@@ -7,7 +7,7 @@
 # reload live.
 
 # Keep in sync with .ruby-version and the production Dockerfile.
-ARG RUBY_VERSION=3.4.8
+ARG RUBY_VERSION=3.4.13
 FROM docker.io/library/ruby:$RUBY_VERSION-slim
 
 WORKDIR /rails

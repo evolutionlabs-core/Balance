@@ -20,6 +20,7 @@ module ApplicationHelper
       ].compact },
       { label: "Accounting", items: [
         { path: journal_entries_path, svg: "icons/list.svg", text: "Journal entries" },
+        { path: bank_transactions_path, svg: "icons/landmark.svg", text: "Bank transactions" },
         { path: accounts_path, svg: "icons/wallet.svg", text: "Accounts" },
         { path: balance_sheet_path, svg: "icons/gauge.svg", text: "Reports", children: [
           { path: balance_sheet_path, text: "Balance sheet" },

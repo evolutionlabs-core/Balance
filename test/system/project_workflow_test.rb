@@ -49,7 +49,8 @@ class ProjectWorkflowTest < ApplicationSystemTestCase
       click_on "Save changes"
     end
 
-    assert_selector "h1", text: "Projects"
+    assert_selector "h1", text: "Modal Edit Villa Renamed"
+    assert_current_path project_path(project)
     assert_equal "Modal Edit Villa Renamed", project.reload.name
   end
 

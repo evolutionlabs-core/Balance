@@ -1,0 +1,52 @@
+<% content_for :title, "Bank transactions" %>
+
+<%= content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", data: [ { label: "Bank transactions" } ] %>
+<% end %>
+
+<% actions = capture do %>
+  <div class="flex items-center gap-2">
+    <% if @linked %>
+      <%= button_to bank_sync_path, class: secondary_button_class(size: :compact) do %>
+        <%= inline_svg_tag "icons/refresh.svg", class: "h-4 w-4" %>Sync
+      <% end %>
+    <% end %>
+
+    <button type="button" class="<%= primary_button_class(size: :compact) %>"
+        data-controller="bank-link" data-action="bank-link#open"
+        data-bank-link-token-url-value="<%= bank_link_token_path %>"
+        data-bank-link-connection-url-value="<%= bank_connection_path %>"
+        data-bank-link-script-url-value="<%= Beerus.connect_script_url %>">
+      <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Link bank
+    </button>
+  </div>
+<% end %>
+
+<%= render "shared/page_header",
+    title: "Bank transactions",
+    description: "Transactions from your linked banks.",
+    action: actions %>
+
+<% if !@linked %>
+  <%= render "shared/empty_state",
+      icon: "icons/landmark.svg",
+      title: "No banks linked",
+      description: "Link a bank to import its transactions into Balance." %>
+<% elsif @transactions.blank? %>
+  <%= render "shared/empty_state",
+      icon: "icons/landmark.svg",
+      title: "No transactions yet",
+      description: "Transactions from your bank appear here." %>
+<% else %>
+  <%= render layout: "shared/table", locals: { columns: [
+        { label: "Date" }, { label: "Transaction" }, { label: "Amount", align: :right }
+      ] } do %>
+    <% @transactions.each do |transaction| %>
+      <tr class="<%= table_row_class %>">
+        <td class="<%= table_cell_class %> whitespace-nowrap"><%= bank_transaction_date(transaction) %></td>
+        <td class="<%= table_cell_class(strong: true) %>"><%= transaction.fetch("description") %></td>
+        <td class="<%= table_cell_class(align: :right) %> tabular-nums whitespace-nowrap"><%= bank_transaction_amount(transaction) %></td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>
