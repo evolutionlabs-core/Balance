@@ -46,6 +46,10 @@ Rails.application.routes.draw do
     resource :reversal, only: %i[new create], controller: "journal_entries/reversals"
     resource :template, only: %i[new create], controller: "journal_entries/templates"
   end
+  resources :bank_transactions, only: %i[index]
+  resource :bank_link_token, only: %i[create]
+  resource :bank_connection, only: %i[create]
+  resource :bank_sync, only: %i[create]
   resources :entry_templates, only: %i[index destroy]
   resources :journal_entry_drafts, only: %i[index show create edit update destroy] do
     resource :posting, only: %i[create], controller: "journal_entry_drafts/postings"
