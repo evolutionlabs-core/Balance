@@ -58,11 +58,19 @@ class Beerus
           http.request(build_request(method, uri, body, access_token))
         end
 
-        raise Error, "Beerus responded #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+        raise Error, error_message(response) unless response.is_a?(Net::HTTPSuccess)
 
         JSON.parse(response.body)
       rescue Timeout::Error, SystemCallError, SocketError, OpenSSL::SSL::SSLError, JSON::ParserError, KeyError => error
         raise Error, error.message
+      end
+
+      def error_message(response)
+        error = JSON.parse(response.body).fetch("error")
+
+        "Beerus responded #{response.code} #{error.fetch("code")}: #{error.fetch("message")} (request #{error.fetch("request_id")})"
+      rescue JSON::ParserError, KeyError, TypeError
+        "Beerus responded #{response.code}"
       end
 
       def api_url

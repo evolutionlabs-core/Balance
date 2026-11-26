@@ -21,4 +21,17 @@ class BankConnectionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "h2", "No transactions yet"
   end
+
+  test "answers with a short message and keeps the bank unlinked when the exchange fails" do
+    Beerus.stub(:exchange_public_token, ->(_public_token) { raise Beerus::Error, "Beerus responded 400 invalid_public_token: The public token has expired. (request req_2)" }) do
+      post bank_connection_path, params: { public_token: "public-1" }, as: :json
+    end
+
+    assert_response :bad_gateway
+    assert_equal "Couldn't start bank linking. Try again in a moment.", response.parsed_body.fetch("error")
+
+    get bank_transactions_path
+
+    assert_select "h2", "No banks linked"
+  end
 end
