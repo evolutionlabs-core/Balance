@@ -18,6 +18,9 @@
         data-bank-link-connection-url-value="<%= bank_connection_path %>"
         data-bank-link-script-url-value="<%= Beerus.connect_script_url %>">
       <%= inline_svg_tag "icons/plus.svg", class: "h-4 w-4" %>Link bank
+      <template data-bank-link-target="error">
+        <%= render "shared/flash", messages: { "alert" => "Couldn't start bank linking. Try again in a moment." } %>
+      </template>
     </button>
   </div>
 <% end %>

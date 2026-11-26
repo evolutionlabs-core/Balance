@@ -95,6 +95,12 @@ monitoring, or external secrets and is not a deployment procedure.
   PostgreSQL health check passes.
 - If the AI assistant cannot connect, verify the provider is listening and the
   `OPENAI_API_BASE` host is reachable from the container.
+- If **Link bank** shows "Couldn't start bank linking", read the `Bank linking
+  failed` line in `docker compose logs web-dev`. Inside the container,
+  `connect.localhost` does not resolve, so set `BEERUS_API_URL` to a Beerus
+  address the container can reach. Register
+  `http://localhost:8080/bank_transactions` as a redirect URI with
+  `beerus partner add`, or set `BEERUS_REDIRECT_URI` to a URI you registered.
 - If port `8080` is occupied, stop the conflicting process or change the host
   side of the port mapping in `compose.yaml`.
 - Registry DNS or timeout failures originate outside the application; confirm
